@@ -1,0 +1,313 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Circulation &rsaquo; Edit stack requests</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<!-- TMPL_INCLUDE NAME="calendar.inc" -->
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
+<script type="text/javascript">
+
+    var MSG_CONFIRM_EDIT_TODAY_STACK = _("Are you sure you want to print today stacks requests ?");
+    var MSG_CONFIRM_EDIT_STACK = _("Are you sure you want to print comming stacks requests ?");
+
+    // MAN094 MAN253
+    var myTextExtraction = function(node) {
+        // extract data from markup and return it
+        if (node.childNodes.length > 1 && node.childNodes[1].innerHTML !== undefined) {
+            return node.childNodes[1].innerHTML;
+        } else {
+            return node.innerHTML;
+        }
+    } 
+    $(document).ready(function() {
+        
+        $("#stackst").tablesorter({<!-- TMPL_IF NAME="dateformat_metric" -->
+            dateFormat: 'uk',<!-- /TMPL_IF -->
+            sortList: [[2,0]],
+            widgets: ['zebra'],
+            headers: { 12: { sorter: false} },
+            textExtraction: myTextExtraction
+        });
+        
+    });
+    // END MAN094 MAN253
+    
+</script>
+<style type="text/css">
+    
+    #editform input[type="submit"] {
+        float: left;
+        margin-right: 1em;
+    }
+    
+}
+
+</style>
+
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="circ-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a> &rsaquo; Edit stack requests</div>
+
+<div id="doc3" class="yui-t2">    
+<div id="bd">
+    
+    <div id="yui-main">
+    <div class="yui-b">
+    
+    <!-- TMPL_IF NAME="print" -->
+        <div class="dialog message">
+            <ul>
+                <li><!-- TMPL_VAR NAME="count_edited" --> stack(s) were edited.</li>
+                
+                <!-- TMPL_IF NAME="count_expired" -->
+                    <li><!-- TMPL_VAR NAME="count_expired" --> stack(s) were canceled for expiration reason.</li>
+                <!-- /TMPL_IF -->
+                
+                <!-- TMPL_IF NAME="count_not_edited" -->
+                    <li><!-- TMPL_VAR NAME="count_not_edited" --> stack(s) could not be edited because item has been requested and is out of desk.</li>
+                <!-- /TMPL_IF -->
+            </ul>
+        </div>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_INCLUDE NAME="jasper.inc" -->
+        
+    <h1>Edit stack requests</h1>
+    <form id="editform" action="/cgi-bin/koha/stack/search-stacks.pl" method="post" >
+        
+        <input type="hidden" name="from"     value="<!-- TMPL_VAR NAME='from' -->" />
+        <input type="hidden" name="to"       value="<!-- TMPL_VAR NAME='to' -->" />
+        <input type="hidden" name="canceled" value="<!-- TMPL_VAR NAME='canceled' -->" />
+        <input type="hidden" name="state"    value="<!-- TMPL_VAR NAME='state' -->" />
+        <input type="hidden" name="desk"     value="<!-- TMPL_VAR NAME='desk' -->" />
+        <input type="hidden" id="reprint_stack" name="reprint_stack" value="" />
+        
+        <fieldset class="action">
+            <input type="submit" class="submit" name="opinstant" value="Edit today stacks" onclick="return confirm(MSG_CONFIRM_EDIT_TODAY_STACK);" />
+            <span class="hint">Click this button to edit instant stack requests shown into table.</span>
+        </fieldset>
+    
+        <fieldset class="action">
+            <input type="submit" class="submit" name="opdelayed" value="Clean expired and edit comming requests" onclick="return confirm(MSG_CONFIRM_EDIT_STACK);" />
+            <span class="hint">
+                Click this button to expire requests ending yesterday and to print comming requests.<br/>
+                <strong>Beware</strong>: this action can not be undone, it should be done at last once before circulation opens.
+            </span>
+        </fieldset>
+
+        <div class="searchresults">
+        <!-- TMPL_IF NAME="stackrq_loop" -->
+            <h4><!-- TMPL_VAR NAME="stackrq_total" --> record(s)</h4>
+            <table id="stackst" >
+                <thead><tr>
+                    <th>Id</th>
+                    <th>Stack state</th>
+                    <th>Begin date</th>
+                    <th>End date</th>
+                    <th style="min-width: 8em;">Patron</th>
+                    <th style="min-width: 10em;">Title</th>
+                    <th>Barcode</th>
+                    <th style="min-width: 6em;">Call No.</th>
+                    <th style="min-width: 5em;">Item state</th>
+                    <th>Delivery desk</th>
+                    <th>Renewed</th>
+                    <th>Origin</th>
+                    <th>Actions</th>
+                </tr></thead>
+                <tbody>
+                <!-- TMPL_LOOP NAME="stackrq_loop" -->
+                <tr>
+                    <td>
+                        <a href="/cgi-bin/koha/stack/all-operations.pl?input=<!-- TMPL_VAR NAME='request_number' -->">
+                            <!-- TMPL_VAR NAME="request_number" -->
+                        </a>
+                    </td>
+                    <td><!-- TMPL_INCLUDE NAME="stack/stack-state.inc" --></td>
+                    <td><!-- TMPL_VAR NAME="begin_date_ui" --></td>
+                    <td><!-- TMPL_VAR NAME="end_date_ui" --></td>
+                    <td>
+                        <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME='borrowernumber' -->">
+                            <!-- TMPL_VAR NAME="surname" -->
+                            <!-- TMPL_IF NAME="firstname" -->, <!-- TMPL_VAR NAME="firstname" --><!-- /TMPL_IF -->
+                        </a>
+                    </td>
+                    <td>
+                        <!-- TMPL_IF NAME="title" -->
+                            <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME='biblionumber' -->">
+                                <strong><!-- TMPL_VAR NAME="title" ESCAPE="HTML" --></strong>
+                            </a>
+                        <!-- TMPL_ELSE -->
+                            <strong><!-- TMPL_VAR NAME="nc_title" ESCAPE="HTML" --></strong>
+                        <!-- /TMPL_IF -->
+                        
+                        <!-- TMPL_IF NAME="author" -->
+                            , by <!-- TMPL_VAR NAME="author" -->
+                        <!-- TMPL_ELSIF NAME="nc_author" -->
+                            , by <!-- TMPL_VAR NAME="nc_author" ESCAPE="HTML" -->
+                        <!-- /TMPL_IF -->
+                        
+                        <!-- TMPL_IF NAME="publishercode" -->; <!-- TMPL_VAR NAME="publishercode" --> <!-- /TMPL_IF -->
+                        
+                        <!-- TMPL_IF NAME="publicationyear" -->
+                            , <!-- TMPL_VAR NAME="publicationyear" -->
+                        <!-- TMPL_ELSIF NAME="nc_pubyear" -->
+                            , <!-- TMPL_VAR NAME="nc_pubyear" ESCAPE="HTML" -->
+                        <!-- /TMPL_IF -->
+                    <td>
+                        <!-- TMPL_IF NAME="itemnumber" -->
+                            <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME='biblionumber' -->&itemnumber=<!-- TMPL_VAR NAME='itemnumber' -->#item<!-- TMPL_VAR NAME='itemnumber' -->">
+                                <!-- TMPL_VAR NAME="barcode" -->
+                            </a>
+                        <!-- TMPL_ELSE -->
+                            <!-- TMPL_VAR NAME="barcode" -->
+                        <!-- /TMPL_IF -->
+                    </td>
+                    <td>                 
+                        <!-- TMPL_IF NAME="itemcallnumber" -->
+                            <span style="display: none;"><!-- TMPL_VAR NAME="cn_sort" --></span><!-- TMPL_VAR NAME="itemcallnumber" ESCAPE="HTML" -->
+                        <!-- TMPL_ELSE -->
+                            <span style="display: none;"><!-- TMPL_VAR NAME="nc_callnumber" --></span><!-- TMPL_VAR NAME="nc_callnumber" ESCAPE="HTML" -->
+                        <!-- /TMPL_IF -->
+                    </td>
+                    <td><!-- TMPL_INCLUDE NAME="stack/istate.inc" --></td>
+                    <td><!-- TMPL_VAR NAME="delivery_desk_ui" --></td>
+                    <td><!-- TMPL_IF NAME="renewals" -->
+                            <!-- TMPL_VAR NAME="renewals" --> times
+                            <!-- TMPL_IF NAME="renew_date_ui" -->, <small>last on: <!-- TMPL_VAR NAME="renew_date_ui" --></small><!-- /TMPL_IF -->
+                        <!-- TMPL_ELSE -->
+                            No
+                        <!-- /TMPL_IF -->
+                     </td>
+                     <td><!-- TMPL_INCLUDE NAME="stack/stack-origin.inc" --></td>
+                     <td>
+                     <!-- TMPL_IF EXPR="state ne 'A'" -->
+                        <input type="submit" class="submit" name="opprint" value="Reprint" onclick="document.getElementById('reprint_stack').value = <!-- TMPL_VAR NAME='request_number' -->;return true;" />
+                     <!-- /TMPL_IF -->
+                     </td>
+                 </tr>
+                <!-- /TMPL_LOOP -->
+                </tbody>
+            </table>
+        <!-- TMPL_ELSE -->
+            <b>No stacks found.</b>
+        <!-- /TMPL_IF -->
+        </div>
+    
+    </form>
+    
+    </div>
+    </div>
+    <div class="yui-b">
+    <form action="/cgi-bin/koha/stack/search-stacks.pl" method="get" >
+        <fieldset class="brief">
+        <h4>Refine Results:</h4>
+        <ol>
+        <li>
+            <label for="state">
+                State:
+            </label>
+            <select id="state" name="state">
+                <option value="">- All -</option>
+                <!-- TMPL_LOOP NAME="states_loop" -->
+                    <option value="<!-- TMPL_VAR NAME='state' -->"<!-- TMPL_IF NAME="selected" --> selected="selected"<!-- /TMPL_IF -->>
+                        <!-- TMPL_INCLUDE NAME="stack/stack-state.inc" -->
+                    </option>
+                <!-- /TMPL_LOOP -->
+            </select>
+        </li>
+        <li>
+            <label for="canceled">
+                Only canceled stacks:
+            </label>
+            <input type="checkbox" name="canceled" value="1"<!-- TMPL_IF NAME="canceled" --> checked="checked"<!-- /TMPL_IF -->>
+        </li>
+        <li>
+            <label for="desk">
+                Delivery desk:
+            </label>
+            <select name="desk">
+                <option value="">- All -</option>
+                <option value="<!-- TMPL_VAR NAME='desk_not_res' -->" <!-- TMPL_IF EXPR="desk eq desk_not_res" --> selected="selected"<!-- /TMPL_IF -->>- All but reserve -</option>
+                <!-- TMPL_LOOP NAME="desks_loop" -->
+                    <option value="<!-- TMPL_VAR NAME='deskcode' -->"<!-- TMPL_IF NAME="selected" --> selected="selected"<!-- /TMPL_IF -->>
+                        <!-- TMPL_VAR NAME='deskname' -->
+                    </option>
+                <!-- /TMPL_LOOP -->
+            </select>
+        </li>
+        <li>
+            <label for="from">
+                Start date:
+            </label>
+            <input type="text" size="10" id="from" name="from" value="<!-- TMPL_VAR NAME="from" -->" />
+            <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif"  border="0" id="openCalendarFrom" style="cursor: pointer;" alt="" />
+            <script language="JavaScript" type="text/javascript">
+            function validate1(date) {
+                var day = date.getDate();
+                var month = date.getMonth() + 1;
+                var year = date.getFullYear();
+                var weekDay = date.getDay();
+                var dayMonth = month + '-' + day;
+                var dateString = year + '-' + month + '-' + day;
+                var dateTo = document.getElementById('to').value.split("-");
+                var limitDate = new Date(dateTo[0], (dateTo[1] - 1), dateTo[2]);
+                if (date > limitDate) {
+                        return true;
+                } else {
+                        return false;
+                }
+            }
+            Calendar.setup(
+                    {
+                    inputField : "from",
+                    ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
+                    button : "openCalendarFrom",
+                    disableFunc : validate1,
+                    dateStatusFunc : validate1
+                    }
+            );
+            </script>
+        </li>
+        <li>
+            <label for="to" >
+                End date:
+            </label>
+            <input size="10" id="to" name="to" value="<!-- TMPL_VAR NAME="to" -->" type="text" />
+            <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="" id="openCalendarTo" style="cursor: pointer;" border="0" />
+            <script type="text/javascript">
+                    function validate2(date) {
+                        var day = date.getDate();
+                        var month = date.getMonth() + 1;
+                        var year = date.getFullYear();
+                        var weekDay = date.getDay();
+                        var dayMonth = month + '-' + day;
+                        var dateString = year + '-' + month + '-' + day;
+                        var dateFrom = document.getElementById('from').value.split("-");
+                        var limitDate = new Date(dateFrom[0], (dateFrom[1] - 1), dateFrom[2]);
+                        if (limitDate > date) {
+                                return true;
+                        } else {
+                                return false;
+                        }
+                    }
+            
+                    Calendar.setup(
+                            {
+                                inputField : "to",
+                                ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
+                                button : "openCalendarTo",
+                                disableFunc : validate2,
+                                dateStatusFunc : validate2
+                            }
+                    );
+            </script>
+        </li>
+        </ol>
+
+        </fieldset>
+        <fieldset class="action"><input type="submit" name="submit" value="Go" class="submit"/></fieldset>
+    </form>
+    </div>
+    
+</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

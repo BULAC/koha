@@ -24,9 +24,10 @@ use C4::Members;
 use C4::Items;
 use C4::Circulation;
 use C4::Biblio;
-use C4::Reserves qw(GetReservesFromBorrowernumber);
+use C4::Reserves;
 use C4::Context;
 use C4::Branch qw/GetBranchName/;
+use C4::Overdues qw/CheckBorrowerDebarred/; # PROGILONE - A2
 use Digest::MD5 qw(md5_base64);
 
 use vars qw($VERSION @ISA @EXPORT);
@@ -94,7 +95,7 @@ sub CanBookBeReserved {
     if ( $borrower->{lost} eq 1 ) {
         $out = undef;
     }
-    if ( $borrower->{debarred} eq 1 ) {
+    if ( CheckBorrowerDebarred($borrower) ) { # PROGILONE - A2
         $out = undef;
     }
     my @reserves = GetReservesFromBorrowernumber( $borrower->{'borrowernumber'} );

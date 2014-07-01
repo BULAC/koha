@@ -26,7 +26,6 @@
 parcel.pl
 
 =head1 DESCRIPTION
-
 This script shows all orders receipt or pending for a given supplier.
 It allows to write an order as 'received' when he arrives.
 
@@ -35,11 +34,9 @@ It allows to write an order as 'received' when he arrives.
 =over 4
 
 =item supplierid
-
 To know the supplier this script has to show orders.
 
 =item code
-
 is the bookseller invoice number.
 
 =item freight
@@ -49,7 +46,6 @@ is the bookseller invoice number.
 
 
 =item datereceived
-
 To filter the results list on this given date.
 
 =back

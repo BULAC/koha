@@ -1,0 +1,27 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Spaces management</title>
+<base target="_parent">
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/js/spaces/frame-manager.js"></script>
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="cat-search.inc" -->
+
+<!-- TMPL_IF NAME="booking" -->
+	<div id="breadcrumbs">
+		<a href="/cgi-bin/koha/mainpage.pl">Home</a> 
+		&rsaquo; 
+		Spaces booking
+	</div>
+<!-- TMPL_ELSE -->
+	<!-- TMPL_IF NAME="management" -->
+		<div id="breadcrumbs">
+			<a href="/cgi-bin/koha/mainpage.pl">Home</a>
+			&rsaquo; 
+			<a href="/cgi-bin/koha/admin/admin-home.pl">Administration</a> 
+			&rsaquo; 
+			Spaces management
+		</div>
+	<!-- /TMPL_IF -->
+<!-- /TMPL_IF -->

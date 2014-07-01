@@ -18,11 +18,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-=head1 NAME
-
-opac-tags.pl
-
-=head1 DESCRIPTION
+=head1 
 
 TODO :: Description here
 

@@ -37,6 +37,11 @@ my $tagid        = $query->param('tagid');
 my $resultstring = $query->param('result');
 my $dbh          = C4::Context->dbh;
 
+# PROGILONE - july 2010 - C2
+my $onchoose     = $query->param('onchoose');
+my $editauthtypecode = $query->param('editauthtypecode');
+# End PROGILONE
+
 my $startfrom = $query->param('startfrom');
 $startfrom = 0 if ( !defined $startfrom );
 my ( $template, $loggedinuser, $cookie );
@@ -44,7 +49,8 @@ my $resultsperpage;
 
 my $authtypes = getauthtypes;
 my @authtypesloop;
-foreach my $thisauthtype ( keys %$authtypes ) {
+# PROGILONE - july 2010 : add sort
+foreach my $thisauthtype ( sort { $authtypes->{$a}{'authtypetext'} cmp $authtypes->{$b}{'authtypetext'} } keys %$authtypes ) {
     my %row = (
         value        => $thisauthtype,
         selected     => ($thisauthtype eq $authtypecode),
@@ -171,6 +177,12 @@ $template->param(
     value_any     => $query->param('value_any') || "",
     tagid         => $tagid,
     index         => $index,
+
+    # PROGILONE - july 2010 - C2
+    onchoose      => $onchoose,
+    editauthtypecode => $editauthtypecode,
+    # End PROGILONE
+
     authtypesloop => \@authtypesloop,
     authtypecode  => $authtypecode,
     value_mainstr  => $query->param('value_mainstr') || "", 

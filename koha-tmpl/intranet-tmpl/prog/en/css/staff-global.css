@@ -21,11 +21,6 @@ a.overdue,.overdue {
 	color : #cc0000;
 }
 
-a.popup {
-	background : transparent url("../../img/pop-up-link.png") center right no-repeat;
-	padding-right : 15px;
-}
-
 body {
 	text-align : left;
   	padding:0 0 2.5em 0;
@@ -437,9 +432,6 @@ ul.toolbar {
 	padding-left : 0;
 }
 
-ul.toolbar button {
-	padding-bottom : 2px;
-}
 .yui-menu-button  {
 	
 }
@@ -507,8 +499,7 @@ fieldset.brief {
 	border : 1px solid #E8E8E8;
 }
 
-fieldset.brief label,
-fieldset.brief span.label {
+fieldset.brief label {
 	display : block;
 	font-weight : bold;
 	padding : .3em 0;
@@ -544,8 +535,7 @@ div.yui-b fieldset.brief select {
 div.yui-b fieldset.brief li.radio {
 	padding : .7em 0;
 }
-div.yui-b fieldset.brief li.radio label,
-div.yui-b fieldset.brief li.radio span.label {
+div.yui-b fieldset.brief li.radio label {
 	display : inline;
 }
 
@@ -563,6 +553,16 @@ margin: .9em 0 0 0;
 padding: 0;
 width: 100%; 
 }
+
+/* B014*/
+#memberentry_subscription legend {
+	visibility: none;
+}
+
+fieldset#memberentry_subscription {
+    legend: hidden;
+}
+/* END B014*/
 
 fieldset.rows legend {  
 	margin-left: 1em;
@@ -926,8 +926,7 @@ fieldset.rows .inputnote {
 	background-repeat : no-repeat;
 }
 
-#placehold a,
-#placehold button {
+#placehold a {
 	padding-left : 34px;
 	background-image: url("../../img/toolbar-hold.gif");
 	background-position : center left;
@@ -937,6 +936,41 @@ fieldset.rows .inputnote {
 #editmenuc .first-child, #deleteshelf .first-child,#newmenuc .first-child, #addbiblio .first-child, #z3950search .first-child, #printmenuc .first-child, #newsupplier .first-child, #savemenuc .first-child, #budgets_menuc .first-child, #periods_menuc .first-child {
 	padding-left : 15px;
 }
+
+/* B032 */
+a.stackrq {
+    padding-left : 45px;
+    background-image : url("../../img/stackrq.png");
+    background-position : center left;
+    background-repeat : no-repeat;
+    background-size: 100%;
+    font-size: 3em;
+    display: block;
+    width: 10px;
+    height: 50px;
+}
+
+a.stackrq span {
+    display : none;
+}
+
+#stackrqbiblio a {
+    padding-left : 34px;
+    background-image : url("../../img/toolbar-stackrq.png");
+    background-position : center left;
+    background-repeat : no-repeat;
+    background-size: 23px;
+    margin-left: 2px;
+}
+
+a.flyitem, a.flybiblio {
+    padding-left : 30px;
+    background-image : url("../../img/toolbar-edit.gif");
+    background-position : center left;
+    background-repeat : no-repeat;
+}
+
+/* END B032 */
 
 .error,
 .error a,
@@ -1139,21 +1173,11 @@ td input.approve {
 	color:black;
 	padding: .4em .4em .4em 34px;
 }
-
+ 
 .dialog input.edit {
 	background: #fff url(../../img/toolbar-edit.gif) no-repeat 4px center;
 	color:black;
-	max-width : 13em;
 	padding: .4em .4em .4em 34px;
-	white-space: normal;
-}
-
-.dialog input.new {
-	background: #fff url(../../img/toolbar-new.gif) no-repeat 4px center;
-	color:black;
-	max-width : 13em;
-	padding: .4em .4em .4em 34px;
-	white-space: normal;
 }
 
 .dialog input.print {
@@ -1219,12 +1243,6 @@ span.required {
 
 a .term {
 	 text-decoration : underline;
-}
-
-/* style for shelving location in catalogsearch */
-.shelvingloc {
-    display : block;
-    font-style : italic;
 }
 
 a:hover .term {
@@ -1364,10 +1382,9 @@ li.email {
 	font-size : 105%;
 }
 
-.hold {
+.reserve {
 	float : right;
-	font-size: 90%;
-	margin: 0;
+	font-weight : bold;
 }
 
 .thumbnail {
@@ -1468,6 +1485,13 @@ li.email {
 #search-facets li.showmore {
 	font-weight : bold;
 	text-indent : 1em;
+}
+
+/* PROGILONE - avril 2010 - F20 */
+#search-facets .facetcount {
+    font-style : italic;
+    color : #707070;
+    font-size : 85%;
 }
 
 div.pages {
@@ -1575,7 +1599,7 @@ a.yuimenuitemlabel:hover {
 #toplevelnav {
 	float : left;
 	margin-left : .5em;
-	width : 30em;
+	width : auto;
 }
 
 ul#toplevelmenu {
@@ -1743,7 +1767,7 @@ span.permissiondesc {
 
 
 /* borrower autocomplete */
-#borrowerautocomplete { width: 450px; text-align:left;} /* z-index needed on top instances for ie & sf absolute inside relative issue */
+#borrowerautocomplete { width: auto; text-align:left;} /* z-index needed on top instances for ie & sf absolute inside relative issue */
 .autocomplete .yui-ac-highlight ,
 .autocomplete .yui-ac-highlight .sample-result,
 .autocomplete .yui-ac-highlight .sample-query { color:#FFF; }
@@ -1751,6 +1775,58 @@ span.permissiondesc {
 .autocomplete .sample-query { color:#000; }
 #findborrower { position:static; width:auto; }
 #yborrowercontainer { text-align:left;width:335px; }
+
+/* B014*/
+/* zip autocomplete */
+/* z-index needed on top instances for ie & sf absolute inside relative issue */
+#zipcodeautocomplete,
+#Bzipcodeautocomplete {
+    width: 450px;
+    text-align: left;
+}
+
+.autocomplete .yui-ac-highlight .zip-result, .autocomplete .zip-result,
+.autocomplete .yui-ac-highlight .Bzip-result, .autocomplete .Bzip-result {
+    color: black;
+}
+
+#zipcode,
+#Bzipcode {
+    position: static;
+    width: auto;
+}
+
+#ac_containerzip,
+#ac_containerBzip {
+    text-align: left;
+    width: 335px;
+}
+
+/* country autocomplete */
+/* z-index needed on top instances for ie & sf absolute inside relative issue */
+#countryautocomplete,
+#Bcountryautocomplete {
+    width: 450px;
+    text-align: left;
+}
+
+.autocomplete .yui-ac-highlight .country-result, .autocomplete .country-result,
+.autocomplete .yui-ac-highlight .Bcountry-result, .autocomplete .Bcountry-result {
+    color: black;
+}
+
+#country,
+#B_country {
+    position: static;
+    width: auto;
+}
+
+#ac_containercountry,
+#ac_containerBcountry {
+    text-align: left;
+    width: 335px;
+}
+/* END B014*/
 
 /* patron attribues autocomplete for overdues report (pattrodue) */
 .pattrodue-autocomplete .pattrodue-result { color: black; }
@@ -1911,12 +1987,10 @@ ul.budget_hierarchy li:last-child:after {
 ul.budget_hierarchy li:first-child:after {
     content: "";
 }
-.holdcount { font-size : 105%; line-height : 200%; }
-.holdcount a { border : 1px solid #a4bedd; background-color : #e4ecf5; font-weight : bold; -moz-border-radius: 4px; padding : .1em .4em; text-decoration : none; }
-.holdcount a:hover { background-color : #ebeff7; }
-.container {
-	border : 1px solid #EEE;
-	padding : 1em;
-	margin : 1em 0;
+
+/* MAN125 */
+input[disabled=disabled] {
+    color: #999;
 }
-fieldset.rows+h3 {clear:both;padding-top:.5em;}
+/* END MAN125 */
+

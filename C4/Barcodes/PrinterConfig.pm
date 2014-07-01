@@ -35,7 +35,7 @@ C4::Barcodes::PrinterConfig - Koha module dealing with labels in a PDF.
 
 =head1 SYNOPSIS
 
-use C4::Barcodes::PrinterConfig;
+	use C4::Barcodes::PrinterConfig;
 
 =head1 DESCRIPTION
 
@@ -45,21 +45,17 @@ environment of the pdf file.
 
 =head1 FUNCTIONS
 
-=head2 my @positionsForX;
+=over 2
 
-Takes all the X positions of the pdf file.
+=cut
 
-=head2 my @positionsForY; 
+my @positionsForX; # Takes all the X positions of the pdf file.
+my @positionsForY; # Takes all the Y positions of the pdf file.
+my $firstLabel = 1; # Test if the label passed as a parameter is the first label to be printed into the pdf file.
 
-Takes all the Y positions of the pdf file.
+=item setPositionsForX
 
-=head2 my $firstLabel = 1; 
-
-Test if the label passed as a parameter is the first label to be printed into the pdf file.
-
-=head2 setPositionsForX
-
-  C4::Barcodes::PrinterConfig::setPositionsForX($marginLeft, $labelWidth, $columns, $pageType);
+	C4::Barcodes::PrinterConfig::setPositionsForX($marginLeft, $labelWidth, $columns, $pageType);
 
 Calculate and stores all the X positions across the pdf page.
 
@@ -72,12 +68,7 @@ C<$columns> Indicates how many columns do you want in your page type.
 C<$pageType> Page type to print (eg: a4, legal, etc).
 
 =cut
-
-# Globals used by the functions
-my @positionsForX;
-my @positionsForY;
-my $firstLabel = 1;
-
+#'
 sub setPositionsForX {
 	my ($marginLeft, $labelWidth, $columns, $pageType) = @_;
 	my $defaultDpi = 72/25.4; # By default we know 25.4 mm -> 1 inch -> 72 dots per inch
@@ -91,9 +82,9 @@ sub setPositionsForX {
 	@positionsForX = @positions;
 }
 
-=head2 setPositionsForY
+=item setPositionsForY
 
-  C4::Barcodes::PrinterConfig::setPositionsForY($marginBottom, $labelHeigth, $rows, $pageType);
+	C4::Barcodes::PrinterConfig::setPositionsForY($marginBottom, $labelHeigth, $rows, $pageType);
 
 Calculate and stores all tha Y positions across the pdf page.
 
@@ -106,7 +97,7 @@ C<$rows> Indicates how many rows do you want in your page type.
 C<$pageType> Page type to print (eg: a4, legal, etc).
 
 =cut
-
+#'
 sub setPositionsForY {
 	my ($marginBottom, $labelHeigth, $rows, $pageType) = @_;
 	my $defaultDpi = 72/25.4; # By default we know 25.4 mm -> 1 inch -> 72 dots per inch
@@ -120,10 +111,16 @@ sub setPositionsForY {
 	@positionsForY = @positions;
 }
 
-=head2 getLabelPosition
+=item getLabelPosition
 
-  (my $x, my $y, $pdfObject, $pageObject, $gfxObject, $textObject, $coreObject, $labelPosition) = 
-     C4::Barcodes::PrinterConfig::getLabelPosition($labelPosition, $pdfObject, $page, $gfx, $text, $fontObject, $pageType);	
+	(my $x, my $y, $pdfObject, $pageObject, $gfxObject, $textObject, $coreObject, $labelPosition) = 
+					C4::Barcodes::PrinterConfig::getLabelPosition($labelPosition, 
+																  $pdfObject, 
+																  $page,
+																  $gfx,
+																  $text,
+																  $fontObject,
+																  $pageType);	
 
 Return the (x,y) position of the label that you are going to print considering the environment.
 
@@ -142,7 +139,7 @@ C<$fontObject> The font object
 C<$pageType> Page type to print (eg: a4, legal, etc).
 
 =cut
-
+#'
 sub getLabelPosition {
 	my ($labelNum, $pdf, $page, $gfxObject, $textObject, $fontObject, $pageType) = @_;
 	my $indexX = $labelNum % @positionsForX;
@@ -171,9 +168,9 @@ sub getLabelPosition {
 	return ($positionsForX[$indexX], $positionsForY[$indexY], $pdf, $page, $gfxObject, $textObject, $fontObject, $labelNum);
 }
 
-=head2 labelsPage
+=item labelsPage
 
-  my @labelTable = C4::Barcodes::PrinterConfig::labelsPage($rows, $columns);
+	my @labelTable = C4::Barcodes::PrinterConfig::labelsPage($rows, $columns);
 
 This function will help you to build the labels panel, where you can choose
 wich label position do you want to start the printer process.
@@ -183,7 +180,7 @@ C<$rows> Indicates how many rows do you want in your page type.
 C<$columns> Indicates how many rows do you want in your page type.
 
 =cut
-
+#'
 sub labelsPage{
 	my ($rows, $columns) = @_;
 	my @pageType;
@@ -215,6 +212,8 @@ sub labelsPage{
 1;
 
 __END__
+
+=back
 
 =head1 AUTHOR
 

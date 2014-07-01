@@ -1,7 +1,5 @@
 #!/usr/bin/perl
 
-# Parts copyright Catalyst IT 2010
-#
 # This file is part of Koha.
 #
 # Koha is free software; you can redistribute it and/or modify it under the
@@ -112,20 +110,18 @@ my @resultsdata;
 $to=($count>$to?$to:$count);
 my $index=$from;
 foreach my $borrower(@$results[$from..$to-1]){
-    # find out stats
-    $borrower->{'dateexpiry'}= C4::Dates->new($borrower->{'dateexpiry'},'iso')->output('syspref');
-    if ($categories_dislay{$borrower->{'categorycode'}}){
-        my %row = (
-	    count => $index++,
-	    %$borrower,
-	    %{$categories_dislay{$$borrower{categorycode}}},
-	);
-	push(@resultsdata, \%row);
-    }
-    else {
-	 warn $borrower->{'cardnumber'} ." has a bad category code of " . $borrower->{'categorycode'} ."\n";
-    }
+  #find out stats
+
+  $$borrower{'dateexpiry'}= C4::Dates->new($$borrower{'dateexpiry'},'iso')->output('syspref');
+
+  my %row = (
+    count => $index++,
+	%$borrower,
+	%{$categories_dislay{$$borrower{categorycode}}},
+    );
+  push(@resultsdata, \%row);
 }
+
 if ($$patron{branchcode}){
 	foreach my $branch (grep{$_->{value} eq $$patron{branchcode}}@$branches){
 		$$branch{selected}=1;

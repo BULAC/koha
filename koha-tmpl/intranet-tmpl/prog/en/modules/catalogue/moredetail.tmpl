@@ -1,7 +1,20 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <title>Koha &rsaquo; Catalog &rsaquo; Item details for <!-- TMPL_LOOP NAME="BIBITEM_DATA" --><!-- TMPL_VAR NAME="title" --><!-- /TMPL_LOOP --></title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<!-- PROGILONE - june 2010 - C1 -->
+	<!-- TMPL_INCLUDE NAME="pgl-results-navigation-js.inc" -->
+	<!-- TMPL_INCLUDE NAME="pgl-back-results-js.inc" -->
+<!-- End PROGILONE -->
 <style type="text/css">h3{padding-top: 1em; border-top: 2px solid #CCCCCC;}</style>
+<script type="text/JavaScript">
+//<![CDATA[
+    function alertCallNumber() {
+    	var text = _("The active callnumber can not be printed because it was not generated with the callnumber plugin.");
+    	alert(text);
+    }
+//]]>
+</script>
+
 </head>
 <body>
 
@@ -16,6 +29,7 @@
     <div id="yui-main">
     <div class="yui-b">
 <!-- TMPL_INCLUDE NAME="cat-toolbar.inc" -->
+<!-- TMPL_INCLUDE NAME="jasper.inc" -->
 
 <div id="catalogue_detail_biblio">
     <!-- TMPL_LOOP NAME="BIBITEM_DATA" -->
@@ -42,11 +56,56 @@
     <!-- TMPL_LOOP NAME="ITEM_DATA" -->
     <div class="yui-g">
         <h3 id="item<!-- TMPL_VAR NAME="itemnumber" -->">Barcode <!-- TMPL_VAR NAME="barcode" -->  <!-- TMPL_IF name="notforloantext" --><!-- TMPL_VAR name="notforloantext" --> <!-- /TMPL_IF --></h3>
-        <div class="listgroup"><h4>Item Information <!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_catalogue" --><!-- TMPL_UNLESS name="nomod" -->
-         <!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_items" -->
-         <a href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber"-->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->">[Edit Item]</a>
-         <!-- /TMPL_IF -->
-         <!-- /TMPL_UNLESS --><!-- /TMPL_IF --></h4>
+        <div class="listgroup">
+        	<!-- Progilone B10: Duplicate item -->
+        	<h4>
+        		Item Information 
+        		<!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_catalogue" -->
+        			<span>
+        			<!-- TMPL_UNLESS name="nomod" -->
+        				<a href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber"-->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->">[Edit Items]</a>
+        				<a href="/cgi-bin/koha/cataloguing/additem.pl?op=duplicateitem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber"-->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->">[Duplicate Items]</a>
+        			<!-- /TMPL_UNLESS -->
+                    <!-- B11 -->
+                    <form method="post" action="/cgi-bin/koha/catalogue/moredetail.pl">
+	            		<input type="hidden" name="biblionumber" value="<!-- TMPL_VAR Name="biblionumber" -->" />
+	            		<input type="hidden" name="itemnumber" value ="<!-- TMPL_VAR NAME="itemnumber" -->" />
+	            		<input type="hidden" name="barcode" value ="<!-- TMPL_VAR NAME="barcode" -->" />
+	            		<input type="hidden" name="op" value ="print_barcode" />
+	            		<input type="submit" class="submit" name="print_barcode" value="Barcode edition" />
+	            	</form>
+	            	
+	            	<form method="post" action="/cgi-bin/koha/catalogue/moredetail.pl">
+	            		<input type="hidden" name="biblionumber" value="<!-- TMPL_VAR Name="biblionumber" -->" />
+	            		<input type="hidden" name="itemnumber" value ="<!-- TMPL_VAR NAME="itemnumber" -->" />
+	            		<input type="hidden" name="op" value ="print_callnumber" />
+	            		
+                        <!-- TMPL_IF NAME="pluginCallnumber" -->
+                        <input type="submit" class="submit" name="print_callnumber" value="Callnumber edition" />
+                        <!-- TMPL_ELSE -->
+                        <input type="submit" class="submit" name="print_callnumber" value="Callnumber edition" onclick="alertCallNumber();return false;" />
+		                <!-- /TMPL_IF -->
+                        
+	            	</form>
+	            	
+	            	<form method="post" action="/cgi-bin/koha/catalogue/moredetail.pl">
+	            		<input type="hidden" name="biblionumber" value="<!-- TMPL_VAR Name="biblionumber" -->" />
+	            		<input type="hidden" name="itemnumber" value ="<!-- TMPL_VAR NAME="itemnumber" -->" />
+	            		<input type="hidden" name="op" value ="print_return_ticket" />
+	            		<input type="submit" class="submit" name="print_return_ticket" value="Return Ticket" />
+	            	</form>
+	            	
+	            	<form method="post" action="/cgi-bin/koha/catalogue/moredetail.pl">
+                        <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR Name="biblionumber" -->" />
+                        <input type="hidden" name="itemnumber" value ="<!-- TMPL_VAR NAME="itemnumber" -->" />
+                        <input type="hidden" name="op" value ="print_taking_slip" />
+                        <input type="submit" class="submit" name="print_taking_slip" value="Taking Slip" />
+                    </form>
+                    <!-- END B11 -->
+                    </span>
+        		<!-- /TMPL_IF -->
+        	</h4>
+        	<!-- End Progilone -->
             <ol class="bibliodetails">
             <li><span class="label">Home Library:</span> <!-- TMPL_VAR NAME="homebranchname" -->&nbsp;</li>
 	    <!-- TMPL_IF NAME="item-level_itypes" -->
@@ -183,6 +242,54 @@
                     &nbsp;
                 <!-- /TMPL_IF -->
             </div>
+            
+            <!-- B122 -->
+            <div class="listgroup"><h4>Stocktaking</h4>
+            <ol class="bibliodetails">
+
+                <li><span class="label">Paper state:</span>
+                    <!-- TMPL_LOOP NAME="itempapierloop" -->
+                        <!-- TMPL_IF NAME="selected" -->
+                            <!-- TMPL_VAR NAME="lib" -->
+                        <!-- /TMPL_IF -->
+                    <!-- /TMPL_LOOP -->&nbsp;
+                </li>
+                <li><span class="label">Shaping state:</span>
+                    <!-- TMPL_LOOP NAME="itemfaconnageloop" -->
+                        <!-- TMPL_IF NAME="selected" -->
+                            <!-- TMPL_VAR NAME="lib" -->
+                        <!-- /TMPL_IF -->
+                    <!-- /TMPL_LOOP -->&nbsp;
+                </li>
+                <li><span class="label">Intervention level:</span>
+                    <!-- TMPL_LOOP NAME="itemintervloop" -->
+                        <!-- TMPL_IF NAME="selected" -->
+                            <!-- TMPL_VAR NAME="lib" -->
+                        <!-- /TMPL_IF -->
+                    <!-- /TMPL_LOOP -->&nbsp;
+                </li>                
+                <li><span class="label">Weeding proposal:</span><!-- TMPL_IF NAME="itemdesherbage" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></li>
+                <li><span class="label">Scan proposal:</span><!-- TMPL_IF NAME="itemnumerisation" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></li>
+                <li><span class="label">Inadequacy:</span><!-- TMPL_IF NAME="inadequacy" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></li>
+                <li><span class="label">Inadequacy info:</span><!-- TMPL_VAR NAME="inadequacyinfo" -->&nbsp;</li>
+                <li><span class="label">2 barcodes:</span><!-- TMPL_IF NAME="itemtwobarcodes" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></li>                                                
+                <li><span class="label">Missing barcode:</span><!-- TMPL_IF NAME="itemnobarcode" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></li>
+                <li><span class="label">Missing info:</span><!-- TMPL_VAR NAME="nobarcodeinfo" -->&nbsp;</li>
+                <li><span class="label">Materials:</span><!-- TMPL_IF NAME="materials" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></li>
+                <li><span class="label">Materials info:</span>
+                    <!-- TMPL_LOOP NAME="itemmaterialsinfoloop" -->
+                        <!-- TMPL_IF NAME="selected" -->
+                            <!-- TMPL_VAR NAME="lib" -->
+                        <!-- /TMPL_IF -->
+                    <!-- /TMPL_LOOP -->&nbsp;
+                </li>
+                <li><span class="label">Missing:</span><!-- TMPL_IF NAME="itemmissing" -->Yes<!-- TMPL_ELSE -->No<!-- /TMPL_IF --></li>
+                <li><span class="label">Missing info:</span><!-- TMPL_VAR NAME="missinginfo" -->&nbsp;</li>
+                <li><span class="label">Notes:</span><!-- TMPL_VAR NAME="itemnotes" -->&nbsp;</li>
+            </ol>
+            </div>
+            <!-- END B122 -->
+
 </div>
 <!-- /TMPL_LOOP -->
 
@@ -194,4 +301,8 @@
 <!-- TMPL_INCLUDE NAME="biblio-view-menu.inc" -->
 </div>
 </div>
+<!-- PROGILONE - june 2010 - C1 -->
+<!-- TMPL_INCLUDE NAME="pgl-results-navigation-html.inc" -->
+<!-- TMPL_INCLUDE NAME="pgl-back-results-html.inc" -->
+<!-- End PROGILONE -->
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

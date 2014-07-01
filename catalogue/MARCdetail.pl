@@ -23,7 +23,6 @@ MARCdetail.pl : script to show a biblio in MARC format
 
 =head1 SYNOPSIS
 
-=cut
 
 =head1 DESCRIPTION
 
@@ -39,6 +38,8 @@ The first 10 tabs present the biblio, the 11th one presents
 the items attached to the biblio
 
 =head1 FUNCTIONS
+
+=over 2
 
 =cut
 
@@ -89,21 +90,30 @@ my $itemcount = GetItemsCount($biblionumber);
 $template->param( count => $itemcount,
 					bibliotitle => $biblio->{title}, );
 
-# Getting the list of all frameworks
-# get framework list
-my $frameworks = getframeworks;
-my @frameworkcodeloop;
-foreach my $thisframeworkcode ( keys %$frameworks ) {
-    my %row = (
-        value         => $thisframeworkcode,
-        frameworktext => $frameworks->{$thisframeworkcode}->{'frameworktext'},
-    );
-    if ($frameworkcode eq $thisframeworkcode){
-        $row{'selected'}= 1;
-        }
-    push @frameworkcodeloop, \%row;
+#Getting the list of all frameworks
+my $queryfwk =
+  $dbh->prepare("select frameworktext, frameworkcode from biblio_framework");
+$queryfwk->execute;
+my %select_fwk;
+my @select_fwk;
+my $curfwk;
+push @select_fwk, "Default";
+$select_fwk{"Default"} = "Default";
+
+while ( my ( $description, $fwk ) = $queryfwk->fetchrow ) {
+    push @select_fwk, $fwk;
+    $select_fwk{$fwk} = $description;
 }
-$template->param( frameworkcodeloop => \@frameworkcodeloop, );
+$curfwk=$frameworkcode;
+my $framework=CGI::scrolling_list( -name     => 'Frameworks',
+            -id => 'Frameworks',
+            -default => $curfwk,
+            -OnChange => 'Changefwk(this);',
+            -values   => \@select_fwk,
+            -labels   => \%select_fwk,
+            -size     => 1,
+            -multiple => 0 );
+$template->param(framework => $framework);
 # fill arrays
 my @loop_data = ();
 my $tag;
@@ -189,6 +199,15 @@ for ( my $tabloop = 0 ; $tabloop <= 10 ; $tabloop++ ) {
                     {
                         $subfield_data{authority} = $fields[$x_i]->subfield(9);
                     }
+                    
+                    # PROGILONE - july 2010 - C2
+                    if ( $tagslib->{ $fields[$x_i]->tag() }->{ $subf[$i][0] }->{value_builder} eq "pgl_authority.pl" )
+                    {
+                    	# plugin should be on subfield containing auth code
+                        $subfield_data{authority} = $subf[$i][1];
+                    }
+                    # End PROGILONE
+                    
                     $subfield_data{marc_value} =
                       GetAuthorisedValueDesc( $fields[$x_i]->tag(),
                         $subf[$i][0], $subf[$i][1], '', $tagslib) || $subf[$i][1];

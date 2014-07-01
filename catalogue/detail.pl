@@ -37,6 +37,8 @@ use C4::External::Amazon;
 use C4::Search;		# enabled_staff_search_views
 use C4::VirtualShelves;
 use C4::XSLT;
+use C4::Stack::Rules; # B032
+use C4::Utils::IState; # B032
 
 # use Smart::Comments;
 
@@ -87,7 +89,6 @@ unless (defined($record)) {
 }
 
 my $marcnotesarray   = GetMarcNotes( $record, $marcflavour );
-my $marcisbnsarray   = GetMarcISBN( $record, $marcflavour );
 my $marcauthorsarray = GetMarcAuthors( $record, $marcflavour );
 my $marcsubjctsarray = GetMarcSubjects( $record, $marcflavour );
 my $marcseriesarray  = GetMarcSeries($record,$marcflavour);
@@ -102,9 +103,6 @@ my $dbh = C4::Context->dbh;
 # change back when ive fixed request.pl
 my @items = &GetItemsInfo( $biblionumber, 'intra' );
 my $dat = &GetBiblioData($biblionumber);
-
-# get count of holds
-my ( $holdcount, $holds ) = GetReservesFromBiblionumber($biblionumber,1);
 
 #coping with subscriptions
 my $subscriptionsnumber = CountSubscriptionFromBiblionumber($biblionumber);
@@ -140,8 +138,6 @@ my $authvalcode_items_itemlost = GetAuthValCode('items.itemlost',$fw);
 my $authvalcode_items_damaged  = GetAuthValCode('items.damaged', $fw);
 foreach my $item (@items) {
 
-    $item->{homebranch}        = GetBranchName($item->{homebranch});
-
     # can place holds defaults to yes
     $norequests = 0 unless ( ( $item->{'notforloan'} > 0 ) || ( $item->{'itemnotforloan'} > 0 ) );
 
@@ -165,7 +161,7 @@ foreach my $item (@items) {
     $item->{'location'} = $shelflocations->{$shelfcode} if ( defined( $shelfcode ) && defined($shelflocations) && exists( $shelflocations->{$shelfcode} ) );
     my $ccode = $item->{'ccode'};
     $item->{'ccode'} = $collections->{$ccode} if ( defined( $ccode ) && defined($collections) && exists( $collections->{$ccode} ) );
-    foreach (qw(ccode enumchron copynumber itemnotes uri)) {
+    foreach (qw(ccode enumchron copynumber uri)) {
         $itemfields{$_} = 1 if ( $item->{$_} );
     }
 
@@ -195,6 +191,9 @@ foreach my $item (@items) {
         $item->{transfertto}   = $branches->{$transfertto}{branchname};
         $item->{nocancel} = 1;
     }
+    
+    # Check can request stack on item
+    $item->{allowstackreq} = 1 if CanRequestStackOnItem($item->{'itemnumber'}); # B032
 
     # FIXME: move this to a pm, check waiting status for holds
     my $sth2 = $dbh->prepare("SELECT * FROM reserves WHERE borrowernumber=? AND itemnumber=? AND found='W'");
@@ -202,6 +201,8 @@ foreach my $item (@items) {
     while (my $wait_hashref = $sth2->fetchrow_hashref) {
         $item->{waitingdate} = format_date($wait_hashref->{waitingdate});
     }
+         
+    AddIStateInfos($item); # B011
 
     push @itemloop, $item;
 }
@@ -213,16 +214,13 @@ $template->param(
 	MARCAUTHORS => $marcauthorsarray,
 	MARCSERIES  => $marcseriesarray,
 	MARCURLS => $marcurlsarray,
-    MARCISBNS => $marcisbnsarray,
 	subtitle    => $subtitle,
 	itemdata_ccode      => $itemfields{ccode},
 	itemdata_enumchron  => $itemfields{enumchron},
 	itemdata_uri        => $itemfields{uri},
 	itemdata_copynumber => $itemfields{copynumber},
 	volinfo				=> $itemfields{enumchron},
-    itemdata_itemnotes  => $itemfields{itemnotes},
 	z3950_search_params	=> C4::Search::z3950_search_args($dat),
-    holdcount           => $holdcount,
 	C4::Search::enabled_staff_search_views,
 );
 
@@ -304,5 +302,10 @@ if ( C4::Context->preference("AmazonEnabled") == 1 ) {
 if (C4::Context->preference('OPACBaseURL')){
      $template->param( OpacUrl => C4::Context->preference('OPACBaseURL') );
 }
+
+# B032
+# Stack request link for serial
+$template->param( stackrequestonbiblio => 1 ) if CanRequestStackOnBiblio($biblionumber);
+# END B032
 
 output_html_with_http_headers $query, $cookie, $template->output;

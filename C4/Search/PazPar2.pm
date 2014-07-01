@@ -34,8 +34,6 @@ C4::Search::PazPar2 - implement client for PazPar2
 
 =head1 SYNOPSIS
 
-=cut
-
 =head1 DESCRIPTION
 
 =cut

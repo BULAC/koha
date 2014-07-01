@@ -20,9 +20,8 @@ while (defined($po = readdir(DIR))) {
 }
 closedir DIR;
 
-=head1 EXAMPLE
-
- my($theme, $module) = @$spec;
+=head
+my($theme, $module) = @$spec;
    my $pid = fork;
    die "fork: $!\n" unless defined $pid;
    if (!$pid) {
@@ -48,5 +47,5 @@ closedir DIR;
       die "tmpl_process3.pl: exec: $!\n";
    }
    wait;
- }
+}
 =cut

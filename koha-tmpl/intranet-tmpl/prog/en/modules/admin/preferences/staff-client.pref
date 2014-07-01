@@ -6,6 +6,10 @@ Staff Client:
               choices: staff-templates
             - theme on the staff interface.
         -
+            - "Enable the following languages on the staff interface:"
+            - pref: language
+              type: staff-languages
+        -
             - "The staff client is located at http://"
             - pref: staffClientBaseURL
               class: url
@@ -15,11 +19,6 @@ Staff Client:
             - pref: intranetstylesheet
               class: url
             - on all pages in the staff interface, instead of the default. (This should be a complete URL, starting with <code>http://</code>.)
-        -
-            - "Include the following CSS on all pages in the staff client:"
-            - pref: IntranetUserCSS
-              type: textarea
-              class: code
         -
             - Include the stylesheet <code><!-- TMPL_VAR NAME="themelang" -->/css/</code>
             - pref: intranetcolorstylesheet
@@ -41,7 +40,7 @@ Staff Client:
               type: textarea
               class: code
         -
-            - "Include the following JavaScript on all pages in the staff clien:"
+            - "Include the following JavaScript on all pages in the staff interface:"
             - pref: intranetuserjs
               type: textarea
               class: code

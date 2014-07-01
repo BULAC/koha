@@ -35,6 +35,10 @@ use POSIX qw(strftime);
 
 my $cgi = new CGI;
 
+# PROGILONE - may 2010 - F14
+# Get Session
+my $session = get_session($cgi->cookie("CGISESSID"));
+
 # Getting the template and auth
 my ($template, $loggedinuser, $cookie)
 = get_template_and_user({template_name => "opac-search-history.tmpl",
@@ -63,36 +67,65 @@ if (!$loggedinuser) {
 	my $uri = $cgi->url();
 	print $cgi->redirect(-uri => $uri,
 			     -cookie => $recentSearchesCookie);
-
+			     
+	# PROGILONE - may 2010 - F14
+	# Manage Search History by session
+	$session->param('historySession', undef);
     # Showing search history
     } else {
 
 	# Getting the cookie
 	my $searchcookie = $cgi->cookie('KohaOpacRecentSearches');
-	if ($searchcookie && thaw(uri_unescape($searchcookie))) {
-	    my @recentSearches = @{thaw(uri_unescape($searchcookie))};
-	    if (@recentSearches) {
+	    if ( $session->param('historySession') ) {			
+        my @recentSearches = @{$session->param('historySession')}; 
+		# PROGILONE - may 2010 - F14
+		# Manage Search History by session
+		# -- if (@recentSearches) {
 
 		# As the dates are stored as unix timestamps, let's do some formatting
 		foreach my $asearch (@recentSearches) {
-
-		    # We create an iso date from the unix timestamp
-		    my $isodate = strftime "%Y-%m-%d", localtime($asearch->{'time'});
-
-		    # So we can create a C4::Dates object, to get the date formatted according to the dateformat syspref
-		    my $date = C4::Dates->new($isodate, "iso");
-		    my $sysprefdate = $date->output("syspref");
+		# PROGILONE - may 2010 - F14
+		my @output;
+			# PROGILONE - may 2010 - F14
+            # Change display of query in opac search history
+			my $num_op = () = split /&op/, $asearch->{'query_cgi'}, -1;
+			my @idx = split(/&op/, $asearch->{'query_cgi'} );
+			
+			# Identify operands
+			for (my $i=0;$i<$num_op;$i++) {
+				my %row;
+				#Test index with operands
+				if ($i > 0){
+					my $operand = substr($idx[$i], index($idx[$i],"op=")+2, 2);
+						if ($operand eq "an"){
+						$row{OPERAND_AND} = 1;
+						}				
+						elsif ($operand eq "or"){
+						$row{OPERAND_OR} = 1;
+						}
+						elsif ($operand eq "no"){
+						$row{OPERAND_NOT} = 1;
+						}
+				}
+			
+				my $idx_query = substr($idx[$i], index($idx[$i],"idx=")+4, 2);
+				my $phrase_idx = substr($idx[$i], index($idx[$i],",")+1, 3);
+			
+				# Identify indexes
+				$row{get_index($idx_query,$phrase_idx)} = 1;
 		    
-		    # We also get the time of the day from the unix timestamp
-		    my $time = strftime " %H:%M:%S", localtime($asearch->{'time'});
-
-		    # And we got our human-readable date : 
-		    $asearch->{'time'} = $sysprefdate . $time;
+		    	# Identify keywords 
+		    	$row{KEYWORD} = substr($idx[$i], index($idx[$i],"q=")+2);
+		    
+				push(@output, \%row);
+	    	}
+			$asearch->{'searchhistodetail'} = \@output;
 		}
-
+  		# PROGILONE - may 2010 - F14
+		
 		$template->param(recentSearches => \@recentSearches);
-	    }
-	}
+		}
+	    	
     }
 } else {
 # And if the user is logged in, we deal with the database
@@ -121,7 +154,50 @@ if (!$loggedinuser) {
 	my $sth   = $dbh->prepare($query);
 	$sth->execute($loggedinuser, $cgi->cookie("CGISESSID"));
 	my $searches = $sth->fetchall_arrayref({});
-	$template->param(recentSearches => $searches);
+	
+	# PROGILONE - may 2010 - F14
+	# Search History
+
+	foreach my $row_search ( @{$searches} ) {
+			my @output;
+ 			my $tmp_query= $row_search->{'query_cgi'};
+			my $num_op = () = split /&op/, $tmp_query, -1;
+			my @idx = split(/&op/, $tmp_query);
+	
+			for (my $i=0;$i<$num_op;$i++) {
+				my %row;
+				#Test index witout operand
+				if ($i > 0){
+				my $operand = substr($idx[$i], index($idx[$i],"op=")+2, 2);
+					if ($operand eq "an"){
+					$row{OPERAND_AND} = 1;
+					}
+					elsif ($operand eq "or"){
+					$row{OPERAND_OR} = 1;
+					}
+					elsif ($operand eq "no"){
+					$row{OPERAND_NOT} = 1;
+					}
+				}
+			
+				my $idx_query = substr($idx[$i], index($idx[$i],"idx=")+4, 2);
+				my $phrase_idx = substr($idx[$i], index($idx[$i],",")+1, 3);
+			
+				# Identify indexes
+				$row{get_index($idx_query,$phrase_idx)} = 1;
+		    
+		    	# Identify keywords 
+		    	$row{KEYWORD} = substr($idx[$i], index($idx[$i],"q=")+2);
+		    
+				push(@output, \%row);
+					
+	        } #end for
+
+		$row_search->{'searchhistodetail'} = \@output;
+    }
+    # PROGILONE - may 2010 - F14
+    	   
+    $template->param(recentSearches => $searches);
 	
 	# Getting searches from previous sessions
 	$query = "SELECT COUNT(*) FROM search_history WHERE userid = ? AND sessionid != ?";
@@ -133,8 +209,50 @@ if (!$loggedinuser) {
 	    $query = "SELECT userid, sessionid, query_desc, query_cgi, total, DATE_FORMAT(time, \"$dateformat\") as time FROM search_history WHERE userid = ? AND sessionid != ?";
 	    $sth   = $dbh->prepare($query);
 	    $sth->execute($loggedinuser, $cgi->cookie("CGISESSID"));
-    	    my $previoussearches = $sth->fetchall_arrayref({});
-    	    $template->param(previousSearches => $previoussearches);
+    	my $previoussearches = $sth->fetchall_arrayref({});
+	
+		# PROGILONE - may 2010 - F14
+		# Search History
+    	foreach my $row_search ( @{$previoussearches} ) {
+    		my @output;
+			my $tmp_query= $row_search->{'query_cgi'};
+			my $num_op = () = split /&op/, $tmp_query, -1;
+			my @idx = split(/&op/, $tmp_query);
+	
+			for (my $i=0;$i<$num_op;$i++) {
+				my %row;
+				#Test index witout operand
+				if ($i > 0){
+				my $operand = substr($idx[$i], index($idx[$i],"op=")+2, 2);
+					if ($operand eq "an"){
+					$row{OPERAND_AND} = 1;
+					}
+					elsif ($operand eq "or"){
+					$row{OPERAND_OR} = 1;
+					}
+					elsif ($operand eq "no"){
+					$row{OPERAND_NOT} = 1;
+					}
+				}
+			
+				my $idx_query = substr($idx[$i], index($idx[$i],"idx=")+4, 2);
+				my $phrase_idx = substr($idx[$i], index($idx[$i],",")+1, 3);
+			
+				# Identify indexes
+				$row{get_index($idx_query,$phrase_idx)} = 1;
+		    
+		    	# Identify keywords 
+		    	$row{KEYWORD} = substr($idx[$i], index($idx[$i],"q=")+2);
+		    
+				push(@output, \%row);
+					
+	        } #end for
+
+		$row_search->{'searchprevioushistodetail'} = \@output;
+    }
+    # PROGILONE - may 2010 - F14
+
+    $template->param(previousSearches => $previoussearches);
 	
 	}
 
@@ -149,4 +267,86 @@ $template->param(searchhistoryview => 1);
 
 output_html_with_http_headers $cgi, $cookie, $template->output;
 
-
+# PROGILONE - may 2010 - F14
+sub get_index{
+	
+	my ($idx_query, $phrase_idx) = @_;
+	my $idx;
+	
+			if ( $idx_query =~ /kw/){
+		    	$idx = "INDEX_KEYWORD";
+		    }
+			elsif ( $idx_query =~ /au/){	
+		    	if ($phrase_idx eq "phr"){
+		    		$idx = "INDEX_AUTHOR_PHRASE";
+		    	}
+		    	else{
+		    		$idx = "INDEX_AUTHOR";	
+		    	}
+		    }
+		    elsif ( $idx_query =~ /cp/){
+		    	$idx = "INDEX_COPRPORATE_NAME";
+		    }
+		    elsif ( $idx_query =~ /cf/){	
+		    	if ($phrase_idx eq "phr"){
+		    			$idx = "INDEX_CONFERENCE_NAME_PHRASE";
+		    	}
+		    	else{
+		    		$idx = "INDEX_CONFERENCE_NAME";	
+		    	}
+		    }
+		    elsif ( $idx_query =~ /pn/){	
+		    	if ($phrase_idx eq "phr"){
+		    		$idx = "INDEX_PERSONAL_NAME_PHRASE";
+		    	}
+		    	else{
+		    		$idx = "INDEX_PERSONAL_NAME";	
+		    	}
+		    }
+		    elsif ( $idx_query =~ /nt/){
+		    		$idx = "INDEX_NOTES_NAME";
+		    }
+		    elsif ( $idx_query =~ /pb/){
+		    		$idx = "INDEX_PUBLISHER";
+		    }
+		    elsif ( $idx_query =~ /pl/){
+		    		$idx = "INDEX_PUBLISHER_LOCATION";
+		    }
+		    elsif ( $idx_query =~ /sn/){
+		    		$idx = "INDEX_STANDARD_NUMBER";
+		    }
+		    elsif ( $idx_query =~ /nb/){
+		    	$idx = "INDEX_ISBN";
+		    }
+		    elsif ( $idx_query =~ /ns/){
+		    	$idx = "INDEX_ISSN";
+		    }
+		    # Warning Simple Search : /callnum/
+		    elsif ( $idx_query =~ /lcn/){
+		    		$idx = "INDEX_CALL_NUMBER";
+		    }
+		    elsif ( $idx_query =~ /su/){	
+		    	if ($phrase_idx eq "phr"){
+		    		$idx = "INDEX_SUBJECT_PHRASE";
+		    	}
+		    	else{
+		    		$idx = "INDEX_SUBJECT";	
+		    	}
+		    }
+		    elsif ( $idx_query =~ /ti/){	
+		    	if ($phrase_idx eq "phr"){
+		    		$idx = "INDEX_TITLE_PHRASE";
+		    	}
+		    	else{
+		    		$idx = "INDEX_TITLE";	
+		    	}
+		   	}
+		    elsif ( $idx_query =~ /se/){
+		    	$idx = "INDEX_SERIES";
+		    }
+			else{
+				$idx = undef;
+			}
+		return $idx;
+}
+# PROGILONE - may 2010 - F14

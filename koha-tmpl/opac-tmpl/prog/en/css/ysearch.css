@@ -1,0 +1,51 @@
+/* B014*/
+/* zip autocomplete */
+/* z-index needed on top instances for ie & sf absolute inside relative issue */
+#zipcodeautocomplete,
+#Bzipcodeautocomplete {
+    width: 450px;
+    text-align: left;
+}
+
+.autocomplete .yui-ac-highlight .zip-result, .autocomplete .zip-result,
+.autocomplete .yui-ac-highlight .Bzip-result, .autocomplete .Bzip-result {
+    color: black;
+}
+
+#zipcode,
+#Bzipcode {
+    position: static;
+    width: auto;
+}
+
+#ac_containerzip,
+#ac_containerBzip {
+    text-align: left;
+    width: 335px;
+}
+
+/* country autocomplete */
+/* z-index needed on top instances for ie & sf absolute inside relative issue */
+#countryautocomplete,
+#Bcountryautocomplete {
+    width: 450px;
+    text-align: left;
+}
+
+.autocomplete .yui-ac-highlight .country-result, .autocomplete .country-result,
+.autocomplete .yui-ac-highlight .Bcountry-result, .autocomplete .Bcountry-result {
+    color: black;
+}
+
+#country,
+#B_country {
+    position: static;
+    width: auto;
+}
+
+#ac_containercountry,
+#ac_containerBcountry {
+    text-align: left;
+    width: 335px;
+}
+/* END B014*/

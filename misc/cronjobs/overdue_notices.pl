@@ -19,6 +19,7 @@
 
 use strict;
 use warnings;
+use utf8;
 
 BEGIN {
 
@@ -112,9 +113,9 @@ directory. This can be downloaded or futher processed by library staff.
 
 comma separated list of fields that get substituted into templates in
 places of the E<lt>E<lt>items.contentE<gt>E<gt> placeholder. This
-defaults to due date,title,barcode,author
+defaults to issuedate,title,barcode,author
 
-Other possible values come from fields in the biblios, items and
+Other possible values come from fields in the biblios, items, and
 issues tables.
 
 =item B<-borcat>
@@ -255,7 +256,7 @@ my $csvfilename;
 my $htmlfilename;
 my $triggered = 0;
 my $listall = 0;
-my $itemscontent = join( ',', qw( date_due title barcode author itemnumber ) );
+my $itemscontent = join( ',', qw( issuedate title barcode author biblionumber ) );
 my @myborcat;
 my @myborcatout;
 
@@ -471,11 +472,10 @@ END_SQL
                 if ( $overdue_rules->{"debarred$i"} ) {
     
                     #action taken is debarring
-                    C4::Members::DebarMember($borrowernumber);
+                    C4::Members::DebarMember( $borrowernumber, '9999-12-31' ); # PROGILONE - A2
                     $verbose and warn "debarring $borrowernumber $firstname $lastname\n";
                 }
                 my @params = ($listall ? ( $borrowernumber , 1 , $MAX ) : ( $borrowernumber, $mindays, $maxdays ));
-                $verbose and warn "STH2 PARAMS: borrowernumber = $borrowernumber, mindays = $mindays, maxdays = $maxdays";
                 $sth2->execute(@params);
                 my $itemcount = 0;
                 my $titles = "";
@@ -492,14 +492,14 @@ END_SQL
                     my @item_info = map { $_ =~ /^date|date$/ ? format_date( $item_info->{$_} ) : $item_info->{$_} || '' } @item_content_fields;
                     $titles .= join("\t", @item_info) . "\n";
                     $itemcount++;
-                    push @items, { itemnumber => $item_info->{'itemnumber'}, biblionumber => $item_info->{'biblionumber'} };
+                    push (@items, $item_info->{'biblionumber'});
                 }
                 $sth2->finish;
                 $letter = parse_letter(
                     {   letter          => $letter,
                         borrowernumber  => $borrowernumber,
                         branchcode      => $branchcode,
-                        items           => \@items,
+                        biblionumber    => \@items,
                         substitute      => {    # this appears to be a hack to overcome incomplete features in this code.
                                             bib             => $branch_details->{'branchname'}, # maybe 'bib' is a typo for 'lib<rary>'?
                                             'items.content' => $titles
@@ -657,12 +657,12 @@ sub parse_letter { # FIXME: this code should probably be moved to C4::Letters:pa
         $params->{'letter'} = C4::Letters::parseletter( $params->{'letter'}, 'branches', $params->{'branchcode'} );
     }
 
-    if ( $params->{'items'} ) {
+    if ( $params->{'biblionumber'} ) {
         my $item_format = '';
         PROCESS_ITEMS:
-        while (scalar(@{$params->{'items'}}) > 0) {
-            my $item = shift @{$params->{'items'}};
-            my $fine = GetFine($item->{'itemnumber'}, $params->{'borrowernumber'});
+        while (scalar(@{$params->{'biblionumber'}}) > 0) {
+            my $item = shift @{$params->{'biblionumber'}};
+            my $fine = GetFine($item, $params->{'borrowernumber'});
             if (!$item_format) {
                 $params->{'letter'}->{'content'} =~ m/(<item>.*<\/item>)/;
                 $item_format = $1;
@@ -671,10 +671,10 @@ sub parse_letter { # FIXME: this code should probably be moved to C4::Letters:pa
                 my $formatted_fine = currency_format("$1", "$fine", FMT_SYMBOL);
                 $params->{'letter'}->{'content'} =~ s/<fine>.*<\/fine>/$formatted_fine/;
             }
-            $params->{'letter'} = C4::Letters::parseletter( $params->{'letter'}, 'biblio',      $item->{'biblionumber'} );
-            $params->{'letter'} = C4::Letters::parseletter( $params->{'letter'}, 'biblioitems', $item->{'biblionumber'} );
-            $params->{'letter'} = C4::Letters::parseletter( $params->{'letter'}, 'items', $item->{'itemnumber'} );
-            $params->{'letter'}->{'content'} =~ s/(<item>.*<\/item>)/$1\n$item_format/ if scalar(@{$params->{'items'}} > 0);
+            $params->{'letter'} = C4::Letters::parseletter( $params->{'letter'}, 'biblio',      $item );
+            $params->{'letter'} = C4::Letters::parseletter( $params->{'letter'}, 'biblioitems', $item );
+            $params->{'letter'} = C4::Letters::parseletter( $params->{'letter'}, 'items', $item );
+            $params->{'letter'}->{'content'} =~ s/(<item>.*<\/item>)/$1\n$item_format/ if scalar(@{$params->{'biblionumber'}} > 0);
 
         }
     }

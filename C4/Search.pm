@@ -19,7 +19,8 @@ use strict;
 #use warnings; FIXME - Bug 2505
 require Exporter;
 use C4::Context;
-use C4::Biblio;    # GetMarcFromKohaField, GetBiblioData
+use C4::Utils::Constants; # MAN340
+use C4::Biblio;    # GetMarcFromKohaField, GetBiblioData, GetAuthorisedValueDesc
 use C4::Koha;      # getFacets
 use Lingua::Stem;
 use C4::Search::PazPar2;
@@ -73,7 +74,7 @@ This module provides searching functions for Koha's bibliographic databases
 
 =head2 FindDuplicate
 
-($biblionumber,$biblionumber,$title) = FindDuplicate($record);
+($biblionumber,$title) = FindDuplicate($record);
 
 This function attempts to find duplicate records using a hard-coded, fairly simplistic algorithm
 
@@ -408,6 +409,8 @@ sub getRecords {
 
                 # loop through the results
                 $results_hash->{'hits'} = $size;
+                
+                # PROGILONE - june 2010 - F20 : don't limit loop with $results_per_page and use one count per record;
                 my $times;
                 if ( $offset + $results_per_page <= $size ) {
                     $times = $offset + $results_per_page;
@@ -418,7 +421,6 @@ sub getRecords {
                 for ( my $j = $offset ; $j < $times ; $j++ ) {
                     my $records_hash;
                     my $record;
-                    my $facet_record;
 
                     ## Check if it's an index scan
                     if ($scan) {
@@ -451,33 +453,58 @@ sub getRecords {
 
                         # warn "RECORD $j:".$record;
                         $results_hash->{'RECORDS'}[$j] = $record;
-
-            # Fill the facets while we're looping, but only for the biblioserver
-                        $facet_record = MARC::Record->new_from_usmarc($record)
-                          if $servers[ $i - 1 ] =~ /biblioserver/;
-
-                    #warn $servers[$i-1]."\n".$record; #.$facet_record->title();
-                        if ($facet_record) {
-                            for ( my $k = 0 ; $k <= @$facets ; $k++ ) {
-                                ($facets->[$k]) or next;
-                                my @fields = map {$facet_record->field($_)} @{$facets->[$k]->{'tags'}} ;
-                                for my $field (@fields) {
-                                    my @subfields = $field->subfields();
-                                    for my $subfield (@subfields) {
-                                        my ( $code, $data ) = @$subfield;
-                                        ($code eq $facets->[$k]->{'subfield'}) or next;
-                                        $facets_counter->{ $facets->[$k]->{'link_value'} }->{$data}++;
-                                    }
-                                }
-                                $facets_info->{ $facets->[$k]->{'link_value'} }->{'label_value'} =
-                                    $facets->[$k]->{'label_value'};
-                                $facets_info->{ $facets->[$k]->{'link_value'} }->{'expanded'} =
-                                    $facets->[$k]->{'expanded'};
-                            }
-                        }
                     }
+
                 }
                 $results_hashref->{ $servers[ $i - 1 ] } = $results_hash;
+                
+                # Fill the facets while we're looping, but only for the biblioserver and not for a scan
+                if ( !$scan && $servers[ $i - 1 ] =~ /biblioserver/ ) {
+                    
+                    my $jmax = $size;
+                    if ( $jmax > 500 ) {
+                        $jmax = 500;
+                    }
+                    
+                    for ( my $k = 0 ; $k <= @$facets ; $k++ ) {
+                        ($facets->[$k]) or next;
+                        my @fcodes = @{$facets->[$k]->{'tags'}};
+                        my $sfcode = $facets->[$k]->{'subfield'};
+                                
+		                for ( my $j = 0 ; $j < $jmax ; $j++ ) {
+		                    my $render_record = $results[ $i - 1 ]->record($j)->render();
+                            my @used_datas = ();
+                            
+                            foreach my $fcode (@fcodes) {
+                                
+                                # avoid first line
+                                my $field_pattern = '\n'.$fcode.' ([^\n]+)';
+                                my @field_tokens = ( $render_record =~ /$field_pattern/g ) ;
+                                
+                                foreach my $field_token (@field_tokens) {
+                                    my $subfield_pattern = '\$'.$sfcode.' ([^\$]+)';
+                                    my @subfield_values = ( $field_token =~ /$subfield_pattern/g );
+                                    
+                                    foreach my $subfield_value (@subfield_values) {
+                                    
+                                        my $data = $subfield_value;
+                                        $data =~ s/^\s+//; # trim left
+                                        $data =~ s/\s+$//; # trim right
+                                        
+                                        unless ( $data ~~ @used_datas ) {
+                                            $facets_counter->{ $facets->[$k]->{'link_value'} }->{$data}++;
+                                            push @used_datas, $data;
+                                        }
+                                    } # subfields
+                                } # fields
+                            } # field codes 
+                        } # records
+                        
+                        $facets_info->{ $facets->[$k]->{'link_value'} }->{'label_value'} = $facets->[$k]->{'label_value'};
+                        $facets_info->{ $facets->[$k]->{'link_value'} }->{'expanded'} = $facets->[$k]->{'expanded'};
+                    } # facets
+                }
+                # End PROGILONE
             }
 
             # warn "connection ", $i-1, ": $size hits";
@@ -529,6 +556,15 @@ sub getRecords {
 									$facet_label_value = "*";
 								}
                             }
+                            # PROGILONE - avril 2010 - F19
+                            # replace item type code with corresponding description in facet label
+                            if ( $link_value =~ /ccode/ ) {
+                                $facet_label_value = GetAuthorisedValueDesc('', '', $one_facet, '', '', 'CCODE', 'opac');
+                                unless ($facet_label_value) {
+                                    $facet_label_value = "*";
+                                }
+                            }
+                            # Fin PROGILONE
 
                             # but we're down with the whole label being in the link's title.
                             push @this_facets_array, {
@@ -738,7 +774,13 @@ sub _build_weighted_query {
         $weighted_query .=
           "Title-cover,ext,r1=\"$operand\"";    # exact title-cover
         $weighted_query .= " or ti,ext,r2=\"$operand\"";    # exact title
-        $weighted_query .= " or ti,phr,r3=\"$operand\"";    # phrase title
+        $weighted_query .= " or ti,phr,r3=\"$operand\"";    # phrase title        
+        
+        # PROGILONE -june 2010 - F16 : other indexes with same ranking as title
+        $weighted_query .= " or relevance-second,ext,r2=\"$operand\"";
+        $weighted_query .= " or relevance-second,phr,r3=\"$operand\"";
+        # End PROGILONE
+                
           #$weighted_query .= " or any,ext,r4=$operand";               # exact any
           #$weighted_query .=" or kw,wrdl,r5=\"$operand\"";            # word list any
         $weighted_query .= " or wrdl,fuzzy,r8=\"$operand\""
@@ -964,6 +1006,15 @@ sub getIndexes{
                     'stack',
                     'uri',
                     'withdrawn',
+                    
+                    # PROGILONE - may 2010 - F7
+                    'Graphics-support',
+                    'Graphics-type',
+                    'Literature-Code',
+                    'relevance-second', # F16
+                    'BiblioTemp', # B06
+                    # End PROGILONE
+                    
 
                     # subject related
                   );
@@ -1041,7 +1092,15 @@ sub buildQuery {
 # for handling ccl, cql, pqf queries in diagnostic mode, skip the rest of the steps
 # DIAGNOSTIC ONLY!!
     if ( $query =~ /^ccl=/ ) {
-        return ( undef, $', $', "q=ccl=$'", $', '', '', '', '', 'ccl' );
+        # BUG 4852 
+        my $q=$';
+        # This is needed otherwise ccl= and &limit won't work together, and
+        # this happens when selecting a subject on the opac-detail page
+        if (@limits) {
+            $q .= ' and '.join(' and ', @limits);
+        }
+        return ( undef, $q, $q, "q=ccl=$q", $q, '', '', '', '', 'ccl' );
+        # END
     }
     if ( $query =~ /^cql=/ ) {
         return ( undef, $', $', "q=cql=$'", $', '', '', '', '', 'cql' );
@@ -1067,6 +1126,14 @@ sub buildQuery {
 # Once we do so, we'll end up with a value in $query, just like if we had an
 # incoming $query from the user
     else {
+        
+        # MAN132
+        foreach (@operands) {
+            $_ =~ s/\(/ /g;
+            $_ =~ s/\)/ /g;
+        }
+        # END MAN132
+        
         $query = ""
           ; # clear it out so we can populate properly with field-weighted, stemmed, etc. query
         my $previous_operand
@@ -1095,6 +1162,7 @@ sub buildQuery {
                 # Date of Publication
                 if ( $index eq 'yr' ) {
                     $index .= ",st-numeric";
+                    $query .= "$index=";
                     $indexes_set++;
 					$stemming = $auto_truncation = $weight_fields = $fuzzy_enabled = $remove_stopwords = 0;
                 }
@@ -1102,11 +1170,30 @@ sub buildQuery {
                 # Date of Acquisition
                 elsif ( $index eq 'acqdate' ) {
                     $index .= ",st-date-normalized";
+                    $query .= "$index=";
                     $indexes_set++;
 					$stemming = $auto_truncation = $weight_fields = $fuzzy_enabled = $remove_stopwords = 0;
                 }
-                # ISBN,ISSN,Standard Number, don't need special treatment
-                elsif ( $index eq 'nb' || $index eq 'ns' ) {
+                # ISBN
+                # PROGILONE - may 2010 - F5 F6
+                elsif ( $index eq 'nb' ) {
+                    unless ( C4::Context->preference('NoZebra') ) {
+                        # don't care about hyphens in ISBN
+                        $operand =~ s/-//g ;
+                    }
+                    $query .= "$index=";
+                    $indexes_set++;
+                    (
+                        $stemming,      $auto_truncation,
+                        $weight_fields, $fuzzy_enabled,
+                        $remove_stopwords
+                    ) = ( 0, 0, 0, 0, 0 );
+
+                }
+                # End PROGILONE
+                # ISSN,Standard Number, don't need special treatment
+                elsif ( $index eq 'ns' ) {
+                	$query .= "$index=";
                     $indexes_set++;
                     (
                         $stemming,      $auto_truncation,
@@ -1252,29 +1339,118 @@ sub buildQuery {
 
     # add limits
     my $group_OR_limits;
+    # PROGILONE - may 2010 - F7
+    my $mc_OR_limits;
+    my $literature_OR_limits;
+    my $biography_OR_limits;
+    my $illustration_OR_limits;
+    my $ctype_OR_limits;
+    my $frequency_OR_limits;
+    my $regularity_OR_limits;
+    my $graphics_type_OR_limits;
+    my $graphics_support_OR_limits;
+	my $branch_OR_group;
+    # PROGILONE - may 2010 - F7
     my $availability_limit;
     foreach my $this_limit (@limits) {
         if ( $this_limit =~ /available/ ) {
-#
-## 'available' is defined as (items.onloan is NULL) and (items.itemlost = 0)
-## In English:
-## all records not indexed in the onloan register (zebra) and all records with a value of lost equal to 0
-            $availability_limit .=
-"( ( allrecords,AlwaysMatches='' not onloan,AlwaysMatches='') and (lost,st-numeric=0) )"; #or ( allrecords,AlwaysMatches='' not lost,AlwaysMatches='')) )";
+
+        # PROGILONE - june 2010 - F18
+        ## available records
+            $availability_limit .= "items-available,st-numeric=1";
+            #$availability_limit .= " or ccode,st-numeric=11 or ccode,st-numeric=21"; # special for serials, always available eaven if is no items
+            
             $limit_cgi  .= "&limit=available";
             $limit_desc .= "";
         }
+        # End PROGILONE
 
         # group_OR_limits, prefixed by mc-
         # OR every member of the group
-        elsif ( $this_limit =~ /mc/ ) {
-#        if ( $this_limit =~ /mc/ ) {
-            $group_OR_limits .= " or " if $group_OR_limits;
-            $limit_desc      .= " or " if $group_OR_limits;
-            $group_OR_limits .= "$this_limit";
-            $limit_cgi       .= "&limit=$this_limit";
-            $limit_desc      .= " $this_limit";
-        }
+#        elsif ( $this_limit =~ /mc/  ) {
+	
+	    # PROGILONE - may 2010 - F7
+		# [F7]- Select multiple items listbox
+       elsif($this_limit =~ /mc/) {
+       	$mc_OR_limits .= " or " if $mc_OR_limits;
+       	$limit_desc      .= " or " if $mc_OR_limits;
+       	$mc_OR_limits .= "$this_limit";
+       	$limit_cgi       .= "&limit=$this_limit";
+		$limit_desc      .= " $this_limit";
+       }
+       
+       elsif($this_limit =~ /ln/) {
+       	$literature_OR_limits .= " or " if $literature_OR_limits;
+       	$limit_desc      .= " or " if $literature_OR_limits;
+       	$literature_OR_limits .= "$this_limit";
+       	$limit_cgi       .= "&limit=$this_limit";
+		$limit_desc      .= " $this_limit";
+       }
+       
+       elsif($this_limit =~ /Literature-Code/) {
+       	$biography_OR_limits .= " or " if $biography_OR_limits;
+       	$limit_desc      .= " or " if $biography_OR_limits;
+       	$biography_OR_limits .= "$this_limit";
+       	$limit_cgi       .= "&limit=$this_limit";
+		$limit_desc      .= " $this_limit";
+       }
+       
+       elsif($this_limit =~ /Illustration-Code/) {
+       	$illustration_OR_limits .= " or " if $illustration_OR_limits;
+       	$limit_desc      .= " or " if $illustration_OR_limits;
+       	$illustration_OR_limits .= "$this_limit";
+       	$limit_cgi       .= "&limit=$this_limit";
+		$limit_desc      .= " $this_limit";
+       }
+       
+       elsif($this_limit =~ /ctype/) {
+       	$ctype_OR_limits .= " or " if $ctype_OR_limits;
+       	$limit_desc      .= " or " if $ctype_OR_limits;
+       	$ctype_OR_limits .= "$this_limit";
+       	$limit_cgi       .= "&limit=$this_limit";
+		$limit_desc      .= " $this_limit";
+       }
+       
+       elsif($this_limit =~ /Frequency-code/) {
+       	$frequency_OR_limits .= " or " if $frequency_OR_limits;
+       	$limit_desc      .= " or " if $frequency_OR_limits;
+       	$frequency_OR_limits .= "$this_limit";
+       	$limit_cgi       .= "&limit=$this_limit";
+		$limit_desc      .= " $this_limit";
+       }
+       
+       elsif($this_limit =~ /Regularity-code/) {
+       	$regularity_OR_limits .= " or " if $regularity_OR_limits;
+       	$limit_desc      .= " or " if $regularity_OR_limits;
+       	$regularity_OR_limits .= "$this_limit";
+       	$limit_cgi       .= "&limit=$this_limit";
+		$limit_desc      .= " $this_limit";
+       }
+       
+       elsif($this_limit =~ /Graphics-type/) {
+       	$graphics_type_OR_limits .= " or " if $graphics_type_OR_limits;
+       	$limit_desc      .= " or " if $graphics_type_OR_limits;
+       	$graphics_type_OR_limits .= "$this_limit";
+       	$limit_cgi       .= "&limit=$this_limit";
+		$limit_desc      .= " $this_limit";
+       }
+       
+       elsif($this_limit =~ /Graphics-support/) {
+       	$graphics_support_OR_limits .= " or " if $graphics_support_OR_limits;
+       	$limit_desc      .= " or " if $graphics_support_OR_limits;
+       	$graphics_support_OR_limits .= "$this_limit";
+       	$limit_cgi       .= "&limit=$this_limit";
+		$limit_desc      .= " $this_limit";
+       }
+      
+       elsif($this_limit =~ /branch/) {
+       	$branch_OR_group .= " or " if $branch_OR_group;
+       	$limit_desc      .= " or " if $branch_OR_group;
+       	$branch_OR_group .= "$this_limit";
+       	$limit_cgi       .= "&limit=$this_limit";
+		$limit_desc      .= " $this_limit";
+       }
+		# PROGILONE - may 2010 - F7
 
         # Regular old limits
         else {
@@ -1287,17 +1463,57 @@ sub buildQuery {
                 if (defined $branchname) {
                     $limit_desc .= " branch:$branchname";
                 } else {
-                    $limit_desc .= " $this_limit";
+                    $limit_desc .= "$this_limit";
                 }
             } else {
                 $limit_desc .= " $this_limit";
             }
         }
     }
-    if ($group_OR_limits) {
-        $limit .= " and " if ( $query || $limit );
-        $limit .= "($group_OR_limits)";
+    # PROGILONE - may 2010 - F7
+    # Modifiy AND limits
+    if ( $mc_OR_limits ){
+    	 $limit .= " and " if ( $query || $mc_OR_limits );
+    	 $limit .= "($mc_OR_limits)";
     }
+    if ( $literature_OR_limits ){
+    	 $limit .= " and " if ( $query || $literature_OR_limits );
+    	 $limit .= "($literature_OR_limits)";
+    }
+        if ( $biography_OR_limits ){
+    	 $limit .= " and " if ( $query || $biography_OR_limits );
+    	 $limit .= "($biography_OR_limits)";
+    }
+    if ( $illustration_OR_limits ){
+    	 $limit .= " and " if ( $query || $illustration_OR_limits );
+    	 $limit .= "($illustration_OR_limits)";
+    }
+        if ( $ctype_OR_limits ){
+    	 $limit .= " and " if ( $query || $ctype_OR_limits );
+    	 $limit .= "($ctype_OR_limits)";
+    }
+    if ( $frequency_OR_limits){
+    	 $limit .= " and " if ( $query || $frequency_OR_limits );
+    	 $limit .= "($frequency_OR_limits)";
+    }
+      if ( $regularity_OR_limits ){
+    	 $limit .= " and " if ( $query || $regularity_OR_limits );
+    	 $limit .= "($regularity_OR_limits)";
+    }
+        if ( $graphics_type_OR_limits ){
+    	 $limit .= " and " if ( $query || $graphics_type_OR_limits );
+    	 $limit .= "($graphics_type_OR_limits)";
+    }
+    if ( $graphics_support_OR_limits){
+    	 $limit .= " and " if ( $query || $graphics_support_OR_limits );
+    	 $limit .= "($graphics_support_OR_limits)";
+    }
+    if ( $branch_OR_group ){
+    	 $limit .= " and " if ( $query || $branch_OR_group );
+    	 $limit .= "($branch_OR_group)";
+    }
+ 	# PROGILONE - may 2010 - F7
+ 	
     if ($availability_limit) {
         $limit .= " and " if ( $query || $limit );
         $limit .= "($availability_limit)";
@@ -1308,11 +1524,10 @@ sub buildQuery {
     # if user wants to do ccl or cql, start the query with that
 #    $query =~ s/:/=/g;
     $query =~ s/(?<=(ti|au|pb|su|an|kw|mc)):/=/g;
-    $query =~ s/(?<=(wrdl)):/=/g;
-    $query =~ s/(?<=(trn|phr)):/=/g;
+    $query =~ s/(?<=rtrn):/=/g;
     $limit =~ s/:/=/g;
     for ( $query, $query_desc, $limit, $limit_desc ) {
-        s/  +/ /g;    # remove extra spaces
+        s/  / /g;    # remove extra spaces
         s/^ //g;     # remove any beginning spaces
         s/ $//g;     # remove any ending spaces
         s/==/=/g;    # remove double == from query
@@ -1361,27 +1576,23 @@ sub searchResults {
 
     $search_context = 'opac' unless $search_context eq 'opac' or $search_context eq 'intranet';
 
-    #Build branchnames hash
-    #find branchname
-    #get branch information.....
-    my %branches;
-    my $bsth =$dbh->prepare("SELECT branchcode,branchname FROM branches"); # FIXME : use C4::Branch::GetBranches
-    $bsth->execute();
-    while ( my $bdata = $bsth->fetchrow_hashref ) {
-        $branches{ $bdata->{'branchcode'} } = $bdata->{'branchname'};
-    }
-# FIXME - We build an authorised values hash here, using the default framework
-# though it is possible to have different authvals for different fws.
+	# PROGILONE - april 2010 - F21
+    #get branches informations.....
+    my $branches = GetBranches();
+	# End PROGILONE
 
     my $shelflocations =GetKohaAuthorisedValues('items.location','');
 
     # get notforloan authorised value list (see $shelflocations  FIXME)
     my $notforloan_authorised_value = GetAuthValCode('items.notforloan','');
 
+    # get itemlost authorised value list 
+    my $itemlost_authorised_value = GetAuthValCode('items.itemlost','');
+    
     #Build itemtype hash
     #find itemtype & itemtype image
     my %itemtypes;
-    $bsth =
+    my $bsth =
       $dbh->prepare(
         "SELECT itemtype,description,imageurl,summary,notforloan FROM itemtypes"
       );
@@ -1499,8 +1710,9 @@ sub searchResults {
             $oldbiblio->{summary} = $newsummary;
         }
 
-        # Pull out the items fields
-        my @fields = $marcrecord->field($itemtag);
+        # MAN340
+        # Pull out the items from database
+        my @dbitems = C4::Items::GetItemsInfo($oldbiblio->{'biblionumber'});
 
         # Setting item statuses for display
         my @available_items_loop;
@@ -1522,38 +1734,45 @@ sub searchResults {
         my $itemdamaged_count     = 0;
         my $item_in_transit_count = 0;
         my $can_place_holds       = 0;
-	my $item_onhold_count     = 0;
-        my $items_count           = scalar(@fields);
+        my $item_onhold_count     = 0;
+        my $items_count           = scalar(@dbitems);
         my $maxitems =
           ( C4::Context->preference('maxItemsinSearchResults') )
           ? C4::Context->preference('maxItemsinSearchResults') - 1
-          : 1;
+          : 20;
 
         # loop through every item
-        foreach my $field (@fields) {
-            my $item;
-
-            # populate the items hash
-            foreach my $code ( keys %subfieldstosearch ) {
-                $item->{$code} = $field->subfield( $subfieldstosearch{$code} );
-            }
+        foreach my $item (@dbitems) {
 
 			my $hbranch     = C4::Context->preference('HomeOrHoldingBranch') eq 'homebranch' ? 'homebranch'    : 'holdingbranch';
 			my $otherbranch = C4::Context->preference('HomeOrHoldingBranch') eq 'homebranch' ? 'holdingbranch' : 'homebranch';
-            # set item's branch name, use HomeOrHoldingBranch syspref first, fall back to the other one
+            
+            # PROGILONE - april 2010 - F21 : attach banch infos
+            # set item's branch infos, use HomeOrHoldingBranch syspref first, fall back to the other one
+            my $branch_infos;
             if ($item->{$hbranch}) {
-                $item->{'branchname'} = $branches{$item->{$hbranch}};
+                $branch_infos = $branches->{$item->{$hbranch}};
             }
             elsif ($item->{$otherbranch}) {	# Last resort
-                $item->{'branchname'} = $branches{$item->{$otherbranch}};
+                $branch_infos = $branches->{$item->{$otherbranch}};
             }
+            $item->{'branchname'} = $branch_infos->{'branchname'};            
+            $item->{'branchaddress1'} = $branch_infos->{'branchaddress1'};
+            $item->{'branchaddress2'} = $branch_infos->{'branchaddress2'};
+            $item->{'branchaddress3'} = $branch_infos->{'branchaddress3'};
+            $item->{'branchzip'} = $branch_infos->{'branchzip'};
+            $item->{'branchcity'} = $branch_infos->{'branchcity'};
+            $item->{'branchcountry'} = $branch_infos->{'branchcountry'};
+            $item->{'branchphone'} = $branch_infos->{'branchphone'};
+            $item->{'branchnotes'} = $branch_infos->{'branchnotes'};
+            # End PROGILONE
 
-			my $prefix = $item->{$hbranch} . '--' . $item->{location} . $item->{itype} . $item->{itemcallnumber};
-# For each grouping of items (onloan, available, unavailable), we build a key to store relevant info about that item
-            if ( $item->{onloan} ) {
+            my $prefix = $item->{$hbranch} . '--' . $item->{location} . $item->{itype} . $item->{itemcallnumber};
+            # For each grouping of items (onloan, available, unavailable), we build a key to store relevant info about that item
+            if ( $item->{istate} && $item->{istate} ne 'NOT_AVAIL' ) {
                 $onloan_count++;
-				my $key = $prefix . $item->{onloan} . $item->{barcode};
-				$onloan_items->{$key}->{due_date} = format_date($item->{onloan});
+				my $key = $prefix . $item->{istate} . $item->{barcode};
+				$onloan_items->{$key}->{due_date} = format_date($item->{onloan}) if $item->{onloan};
 				$onloan_items->{$key}->{count}++ if $item->{$hbranch};
 				$onloan_items->{$key}->{branchname} = $item->{branchname};
 				$onloan_items->{$key}->{location} = $shelflocations->{ $item->{location} };
@@ -1567,8 +1786,7 @@ sub searchResults {
                     $can_place_holds = 1;
                 }
             }
-
-         # items not on loan, but still unavailable ( lost, withdrawn, damaged )
+            # items not on loan, but still unavailable ( lost, withdrawn, damaged )
             else {
 
                 # item is on order
@@ -1581,13 +1799,16 @@ sub searchResults {
                 my ($transfertfrom, $transfertto);
 
                 # is item on the reserve shelf?
-		my $reservestatus = 0;
-		my $reserveitem;
-
+                my $reservestatus = 0;
+                my $reserveitem;
+                
+                # MAN340
                 unless ($item->{wthdrawn}
                         || $item->{itemlost}
                         || $item->{damaged}
-                        || $item->{notforloan}
+                        || ($item->{notforloan} ne $AV_ETAT_LOAN && 
+                            $item->{notforloan} ne $AV_ETAT_GENERIC && 
+                            $item->{notforloan} ne $AV_ETAT_STACK)
                         || $items_count > 20) {
 
                     # A couple heuristics to limit how many times
@@ -1603,22 +1824,25 @@ sub searchResults {
                     #        should map transit status to record indexed in Zebra.
                     #
                     ($transfertwhen, $transfertfrom, $transfertto) = C4::Circulation::GetTransfers($item->{itemnumber});
-		    ($reservestatus, $reserveitem) = C4::Reserves::CheckReserves($item->{itemnumber});
+                    ($reservestatus, $reserveitem) = C4::Reserves::CheckReserves($item->{itemnumber});
                 }
 
+                # MAN340
                 # item is withdrawn, lost or damaged
                 if (   $item->{wthdrawn}
                     || $item->{itemlost}
                     || $item->{damaged}
-                    || $item->{notforloan} > 0
-		    || $reservestatus eq 'Waiting'
+                    || ($item->{notforloan} ne $AV_ETAT_LOAN && 
+                        $item->{notforloan} ne $AV_ETAT_GENERIC && 
+                        $item->{notforloan} ne $AV_ETAT_STACK)
+		            || $reservestatus eq 'Waiting'
                     || ($transfertwhen ne ''))
                 {
                     $wthdrawn_count++        if $item->{wthdrawn};
                     $itemlost_count++        if $item->{itemlost};
                     $itemdamaged_count++     if $item->{damaged};
                     $item_in_transit_count++ if $transfertwhen ne '';
-		    $item_onhold_count++     if $reservestatus eq 'Waiting';
+                    $item_onhold_count++     if $reservestatus eq 'Waiting';
                     $item->{status} = $item->{wthdrawn} . "-" . $item->{itemlost} . "-" . $item->{damaged} . "-" . $item->{notforloan};
                     $other_count++;
 
@@ -1629,6 +1853,7 @@ sub searchResults {
                     $other_items->{$key}->{intransit} = ($transfertwhen ne '') ? 1 : 0;
                     $other_items->{$key}->{onhold} = ($reservestatus) ? 1 : 0;
 					$other_items->{$key}->{notforloan} = GetAuthorisedValueDesc('','',$item->{notforloan},'','',$notforloan_authorised_value) if $notforloan_authorised_value;
+					$other_items->{$key}->{itemlost} = GetAuthorisedValueDesc('','',$item->{itemlost},'','',$itemlost_authorised_value) if $itemlost_authorised_value;
 					$other_items->{$key}->{count}++ if $item->{$hbranch};
 					$other_items->{$key}->{location} = $shelflocations->{ $item->{location} };
 					$other_items->{$key}->{imageurl} = getitemtypeimagelocation( 'opac', $itemtypes{ $item->{itype} }->{imageurl} );
@@ -1638,7 +1863,8 @@ sub searchResults {
                     $can_place_holds = 1;
                     $available_count++;
 					$available_items->{$prefix}->{count}++ if $item->{$hbranch};
-					foreach (qw(branchname itemcallnumber)) {
+					# PROGILONE - april 2010 - F21
+					foreach (qw(branchname branchaddress1 branchaddress2 branchaddress3 branchzip branchcity branchcountry branchphone branchnotes itemcallnumber)) {
                     	$available_items->{$prefix}->{$_} = $item->{$_};
 					}
 					$available_items->{$prefix}->{location} = $shelflocations->{ $item->{location} };
@@ -1650,7 +1876,7 @@ sub searchResults {
         $maxitems =
           ( C4::Context->preference('maxItemsinSearchResults') )
           ? C4::Context->preference('maxItemsinSearchResults') - 1
-          : 1;
+          : 20;
         for my $key ( sort keys %$onloan_items ) {
             (++$onloanitemscount > $maxitems) and last;
             push @onloan_items_loop, $onloan_items->{$key};
@@ -1661,7 +1887,7 @@ sub searchResults {
         }
         for my $key ( sort keys %$available_items ) {
             (++$availableitemscount > $maxitems) and last;
-            push @available_items_loop, $available_items->{$key}
+            push @available_items_loop, $available_items->{$key};
         }
 
         # XSLT processing of some stuff

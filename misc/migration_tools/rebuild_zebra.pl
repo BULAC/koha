@@ -9,6 +9,7 @@ use File::Temp qw/ tempdir /;
 use File::Path;
 use C4::Biblio;
 use C4::AuthoritiesMarc;
+use MARC::Field; # PROGILONE - may 2010 - F5 F6
 
 # 
 # script that checks zebradir structure & create directories & mandatory files if needed
@@ -26,23 +27,24 @@ my $keep_export;
 my $reset;
 my $biblios;
 my $authorities;
-my $noxml;
 my $noshadow;
 my $do_munge;
 my $want_help;
 my $as_xml;
 my $process_zebraqueue;
 my $do_not_clear_zebraqueue;
+my $item_limit;
+my $limit_offset;
+my $limit_nb;
 my $verbose_logging;
 my $zebraidx_log_opt = " -v none,fatal,warn ";
 my $result = GetOptions(
     'd:s'           => \$directory,
-    'reset'         => \$reset,
+    'r|reset'         => \$reset, #BUG 5831
     's'             => \$skip_export,
     'k'             => \$keep_export,
     'nosanitize'    => \$nosanitize,
     'b'             => \$biblios,
-    'noxml'         => \$noxml,
     'w'             => \$noshadow,
     'munge-config'  => \$do_munge,
     'a'             => \$authorities,
@@ -50,9 +52,15 @@ my $result = GetOptions(
 	'x'				=> \$as_xml,
     'y'             => \$do_not_clear_zebraqueue,
     'z'             => \$process_zebraqueue,
+    'l:i'           => \$item_limit,
+    'offset:i'      => \$limit_offset,
+    'nb:i'          => \$limit_nb,
     'v'             => \$verbose_logging,
 );
 
+if (defined $limit_nb && not defined $limit_offset) {
+    $limit_offset = '0';
+}
 
 if (not $result or $want_help) {
     print_usage();
@@ -65,14 +73,14 @@ if (not $biblios and not $authorities) {
     die $msg;
 }
 
-if ($authorities and $as_xml) {
-    my $msg = "Cannot specify both -a and -x\n";
+if (!$as_xml and $nosanitize) {
+    my $msg = "Must specify -x with -nosanitize\n";
     $msg   .= "Please do '$0 --help' to see usage.\n";
     die $msg;
 }
 
-if ( !$as_xml and $nosanitize ) {
-    my $msg = "Cannot specify both -no_xml and -nosanitize\n";
+if ($nosanitize and $item_limit) {
+    my $msg = "Cannot specify both -item_limit and -nosanitize\n";
     $msg   .= "Please do '$0 --help' to see usage.\n";
     die $msg;
 }
@@ -113,6 +121,14 @@ my $kohadir = C4::Context->config('intranetdir');
 my $dbh = C4::Context->dbh;
 my ($biblionumbertagfield,$biblionumbertagsubfield) = &GetMarcFromKohaField("biblio.biblionumber","");
 my ($biblioitemnumbertagfield,$biblioitemnumbertagsubfield) = &GetMarcFromKohaField("biblioitems.biblioitemnumber","");
+my ($isbn_field,$isbn_subfield) = &GetMarcFromKohaField("biblioitems.isbn",""); # PROGILONE - may 2010 - F5 F6
+# PROGILONE - july
+my ($onloan_tag, $onloan_subfield) = &GetMarcFromKohaField( "items.onloan", '' );
+my ($lost_tag, $lost_subfield) = &GetMarcFromKohaField( "items.itemlost", '' );
+my ($wthdrawn_tag, $wthdrawn_subfield) = &GetMarcFromKohaField( "items.wthdrawn", '' );
+my ($damaged_tag, $damaged_subfield) = &GetMarcFromKohaField( "items.damaged", '' );
+my ($notforloan_tag, $notforloan_subfield) = &GetMarcFromKohaField( "items.notforloan", '' );
+# End PROGILONE
 
 if ( $verbose_logging ) {
     print "Zebra configuration information\n";
@@ -130,13 +146,13 @@ if ($do_munge) {
 }
 
 if ($authorities) {
-    index_records('authority', $directory, $skip_export, $process_zebraqueue, $as_xml, $noxml, $nosanitize, $do_not_clear_zebraqueue, $verbose_logging, $zebraidx_log_opt, $authorityserverdir);
+    index_records('authority', $directory, $skip_export, $process_zebraqueue, $as_xml, $nosanitize, $do_not_clear_zebraqueue, $verbose_logging, $zebraidx_log_opt);
 } else {
     print "skipping authorities\n" if ( $verbose_logging );
 }
 
 if ($biblios) {
-    index_records('biblio', $directory, $skip_export, $process_zebraqueue, $as_xml, $noxml, $nosanitize, $do_not_clear_zebraqueue, $verbose_logging, $zebraidx_log_opt, $biblioserverdir);
+    index_records('biblio', $directory, $skip_export, $process_zebraqueue, $as_xml, $nosanitize, $do_not_clear_zebraqueue, $verbose_logging, $zebraidx_log_opt);
 } else {
     print "skipping biblios\n" if ( $verbose_logging );
 }
@@ -168,34 +184,11 @@ if ($keep_export) {
     }
 }
 
-# This checks to see if the zebra directories exist under the provided path.
-# If they don't, then zebra is likely to spit the dummy. This returns true
-# if the directories had to be created, false otherwise.
-sub check_zebra_dirs {
-	my ($base) = shift() . '/';
-	my $needed_repairing = 0;
-	my @dirs = ( '', 'key', 'register', 'shadow' );
-	foreach my $dir (@dirs) {
-		my $bdir = $base . $dir;
-        if (! -d $bdir) {
-        	$needed_repairing = 1;
-        	mkdir $bdir || die "Unable to create '$bdir': $!\n";
-        	print "$0: needed to create '$bdir'\n";
-        }
-    }
-    return $needed_repairing;
-}	# ----------  end of subroutine check_zebra_dirs  ----------
-
 sub index_records {
-    my ($record_type, $directory, $skip_export, $process_zebraqueue, $as_xml, $noxml, $nosanitize, $do_not_clear_zebraqueue, $verbose_logging, $zebraidx_log_opt, $server_dir) = @_;
+    my ($record_type, $directory, $skip_export, $process_zebraqueue, $as_xml, $nosanitize, $do_not_clear_zebraqueue, $verbose_logging, $zebraidx_log_opt) = @_;
 
     my $num_records_exported = 0;
     my $num_records_deleted = 0;
-    my $need_reset = check_zebra_dirs($server_dir);
-    if ($need_reset) {
-    	print "$0: found broken zebra server directories: forcing a rebuild\n";
-    	$reset = 1;
-    }
     if ($skip_export && $verbose_logging) {
         print "====================\n";
         print "SKIPPING $record_type export\n";
@@ -215,12 +208,11 @@ sub index_records {
             mark_zebraqueue_batch_done($entries);
             $entries = select_zebraqueue_records($record_type, 'updated');
             mkdir "$directory/upd_$record_type" unless (-d "$directory/upd_$record_type");
-            $num_records_exported = export_marc_records_from_list($record_type, 
-                                                                  $entries, "$directory/upd_$record_type", $as_xml, $noxml);
+            $num_records_exported = export_marc_records_from_list($record_type, $entries, "$directory/upd_$record_type", $as_xml);
             mark_zebraqueue_batch_done($entries);
         } else {
             my $sth = select_all_records($record_type);
-            $num_records_exported = export_marc_records_from_sth($record_type, $sth, "$directory/$record_type", $as_xml, $noxml, $nosanitize);
+            $num_records_exported = export_marc_records_from_sth($record_type, $sth, "$directory/$record_type", $as_xml, $nosanitize);
             unless ($do_not_clear_zebraqueue) {
                 mark_all_zebraqueue_done($record_type);
             }
@@ -237,29 +229,38 @@ sub index_records {
     }
 	my $record_fmt = ($as_xml) ? 'marcxml' : 'iso2709' ;
     if ($process_zebraqueue) {
-        do_indexing($record_type, 'delete', "$directory/del_$record_type", $reset, $noshadow, $record_fmt, $zebraidx_log_opt) 
-            if $num_records_deleted;
         do_indexing($record_type, 'update', "$directory/upd_$record_type", $reset, $noshadow, $record_fmt, $zebraidx_log_opt)
             if $num_records_exported;
+        do_indexing($record_type, 'delete', "$directory/del_$record_type", $reset, $noshadow, $record_fmt, $zebraidx_log_opt) 
+            if $num_records_deleted;
     } else {
         do_indexing($record_type, 'update', "$directory/$record_type", $reset, $noshadow, $record_fmt, $zebraidx_log_opt)
             if ($num_records_exported or $skip_export);
     }
 }
 
-
 sub select_zebraqueue_records {
     my ($record_type, $update_type) = @_;
 
     my $server = ($record_type eq 'biblio') ? 'biblioserver' : 'authorityserver';
     my $op = ($update_type eq 'deleted') ? 'recordDelete' : 'specialUpdate';
-
-    my $sth = $dbh->prepare("SELECT id, biblio_auth_number 
-                             FROM zebraqueue
-                             WHERE server = ?
-                             AND   operation = ?
-                             AND   done = 0
-                             ORDER BY id DESC");
+    
+    # B06
+    my $query = '';
+    $query .= 'SELECT zebraqueue.id, zebraqueue.biblio_auth_number ';
+    if ($record_type eq 'biblio') {
+        $query .= ',stack_items_temp.biblionumber AS istemp ';
+    }
+    $query .= 'FROM zebraqueue ';
+    if ($record_type eq 'biblio') {
+        $query .= 'LEFT JOIN stack_items_temp ON (zebraqueue.biblio_auth_number = stack_items_temp.biblionumber) ';
+    }
+    $query .= 'WHERE zebraqueue.server = ?
+                 AND zebraqueue.operation = ?
+                 AND zebraqueue.done = 0
+               ORDER BY id DESC';
+    
+    my $sth = $dbh->prepare($query);
     $sth->execute($server, $op);
     my $entries = $sth->fetchall_arrayref({});
 }
@@ -293,24 +294,47 @@ sub select_all_records {
 }
 
 sub select_all_authorities {
-    my $sth = $dbh->prepare("SELECT authid FROM auth_header");
+    my $strsth = 'SELECT authid FROM auth_header';
+    $strsth .= " LIMIT $limit_offset,$limit_nb" if (defined $limit_offset && defined $limit_nb);
+    my $sth = $dbh->prepare($strsth);
     $sth->execute();
     return $sth;
 }
 
 sub select_all_biblios {
-    my $sth = $dbh->prepare("SELECT biblionumber FROM biblioitems ORDER BY biblionumber");
+    # B06
+    my $strsth = '
+        SELECT
+            biblioitems.biblionumber,
+            stack_items_temp.biblionumber AS istemp
+        FROM biblioitems
+        LEFT JOIN stack_items_temp USING (biblionumber)
+        ORDER BY biblionumber';
+    # END B06
+    $strsth .= " LIMIT $limit_offset,$limit_nb" if (defined $limit_offset && defined $limit_nb);
+    my $sth = $dbh->prepare($strsth);
     $sth->execute();
     return $sth;
 }
 
 sub export_marc_records_from_sth {
-    my ($record_type, $sth, $directory, $as_xml, $noxml, $nosanitize) = @_;
+    my ($record_type, $sth, $directory, $as_xml, $nosanitize) = @_;
 
     my $num_exported = 0;
     open (OUT, ">:utf8 ", "$directory/exported_records") or die $!;
     my $i = 0;
-    while (my ($record_number) = $sth->fetchrow_array) {
+    # B06
+    while (my $row = $sth->fetchrow_hashref) {
+        my $record_number;
+        my $istemp;
+        if ($record_type eq 'biblio') {
+            $record_number = $row->{'biblionumber'};
+            $istemp = $row->{'istemp'} if ($record_type eq 'biblio'); 
+        } else {
+            $record_number = $row->{'authid'};
+        }
+        # END B06
+        
         print "." if ( $verbose_logging );
         print "\r$i" unless ($i++ %100 or !$verbose_logging);
         if ( $nosanitize ) {
@@ -323,7 +347,7 @@ sub export_marc_records_from_sth {
             }
             next;
         }
-        my ($marc) = get_corrected_marc_record($record_type, $record_number, $noxml);
+        my ($marc) = get_corrected_marc_record($record_type, $record_number, $as_xml, $istemp); # B06
         if (defined $marc) {
             # FIXME - when more than one record is exported and $as_xml is true,
             # the output file is not valid XML - it's just multiple <record> elements
@@ -340,18 +364,19 @@ sub export_marc_records_from_sth {
 }
 
 sub export_marc_records_from_list {
-    my ($record_type, $entries, $directory, $as_xml, $noxml) = @_;
+    my ($record_type, $entries, $directory, $as_xml) = @_;
 
     my $num_exported = 0;
     open (OUT, ">:utf8 ", "$directory/exported_records") or die $!;
     my $i = 0;
     my %found = ();
-    foreach my $record_number ( map { $_->{biblio_auth_number} }
-                                grep { !$found{ $_->{biblio_auth_number} }++ }
-                                @$entries ) {
+    # B06
+    foreach my $entity ( grep { !$found{ $_->{biblio_auth_number} }++ } @$entries ) {
         print "." if ( $verbose_logging );
         print "\r$i" unless ($i++ %100 or !$verbose_logging);
-        my ($marc) = get_corrected_marc_record($record_type, $record_number, $noxml);
+        
+        my ($marc) = get_corrected_marc_record($record_type, $entity->{'biblio_auth_number'}, $as_xml, $entity->{'istemp'});
+        # END B06
         if (defined $marc) {
             # FIXME - when more than one record is exported and $as_xml is true,
             # the output file is not valid XML - it's just multiple <record> elements
@@ -380,6 +405,7 @@ sub generate_deleted_marc_records {
         my $marc = MARC::Record->new();
         if ($record_type eq 'biblio') {
             fix_biblio_ids($marc, $record_number, $record_number);
+            fix_biblio_items( $marc ) if $item_limit;
         } else {
             fix_authority_id($marc, $record_number);
         }
@@ -398,15 +424,74 @@ sub generate_deleted_marc_records {
 }
 
 sub get_corrected_marc_record {
-    my ($record_type, $record_number, $noxml) = @_;
+    my ($record_type, $record_number, $as_xml, $istemp) = @_; # B06
 
-    my $marc = get_raw_marc_record($record_type, $record_number, $noxml); 
+    my $marc = get_raw_marc_record($record_type, $record_number, $as_xml); 
 
     if (defined $marc) {
         fix_leader($marc);
         if ($record_type eq 'biblio') {
             my $succeeded = fix_biblio_ids($marc, $record_number);
+            fix_biblio_items( $marc ) if $item_limit;
             return unless $succeeded;
+            
+            # PROGILONE - may 2010 - F5 F6
+            if (defined $isbn_field && defined $isbn_subfield) {
+                my @oldfields = $marc->field($isbn_field);
+                foreach ( @oldfields ) {
+                    my $isbn_raw = $_->subfield($isbn_subfield);
+                    if ( $isbn_raw && $isbn_raw =~ m/-/ ) {
+                        # ISBN without hyphens
+                        my $isbn_clean = $isbn_raw;
+                        $isbn_clean =~ s/-//g ; 
+                        # add as new field
+                        my $newfield = MARC::Field->new(
+                            $isbn_field, '', '', 
+                            $isbn_subfield => $isbn_clean,
+                        );
+                        $marc->insert_fields_after($_, $newfield);
+                    }
+                }
+            }
+            
+            # F18 : record is available if at least on item available        
+            my $is_record_available = 0;
+            if (defined $onloan_subfield 
+             && defined $lost_subfield 
+             && defined $wthdrawn_subfield 
+             && defined $damaged_subfield 
+             && defined $notforloan_subfield) {            	
+                my @items = $marc->field($onloan_tag); # onloan, itemlost, wthdrawn, damaged and notforloan are supposed be on items field number
+                foreach (@items) {
+                    my $onloan      = $_->subfield( "$onloan_subfield" );
+                    my $lost        = $_->subfield( "$lost_subfield" );
+                    my $wthdrawn    = $_->subfield( "$wthdrawn_subfield" );
+                    my $damaged     = $_->subfield( "$damaged_subfield" );
+                    my $notforloan  = $_->subfield( "$notforloan_subfield" );
+                    if ( !$onloan && $lost == 0 && $wthdrawn == 0 && $damaged == 0 && $notforloan == 0 ) {
+                    	$is_record_available = 1;
+                    	last;
+                    }
+                }    
+            } else {
+            	$is_record_available = 1;
+            }
+            # store availability in a new field
+            # TODO system pref
+            if ($is_record_available) {
+                my $avfield = MARC::Field->new( '090', '', '', 'z' => "$is_record_available" );
+                $marc->insert_fields_ordered($avfield);
+            }
+            # End PROGILONE
+            
+            # B06 : set 1 in BiblioTemp index field for temporary biblios to be hidden in opac
+            if (C4::Context->preference('UseStackrequest')) {
+                my $is_temporary_item = ($istemp) ? 1 : 0;
+                my $tmpfield = MARC::Field->new( '090', '', '', 'y' => "$is_temporary_item" );
+                $marc->insert_fields_ordered($tmpfield);
+            }
+            # END B06
+        
         } else {
             fix_authority_id($marc, $record_number);
         }
@@ -419,13 +504,14 @@ sub get_corrected_marc_record {
 }
 
 sub get_raw_marc_record {
-    my ($record_type, $record_number, $noxml) = @_;
+    my ($record_type, $record_number, $as_xml) = @_;
   
     my $marc; 
     if ($record_type eq 'biblio') {
-        if ($noxml) {
-            my $fetch_sth = $dbh->prepare_cached("SELECT marc FROM biblioitems WHERE biblionumber = ?");
-            $fetch_sth->execute($record_number);
+        unless ($as_xml) {
+            my $fetch_sth = $dbh->prepare_cached("SELECT marc FROM biblioitems WHERE biblionumber=?
+                                                  UNION SELECT marc FROM deletedbiblioitems WHERE biblionumber=?");
+            $fetch_sth->execute($record_number, $record_number);
             if (my ($blob) = $fetch_sth->fetchrow_array) {
                 $marc = MARC::Record->new_from_usmarc($blob);
                 $fetch_sth->finish();
@@ -435,7 +521,7 @@ sub get_raw_marc_record {
                         # trying to process a record update
             }
         } else {
-            eval { $marc = GetMarcBiblio($record_number); };
+            eval { $marc = GetMarcBiblio($record_number, 1); };
             if ($@) {
                 # here we do warn since catching an exception
                 # means that the bib was found but failed
@@ -470,6 +556,18 @@ sub fix_leader {
     $marc->leader(substr($leader, 0, 24));
 }
 
+sub fix_biblio_items {
+    my $marc = shift;
+
+    my ($itemtagfield, $itemtagsubfield) = GetMarcFromKohaField('items.itemnumber','');
+
+    my $i = 0;
+    for my $itemfield ( $marc->field($itemtagfield) ) {
+	    $marc->delete_field($itemfield) if $i >= $item_limit;
+        $i++;
+    }
+}
+
 sub fix_biblio_ids {
     # FIXME - it is essential to ensure that the biblionumber is present,
     #         otherwise, Zebra will choke on the record.  However, this
@@ -481,8 +579,9 @@ sub fix_biblio_ids {
         $biblioitemnumber = shift;
     } else {    
         my $sth = $dbh->prepare(
-            "SELECT biblioitemnumber FROM biblioitems WHERE biblionumber=?");
-        $sth->execute($biblionumber);
+            'SELECT biblioitemnumber FROM biblioitems WHERE biblionumber=?
+             UNION SELECT biblioitemnumber FROM deletedbiblioitems WHERE biblionumber=?');
+        $sth->execute($biblionumber,$biblionumber);
         ($biblioitemnumber) = $sth->fetchrow_array;
         $sth->finish;
         unless ($biblioitemnumber) {
@@ -561,19 +660,18 @@ only if you are using Zebra; if you are using the 'NoZebra'
 mode, this job should not be used.
 
 Parameters:
-    -b                      index bibliographic records
+    -b                      Index bibliographic records.
 
-    -a                      index authority records
+    -a                      Index authority records.
 
-    -z                      select only updated and deleted
-                            records marked in the zebraqueue
-                            table.  Cannot be used with -r
-                            or -s.
+    -z                      Select only updated and deleted records 
+                            marked in the zebraqueue table.
+                            Cannot be used with -r or -s.
 
-    -r                      clear Zebra index before
-                            adding records to index
+    -r                      Clear all Zebra indexes before
+                            adding records to index.
 
-    -d                      Temporary directory for indexing.
+    -d DIR                  Temporary directory for indexing.
                             If not specified, one is automatically
                             created.  The export directory
                             is automatically deleted unless
@@ -585,34 +683,36 @@ Parameters:
                             already exported the records 
                             in a previous run.
 
-    -noxml                  index from ISO MARC blob
-                            instead of MARC XML.  This
-                            option is recommended only
-                            for advanced user.
-
-    -x                      export and index as xml instead of is02709 (biblios only).
-                            use this if you might have records > 99,999 chars,
+    -x                      Export and index marcxml (XML) instead of marc (is02709) field.
+                            Use this if you might have records > 99,999 chars.
 							
-    -nosanitize             export biblio/authority records directly from DB marcxml
+    -nosanitize             Export biblio/authority records directly from DB marcxml
                             field without sanitizing records. It speed up
                             dump process but could fail if DB contains badly
-                            encoded records. Works only with -x,
+                            encoded records. Works only with -x.
 
-    -w                      skip shadow indexing for this batch
+    -w                      Skip shadow indexing for this batch.
 
-    -y                      do NOT clear zebraqueue after indexing; normally,
+    -y                      Do NOT clear zebraqueue after indexing; normally,
                             after doing batch indexing, zebraqueue should be
                             marked done for the affected record type(s) so that
                             a running zebraqueue_daemon doesn't try to reindex
                             the same records - specify -y to override this.  
                             Cannot be used with -z.
 
-    -v                      increase the amount of logging.  Normally only 
-                            warnings and errors from the indexing are shown.
+    -l N                    Set a maximum number of exported items per biblio.
+                            Doesn't work with -nosanitize.
 
+    -v                      Verbose mode.
+
+    -offset N               Biblio or authority limit offset (for dev).
+    
+    -nb N                   Biblio or authority limit nb (for dev).
+    
     -munge-config           Deprecated option to try
                             to fix Zebra config files.
-    --help or -h            show this message.
+    
+    --help or -h            Show this message.
 _USAGE_
 }
 

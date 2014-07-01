@@ -144,7 +144,6 @@ $template->param(
     op => $new,
     dates => $dates,
     routingnotes => $serials[0]->{'routingnotes'},
-    hasRouting => check_routing($subscriptionid),
     );
 
         output_html_with_http_headers $query, $cookie, $template->output;

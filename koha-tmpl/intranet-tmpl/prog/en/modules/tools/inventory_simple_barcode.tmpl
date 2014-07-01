@@ -1,0 +1,77 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Tools &rsaquo; Inventory</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<!-- TMPL_INCLUDE NAME="calendar.inc" -->
+</head>
+<body>
+<!-- B12 -->
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="cat-search.inc" -->
+
+<script language="javascript">
+
+	function start(){
+		document.getElementById('itembarcode').focus();
+	}
+	
+	window.onload=start;
+
+</script>
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/tools/tools-home.pl">Tools</a> &rsaquo; <!-- TMPL_IF NAME="loop" --><a href="/cgi-bin/koha/tools/inventory.pl">Inventory</a> &rsaquo; Results<!-- TMPL_ELSE -->Inventory<!-- /TMPL_IF --></div>
+
+<div id="doc3" class="yui-t2">
+    <div id="bd">
+        <div id="yui-main">
+            <div class="yui-b">
+                <h1>Simple stocktaking</h1>
+                <!-- TMPL_IF NAME="Number" --><div class="dialog message"><!-- TMPL_VAR NAME="Number" --> items modified : datelastseen, datelast_stocktaking set to <!-- TMPL_VAR NAME="date" --></div><!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="errorsaisie" --><div class="dialog alert">Please enter a barcode</div><!-- /TMPL_IF -->
+                <!-- TMPL_LOOP Name="errorloop" -->
+                    <div class="dialog alert">
+                        <!-- TMPL_VAR NAME="barcode" -->
+                        <!-- TMPL_IF NAME="ERR_BARCODE" -->: barcode not found<!-- /TMPL_IF -->
+			            <!-- TMPL_IF NAME="ERR_WTHDRAWN" -->: item withdrawn<!-- /TMPL_IF -->
+			            <!-- TMPL_IF NAME="ERR_ONLOAN_RET" -->: item was on loan. It was returned before marked as seen<!-- /TMPL_IF -->
+			            <!-- TMPL_IF NAME="ERR_ONLOAN_NOT_RET" -->: item was on loan. couldn't be returned.<!-- /TMPL_IF -->
+                    </div>
+                <!-- /TMPL_LOOP-->
+                <!-- TMPL_UNLESS NAME="loop" -->
+                <div class="yui-g">
+                    <form method="post" action="/cgi-bin/koha/tools/inventory_simple_barcode.pl" enctype="multipart/form-data">
+				        <fieldset class="rows">
+				          <legend>Selection</legend>
+				          <ol>
+				            <li><label for="itembarcode">Item barcode: </label> <input type="text" id="itembarcode" name="itembarcode" value="<!-- TMPL_VAR NAME="itembarcode" -->"/></li>
+				          </ol>
+				        </fieldset>
+				        <fieldset class="rows">
+				            <legend>Update date</legend>
+				            <ol>
+				            <li><label for="setdate">Set inventory date to:</label> <input type="text" id="setdate" name="setdate" value="<!-- TMPL_VAR NAME="today" -->" />
+				                <img src="<!-- TMPL_VAR NAME="themelang" -->/lib/calendar/cal.gif" id="setdate_button" alt="Show Calendar" />
+				            <script type="text/javascript">
+				            Calendar.setup(
+				            {
+				            inputField : "setdate",
+				            ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
+				            button : "setdate_button"
+				            }
+				            );
+				            </script>
+				            <div class="hint"><!-- TMPL_INCLUDE NAME="date-format.inc" --></div>
+				            </li>
+				          </ol>
+				        </fieldset>
+				        <input type="hidden" name="op" value="do_it" />
+				        <fieldset class="action"><input type="submit" value="Submit" class="button" /></fieldset>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="yui-b">
+            <!-- TMPL_INCLUDE NAME="tools-menu.inc" -->
+        </div>
+    </div>
+</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

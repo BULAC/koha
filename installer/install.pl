@@ -230,7 +230,7 @@ elsif ( $step && $step == 3 ) {
         # But could also be useful to have some Authorised values data set prepared here.
         # Framework Selection is achieved through checking boxes.
         my $langchoice = $query->param('fwklanguage');
-        $langchoice = $query->cookie('KohaOpacLanguage') unless ($langchoice);
+        $langchoice = getlanguagecookie($query) unless ($langchoice); # PROGILONE - MAN321
         my $marcflavour = $query->param('marcflavour');
         if ($marcflavour){
             $installer->set_marcflavour_syspref($marcflavour);
@@ -267,7 +267,7 @@ elsif ( $step && $step == 3 ) {
         # But could also be useful to have some Authorised values data set prepared here.
         # Marcflavour Selection is achieved through radiobuttons.
         my $langchoice = $query->param('fwklanguage');
-        $langchoice = $query->cookie('KohaOpacLanguage') unless ($langchoice);
+        $langchoice = getlanguagecookie($query) unless ($langchoice); # PROGILONE - MAN321
         my $dir =
           C4::Context->config('intranetdir') . "/installer/data/$info{dbms}/$langchoice/marcflavour";
         unless (opendir( MYDIR, $dir )) {

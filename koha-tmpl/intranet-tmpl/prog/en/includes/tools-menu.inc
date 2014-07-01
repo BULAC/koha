@@ -2,9 +2,11 @@
 	$(document).ready(function() {
 		var path = location.pathname.substring(1);
 		var url = window.location.toString();
-		url.match(/\?(.+)$/);
-		var params = RegExp.$1;
-		if (params) { params = "?" + params; }
+		var reg = new RegExp("\\?.*$");
+		var params = reg.exec(url);
+		if (!params) {
+			params = '';
+		}
 		$('#navmenulist a[href$="/' + path + params + '"]').css('font-weight','bold');
 	});
 //]]>
@@ -21,6 +23,9 @@
     <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="CAN_user_tools_import_patrons" -->
 	<li><a href="/cgi-bin/koha/tools/import_borrowers.pl">Import patrons</a></li>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="CAN_user_borrowers" -->
+    <li><a href="/cgi-bin/koha/tools/borrowerSCABatch.pl">SCA Borrower enlistment</a></li>
     <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="CAN_user_tools_edit_notices" -->
 	<li><a href="/cgi-bin/koha/tools/letter.pl">Notices</a></li>
@@ -40,6 +45,13 @@
     <!-- TMPL_IF NAME="CAN_user_tools_batch_upload_patron_images" -->
 	<li><a href="/cgi-bin/koha/tools/picture-upload.pl">Upload patron images</a></li>
     <!-- /TMPL_IF -->
+    <!-- B042 -->
+    <!-- TMPL_IF NAME="CAN_user_tools_duplication" -->
+        <!-- TMPL_IF NAME="UseDuplication" -->
+        <li><a href="/cgi-bin/koha/tools/repro-liste.pl">Duplications</a></li>
+        <!-- /TMPL_IF -->        
+    <!-- /TMPL_IF -->
+    <!-- END -->
 </ul>
 <h5>Catalog</h5>
 <ul>
@@ -53,8 +65,24 @@
 	<li><a href="/cgi-bin/koha/tools/export.pl">Export bibs/holdings</a></li>
     <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="CAN_user_tools_inventory" -->
-	<li><a href="/cgi-bin/koha/tools/inventory.pl">Inventory/stocktaking</a></li>
+	<li><!-- TMPL_IF NAME="UseAdvancedInventoryManagement" --><a href="/cgi-bin/koha/tools/inventory_simple.pl"><!-- TMPL_ELSE --><a href="/cgi-bin/koha/tools/inventory.pl"><!-- /TMPL_IF -->Inventory/stocktaking</a></li><!-- B122 -->
     <!-- /TMPL_IF -->
+    <!-- B124-->
+        <!-- TMPL_IF NAME="CAN_user_tools_inventory" -->
+            <!-- TMPL_IF NAME="UseAdvancedInventoryManagement" -->
+            <li><a href="/cgi-bin/koha/tools/inventory_simple_barcode.pl">Simple stocktaking</a></li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="UseAdvancedCountInventory" -->
+            <li><a href="/cgi-bin/koha/tools/inventory_cumulatif.pl">Cumulative inventory</a></li>
+            <!-- /TMPL_IF -->
+        <!-- /TMPL_IF -->
+    <!-- END B124 -->
+    
+    <!-- Progilone B10: Callnumber management -->
+    <!-- TMPL_IF NAME="CAN_user_advanced_callnumber_management" -->
+        <li><a href="/cgi-bin/koha/tools/batchLocationDelete.pl">Batch item location deletion</a></li>
+    <!-- /TMPL_IF -->
+    
     <!-- TMPL_IF NAME="CAN_user_tools_label_creator" -->
 	<li><a href="/cgi-bin/koha/labels/label-home.pl">Label creator</a></li>
 	<li><a href="/cgi-bin/koha/labels/spinelabel-home.pl">Quick spine label creator</a></li>
@@ -76,6 +104,7 @@
     <!-- TMPL_IF NAME="CAN_user_tools_edit_calendar" -->
 	<li><a href="/cgi-bin/koha/tools/holidays.pl">Calendar</a></li>
     <!-- /TMPL_IF -->
+    <li><a href="/cgi-bin/koha/tools/callnumber_register.pl">Callnumber Register</a></li>
     <!-- TMPL_IF NAME="CAN_user_tools_manage_csv_profiles" -->
 	<li><a href="/cgi-bin/koha/tools/csv-profiles.pl">CSV profiles</a></li>
     <!-- /TMPL_IF -->

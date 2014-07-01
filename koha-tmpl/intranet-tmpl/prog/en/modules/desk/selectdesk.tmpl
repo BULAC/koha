@@ -1,0 +1,73 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Circulation &rsaquo; Set Desk</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<style type="text/css">
+    .noshow {display: none;}
+</style>
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="circ-search.inc" -->
+
+<div id="breadcrumbs">
+         <a href="/cgi-bin/koha/mainpage.pl">Home</a>
+&rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a>
+&rsaquo; <a href="/cgi-bin/koha/circ/selectdesk.pl">Set Desk</a>
+</div>
+
+<div id="doc" class="yui-t7">
+  <div id="bd">
+    <div id="yui-main">
+      <div class="yui-b">
+
+<!-- TMPL_IF NAME="updated" -->
+
+<h2>Update Succeeded</h2>
+Updated:<ul>
+    <!-- TMPL_LOOP NAME="updated" -->
+    <!-- TMPL_IF    NAME="updated_desk"  -->
+    	<li>Desk: <!-- TMPL_VAR NAME="old_desk"  DEFAULT="?" --> &rArr; <!-- TMPL_VAR NAME="LoginDeskcode" DEFAULT="?" --></li>
+    <!-- TMPL_ELSE -->
+    <li>ERROR - unknown</li>
+    <!-- /TMPL_IF -->
+    <!-- /TMPL_LOOP -->
+    </ul>
+<form method="post" action="<!-- TMPL_VAR NAME='referer' ESCAPE='HTML' DEFAULT='/cgi-bin/koha/circ/circulation.pl' -->">
+    <div class="noshow">
+        <!-- TMPL_LOOP NAME="recycle_loop" -->
+        <input type="text" name="<!-- TMPL_VAR NAME="param" -->" value="<!-- TMPL_VAR NAME="value" ESCAPE='HTML' -->" />
+        <!-- /TMPL_LOOP -->
+    </div>
+    <button type="submit">Continue</button>
+</form>
+
+<!-- TMPL_ELSE -->
+
+<form method="post" action="selectdesk.pl">
+<fieldset class="rows">
+	<legend>Set Desk</legend>
+    <ol>
+    <li><label for="desk">Choose desk:</label>
+    	<select name="desk" id="desk">
+    	<!-- TMPL_LOOP Name="desks_loop" -->
+        	<option value="<!-- TMPL_VAR NAME='deskcode' -->"<!-- TMPL_IF NAME="selected" --> selected="selected"<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="deskname" --></option>
+        <!-- /TMPL_LOOP -->
+        </select>
+    </li>
+	</ol>
+</fieldset>
+<fieldset class="action"><input type="submit" value="Submit" /></fieldset>
+<div class="noshow">
+    <!-- TMPL_LOOP Name="recycle_loop" -->
+    <input type="text" name="<!-- TMPL_VAR NAME="param" -->" value="<!-- TMPL_VAR NAME="value" ESCAPE='HTML' -->" />
+    <!-- /TMPL_LOOP -->
+    <input type="hidden" name="oldreferer" value="<!-- TMPL_VAR NAME='referer' ESCAPE='HTML' DEFAULT='/cgi-bin/koha/circ/circulation.pl' -->" />
+</div>
+</form>
+<!-- /updated -->
+<!-- /TMPL_IF -->
+
+      </div>
+    </div>
+  </div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

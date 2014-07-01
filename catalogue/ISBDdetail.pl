@@ -23,13 +23,14 @@ ISBDdetail.pl : script to show a biblio in ISBD format
 
 =head1 SYNOPSIS
 
-=cut
 
 =head1 DESCRIPTION
 
 This script needs a biblionumber as parameter 
 
 =head1 FUNCTIONS
+
+=over 2
 
 =cut
 

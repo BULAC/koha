@@ -49,6 +49,7 @@ function popup(subscriptionid) {
 	<div id="yui-main">
 	<div class="yui-b">
 	<!-- TMPL_INCLUDE NAME="serials-toolbar.inc" -->
+	<!-- TMPL_INCLUDE NAME="jasper.inc" -->
 
     <h1>Subscription for <!-- TMPL_VAR name="bibliotitle" --> </h1>
     <!--TMPL_IF Name="abouttoexpire"--><div class="problem">Subscription is near its end. It should be renewed now.</div><!--/TMPL_IF-->
@@ -293,6 +294,7 @@ function popup(subscriptionid) {
             <th>Planned date</th>
             <th>Published date</th>
             <th>Status</th>
+            <th>Action</th>
         </tr>
         <!-- TMPL_LOOP name="serialslist" -->
             <tr>
@@ -327,6 +329,21 @@ function popup(subscriptionid) {
                              <!-- TMPL_VAR NAME="claimdate" -->
                              <!-- /TMPL_IF -->
                         <!-- /TMPL_IF -->
+                </td>
+                <td>
+                	<form method="post" action="/cgi-bin/koha/serials/subscription-detail.pl">
+                		<input type="hidden" name="subscriptionid" value="<!-- TMPL_VAR NAME="subscriptionid" -->" />
+                		<input type="hidden" name="subscription_location" value="<!-- TMPL_VAR name="location" -->" />
+                		<input type="hidden" name="serialseq" value="<!-- TMPL_VAR name="serialseq" -->" />
+                		<input type="hidden" name="op" value="print_callnumber" />
+                        
+                        <!-- TMPL_IF NAME="pluginCallnumber" -->
+                        <input type="submit" class="submit" name="print_callnumber" value="Print Callnumber" />
+                        <!-- TMPL_ELSE -->
+                        <input type="submit" class="submit" name="print_callnumber" value="Print Callnumber" onclick="alert(_('The serial callnumber can not be printed because it was not generated with the callnumber plugin.'));return false;" />
+                        <!-- /TMPL_IF -->
+                            
+                   </form>
                 </td>
             </tr>
         <!-- /TMPL_LOOP -->

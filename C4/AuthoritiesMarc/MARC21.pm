@@ -48,7 +48,11 @@ function based on the marcflavour system preference.
 
 =head2 get_heading_type_from_marc
 
-  my $auth_type = get_auth_type_from_marc($marc);
+=over 4
+
+my $auth_type = get_auth_type_from_marc($marc);
+
+=back
 
 Given a MARC::Record object containing an authority record,
 determine its heading type (e.g., personal name, topical term,
@@ -58,7 +62,11 @@ etc.).
 
 =head2 default_auth_type_location
 
-  my ($tag, $subfield) = default_auth_type_location();
+=over 4
+
+my ($tag, $subfield) = default_auth_type_location();
+
+=back
 
 Get the tag and subfield used to store the heading type
 if not specified in the MARC framework.  For MARC21,
@@ -72,7 +80,11 @@ sub default_auth_type_location {
 
 =head2 fix_marc21_auth_type_location 
 
-  fix_marc21_auth_type_location($auth_marc, $auth_type_tag, $auth_type_subfield);
+=over 4
+
+fix_marc21_auth_type_location($auth_marc, $auth_type_tag, $auth_type_subfield);
+
+=back
 
 If the incoming C<MARC::Record> object has a 152$b, remove it.  If no
 field already exists that contains the specified C<$auth_type_tag>

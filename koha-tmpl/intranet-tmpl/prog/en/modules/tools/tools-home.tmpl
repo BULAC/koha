@@ -24,6 +24,11 @@
     <dt><a href="/cgi-bin/koha/tools/import_borrowers.pl">Import patrons</a></dt>
     <dd>Import patron data</dd>
     <!-- /TMPL_IF -->
+    
+    <!-- TMPL_IF NAME="CAN_user_borrowers" -->
+    <dt><a href="/cgi-bin/koha/tools/borrowerSCABatch.pl">SCA Borrower enlistment</a></dt>
+    <dd>Enlist borrowers by category in the SCA</dd>
+    <!-- /TMPL_IF -->
 
     <!-- TMPL_IF NAME="CAN_user_tools_edit_notices" -->
     <dt><a href="/cgi-bin/koha/tools/letter.pl">Notices</a></dt>
@@ -55,7 +60,14 @@
 	<dd>Upload patron images in batch or one at a time</dd>
     <!-- /TMPL_IF -->
 
-
+	<!-- B042 -->
+    <!-- TMPL_IF NAME="CAN_user_tools_duplication" -->
+        <!-- TMPL_IF NAME="UseDuplication" -->
+        <dt><a href="/cgi-bin/koha/tools/repro-liste.pl">Duplications</a></dt>
+        <dd>Duplications list</dd>
+        <!-- /TMPL_IF -->        
+    <!-- /TMPL_IF -->
+    <!-- END -->
 
 	</dl>
 </div>
@@ -66,6 +78,9 @@
     <dt><a href="/cgi-bin/koha/tools/holidays.pl">Calendar</a></dt>
     <dd>Define days when the library is closed</dd>
     <!-- /TMPL_IF -->
+    
+    <dt><a href="/cgi-bin/koha/tools/callnumber_register.pl">Callnumber register</a></dt>
+    <dd>Print the callnumber register</dd>
 
     <!-- TMPL_IF NAME="CAN_user_tools_manage_csv_profiles" -->
     <dt><a href="/cgi-bin/koha/tools/csv-profiles.pl">CSV profiles</a></dt>
@@ -109,8 +124,14 @@
     <!-- /TMPL_IF -->
 
     <!-- TMPL_IF NAME="CAN_user_tools_inventory" -->
-    <dt><a href="/cgi-bin/koha/tools/inventory.pl">Inventory/stocktaking</a></dt>
+    <dt><!-- TMPL_IF NAME="UseAdvancedInventoryManagement" --><a href="/cgi-bin/koha/tools/inventory_simple.pl"><!-- TMPL_ELSE --><a href="/cgi-bin/koha/tools/inventory.pl"><!-- /TMPL_IF -->Inventory/stocktaking</a></dt><!-- B122 -->
     <dd>Perform inventory (stocktaking) of your catalog</dd>
+    <!-- /TMPL_IF -->
+
+	<!-- Progilone B10: Callnumber management -->
+    <!-- TMPL_IF NAME="CAN_user_advanced_callnumber_management" -->
+    	<dt><a href="/cgi-bin/koha/tools/batchLocationDelete.pl">Batch item location deletion</a></dt>
+	    <dd>Perform mass operation to remove physical location of items by callnumber or location.</dd>
     <!-- /TMPL_IF -->
 
     <!-- TMPL_IF NAME="CAN_user_tools_label_creator" -->

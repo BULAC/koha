@@ -99,8 +99,13 @@ sub TotalPaid {
     $time2 = $time unless $time2;
     my $dbh   = C4::Context->dbh;
     my $query = "SELECT * FROM statistics 
-  LEFT JOIN borrowers ON statistics.borrowernumber= borrowers.borrowernumber
-  WHERE (statistics.type='payment' OR statistics.type='writeoff') ";
+        LEFT JOIN borrowers ON statistics.borrowernumber= borrowers.borrowernumber
+        WHERE (
+            statistics.type='payment'
+            OR statistics.type='writeoff'
+            OR statistics.type='exempt'
+            OR statistics.type='fineerror'
+    ) "; # B015 MAN076
     if ( $time eq 'today' ) {
         $query .= " AND datetime = now()";
     } else {

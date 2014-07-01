@@ -27,6 +27,7 @@ use C4::Circulation;    # GetBiblioIssues
 use C4::Biblio;    # GetBiblio GetBiblioFromItemNumber
 use C4::Dates qw/format_date/;
 use C4::Search;		# enabled_staff_search_views
+use C4::Stack::Search; # B034
 
 my $query = new CGI;
 my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
@@ -75,5 +76,17 @@ $template->param(
 	issuehistoryview => 1,
 	C4::Search::enabled_staff_search_views,
 );
+
+##
+# B034 : stack requests history
+##
+my $stack_requests = GetBiblioStacks($biblionumber);
+
+$template->param(
+    stackrq_total   => scalar @$stack_requests,
+    stackrq_loop    => $stack_requests,
+);
+
+# END B034
 
 output_html_with_http_headers $query, $cookie, $template->output;

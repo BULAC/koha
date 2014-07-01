@@ -1,0 +1,599 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<!-- TMPL_IF NAME="LibraryNameTitle" --><!-- TMPL_VAR NAME="LibraryNameTitle" --><!-- TMPL_ELSE -->Koha Online<!-- /TMPL_IF --> Catalog
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<!-- TMPL_INCLUDE NAME="calendar.inc" -->
+<script type="text/JavaScript" language="JavaScript">
+//<![CDATA[
+           
+YAHOO.util.Event.onContentReady("entryform", function() {
+    new function() {
+       
+        this.oACDSzip = new YAHOO.widget.DS_XHR("/cgi-bin/koha/opac-ysearch.pl", ["\n", "\t"]);
+        this.oACDSzip.scriptQueryAppend = "type=zip";
+        this.oACDSzip.responseType = YAHOO.widget.DS_XHR.TYPE_FLAT;
+        //this.oACDSzip.maxCacheEntries =60; //pb avec ce cache ??
+        this.oACDSzip.queryMatchSubset = true;
+        this.oACDSzip.minQueryLength = 1;
+        this.oACDSzip.queryDelay = 0.1;
+        this.oACDSzip.maxResultsDisplayed = 30;
+
+        this.oACDScountry = new YAHOO.widget.DS_XHR("/cgi-bin/koha/opac-ysearch.pl", ["\n", "\t"]);
+        this.oACDScountry.scriptQueryAppend = "type=country";
+        this.oACDScountry.responseType = YAHOO.widget.DS_XHR.TYPE_FLAT;
+        //this.oACDScountry.maxCacheEntries =60; //pb avec ce cache ??
+        this.oACDScountry.queryMatchSubset = true;
+        this.oACDScountry.minQueryLength = 1;
+        this.oACDScountry.queryDelay = 0.1;
+        this.oACDScountry.maxResultsDisplayed = 30;
+        
+         // Show custom message if no results found  
+        // Instantiate first AutoComplete
+       var myInput = document.getElementById('zipcode');
+       var myContainer = document.getElementById('ac_containerzip');
+       this.oAutoComp = new YAHOO.widget.AutoComplete(myInput,myContainer,this.oACDSzip);
+       this.oAutoComp.itemSelectEvent.subscribe(function(sType, aArgs) {  
+            var oMyAcInstance = aArgs[0]; // your AutoComplete instance  
+            var elListItem = aArgs[1]; //the <li> element selected in the suggestion  
+                               //container  
+            var aData = aArgs[2]; //array of the data for the item as returned by the DataSource  
+            document.getElementById('zipcode').value = aData[1];  
+            document.getElementById('city').value = aData[0];  
+               });
+    
+       
+      
+       this.oAutoComp.formatResult = function(oResultItem, sQuery) {
+           var city        = oResultItem[0];
+           var zipcode      =          oResultItem[1];
+          
+           var aMarkup = [
+               "<div class=\"zip-result\">",
+               zipcode,
+               " ",
+               city,
+               "<\/div>"];
+           return (aMarkup.join(""));
+       };
+       
+       var  myInput2 = document.getElementById('country');
+    
+        var myContainer2 = document.getElementById('ac_containercountry');
+       this.oAutoComp2 = new YAHOO.widget.AutoComplete(myInput2,myContainer2,this.oACDScountry);
+       this.oAutoComp2.itemSelectEvent.subscribe(function(sType, aArgs) {  
+            var oMyAcInstance = aArgs[0]; // your AutoComplete instance  
+            var elListItem = aArgs[1]; //the <li> element selected in the suggestion  
+                               //container  
+            var aData = aArgs[2]; //array of the data for the item as returned by the DataSource  
+            document.getElementById('country').value = aData;  
+               });
+    
+       
+      
+       this.oAutoComp2.formatResult = function(oResultItem, sQuery) {
+           var country        = oResultItem;
+          
+           var aMarkup = [
+               "<div class=\"country-result\">",
+               country,
+               "<\/div>"];
+           return (aMarkup.join(""));
+       };
+    
+}
+});
+ 
+    $(document).ready(function() {
+        
+        $("fieldset.rows input").keydown(function(e){
+            var characterCode; // literal character code will be stored in this variable
+            if (e && e.which){ //if which property of event object is supported (NN4)
+                e = e;
+                characterCode = e.which; //character code is contained in NN4's which property
+            } else {
+                e = event; // TODO rises errorin FF
+                characterCode = e.keyCode; //character code is contained in IE's keyCode property
+            }
+    
+            if (characterCode == 13){ //if generated character code is equal to ascii 13 (if enter key)
+                return false;
+            } else {
+                return true;
+            }
+        });
+        
+    });
+
+    // this function checks id date is like DD/MM/YYYY
+    function CheckDate(field) {
+       var d = field.value;
+       if (d!="") {
+          var amin = 1900; 
+          var amax = 2100; 
+          var date = d.split("/");
+          var ok=1;
+          var msg = _("Invalid date: ");
+          if ( (date.length < 2) && (ok==1) ) {
+            msg += _("separator must be /."); 
+            alert(msg); ok=0; field.focus();
+            return false;
+          }
+          var dd   = date[0];
+          var mm   = date[1];
+          var yyyy = date[2]; 
+          // checking days
+          if ( ((isNaN(dd))||(dd<1)||(dd>31)) && (ok==1) ) {
+            msg += _("day not correct."); 
+            alert(msg); ok=0; field.focus();
+            return false;
+          }
+          // checking months
+          if ( ((isNaN(mm))||(mm<1)||(mm>12)) && (ok==1) ) {
+            msg += _("month not correct.");
+            alert(msg); ok=0; field.focus();
+            return false;
+          }
+          // checking years
+          if ( ((isNaN(yyyy))||(yyyy<amin)||(yyyy>amax)) && (ok==1) ) {
+            msg += _("year not correct."); 
+            alert(msg); ok=0; field.focus();
+            return false;
+          }
+       }
+       return true;
+    }
+    
+    function CheckZipcode(field){
+        var msg="";
+        var inVal= field.value;
+        var ok = 1;
+        if (inVal != "") {
+            if (inVal.length!=5 && inVal.length!=10) {
+                msg = _("Please enter a 5 digits or 5 digits+4 zip code.") + "\n";
+                alert(msg); ok=0; field.focus();
+                return false;
+            } else {
+                var inpVal = parseInt(inVal.substring(0,4));
+                var inpVal2 = 0;
+                if (inVal.length==10){
+                     inpVal2 = parseInt(inVal.substring(6,9));
+                }
+                if (isNaN(inpVal) || isNaN(inpVal2)) {
+                    msg = _("Invalid zip code.") + "\n";
+                    alert(msg); ok=0; field.focus();
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    function CheckNumber(field){
+        var val=field.value;
+        var ok = 1;
+        if (val!="" && isNaN(val)){
+            msg = _("Please enter a number.") + "\n";
+            alert(msg); ok=0; field.focus();
+            return false;
+        }
+        return true;
+    }
+    
+    function CheckPhone(field){
+      var val=field.value;
+      var msg="";
+      var ok = 1;
+      var regExpObj = /<!-- TMPL_VAR NAME="phone_pattern" -->/;
+      if(val!="" && !regExpObj.test(val)){
+        msg = _("Invalid phone number.") +"\n";
+        alert(msg); ok=0; field.focus();
+        return false;
+      }
+      return true;
+    }
+    
+    function CheckMail(field){
+        var msg="";
+        var ok = 1;
+        var str = field.value;
+        var re = /<!-- TMPL_VAR NAME="email_pattern" -->/;
+        if (str!="" && !str.match(re)) {
+           msg = _("Invalid e-mail address.") +"\n";
+           alert(msg); ok=0; field.focus();
+           return false;
+        }
+        return true;
+    }
+    
+    // function to test all fields in forms and nav in different forms(1 ,2 or 3)
+    function check_form_borrowers(nav){
+        var statut=0;
+        var message="";
+        var valid = "0123456789-";
+        var hyphencount = 0;
+        var e = document.form.elements;
+        if(e['password'].value != '' && e['password'].value != e['confirmpassword'].value) {
+            message += _("Your passwords do not match. Please type more carefully.") + "\n";
+            statut=1;
+        }
+        
+        var bmf_pref = '<!-- TMPL_VAR NAME="BorrowerMandatoryField" -->';
+        if (bmf_pref == '') {
+            // should not be
+        } else {
+            var champ_verif = bmf_pref.split ('|');
+            var nok;
+            for (var i=0; i<champ_verif.length; i++) {
+                if (document.getElementsByName(""+champ_verif[i]+"")[0]) {
+                    var val_champ=eval("document.form."+champ_verif[i]+".value");
+                    var ref_champ=eval("document.form."+champ_verif[i]);
+                    //check if it's a select
+                    if (ref_champ.type=='select-one'){
+                        // check to see if first option is selected and is blank
+                        if (ref_champ.options[0].selected &&
+                            ref_champ.options[0].text == ''){
+                            nok = 1;
+                        }
+                    } else {
+                        if ( val_champ == '' ) {
+                            nok = 1;
+                        }   
+                    }
+                }
+            }
+            if (nok) {
+                message += _("A mandatory field is not filled.") +"\n";
+                //test to know if you must show a message with error
+                statut=1;
+            }
+        }
+        
+        if ('' == eval("document.form.intext.value")) {
+            message += _("You must enter the security code.") + "\n";
+            statut=1;
+        }
+        
+        if (statut==1){
+            //alert if at least 1 error
+            alert(message);
+            return false;
+        } else {
+            document.form.submit();
+        }
+        return true;
+    }
+    
+    function Dopop(link) {
+        var newin=window.open(link,'popup','width=600,height=400,resizable=no,toolbar=false,scrollbars=no,top');
+    }
+    
+    function Dopopguarantor(link) {
+        var newin=window.open(link,'popup','width=600,height=400,resizable=no,toolbar=false,scrollbars=yes,top');
+    }
+    
+//]]>
+</script>
+</head>
+<body id="opac-user">
+<!-- B014 -->
+
+<div id="doc3" class="yui-t1">
+   <div id="bd">
+<!-- TMPL_INCLUDE NAME="masthead.inc" -->
+
+    <div id="yui-main">
+    <div class="yui-b"><div class="yui-g">
+    <div id="userdetails" class="container">
+    
+<!-- TMPL_IF NAME="post_ok" -->
+
+    <form id="form_ok" name="form_ok" action="/cgi-bin/koha/opac-main.pl" method="get">
+        <div class="dialog message">
+            <div style="margin-bottom:1em">
+                <h3>Pre-registration accepted</h3>
+            </div>
+            <div style="margin-bottom:.5em;margin-left:2em;">
+                <strong>Your login is <span style="color:#006699"><!-- TMPL_VAR NAME="userid" --></span></strong>
+            </div>
+            <div style="margin-bottom:.5em;margin-left:2em;">
+                <strong>To validate your registration don&rsquo;t forget to provide:</strong>
+            </div>
+            <div style="margin-bottom:.5em;margin-left:2em;">
+                <ul>
+                    <li>your student or business card</li>
+                    <li>your ID card</li>
+                </ul>
+            </div>
+            <div style="margin-left:2em;">
+                <a href="javascript:Dopop('opac-borrowers_details.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->');" >Detail</a>
+                <button class="submit" onclick="$('#form_ok').submit()" >OK</button>
+            </div>
+         </div>
+    </form>
+
+<!-- TMPL_ELSE -->
+    
+    <h1>Pre-registration</h1>
+    
+    <!-- TMPL_IF NAME="check_member" -->
+        <div class="dialog alert">
+            <h3>You are already registered.</h3>
+            <a href="javascript:Dopop('opac-borrowers_details.pl?borrowernumber=<!-- TMPL_VAR NAME="check_member" -->');" >Detail</a>
+        </div>
+    <!-- TMPL_ELSE -->
+    
+        <!-- TMPL_IF NAME="post_err" -->
+            <div class="dialog alert">
+                <h3>Error:</h3>
+                <ul>
+                <!-- TMPL_IF NAME="ERROR_captcha" -->
+                     <li id="ERROR_captcha">Wrong or expired security code, please try again.</li>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="ERROR_age_limitations" -->
+                    <li id="ERROR_age_limitations">Your age is incorrect, ages allowed are <!-- TMPL_VAR NAME="ERROR_age_limitations" -->.</li>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="ERROR_dateofbirth" -->
+                    <li id="ERROR_dateofbirth">Date of birth is invalid.</li>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="ERROR_email" -->
+                    <li id="ERROR_email">E-mail address is invalid.</li>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="ERROR_email_exist" -->
+                    <li>E-mail address is already used.</li>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="ERROR_phone" -->
+                    <li id="ERROR_email">Home phone number is invalid.</li>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="ERROR_mobile" -->
+                    <li id="ERROR_email">Cell phone number is invalid.</li>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="ERROR_short_password" -->
+                    <li id="ERROR_short_password">Password must be at least <!-- TMPL_VAR NAME="minPasswordLength" --> characters long.</li>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="ERROR_mandatory" -->
+                    <li id="ERROR_mandatory">A mandatory field is not filled.</li>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="ERROR_login_exists" -->
+                    <li id="ERROR_login_exists">E-mail address is already used.</li>
+                <!-- /TMPL_IF -->
+                </ul>
+            </div>
+        <!-- /TMPL_IF -->
+    
+    <!-- /TMPL_IF -->
+    
+    <form name="form" id="entryform"  action="/cgi-bin/koha/opac-memberentry.pl" method="post">
+    
+        <input type="hidden" name="capmd5" value="<!-- TMPL_VAR NAME="md5sum" -->" />
+        <input type="hidden" name="op" value="insert" />
+        
+        <fieldset class="rows" id="memberentry_identity">
+        <legend>Name</legend>
+        <ol>
+        <li>
+            <!-- TMPL_IF NAME="mandatorysurname" -->
+            <label for="surname" class="required">
+            <!-- TMPL_ELSE -->
+            <label for="surname">
+            <!-- /TMPL_IF -->
+            Surname: </label>
+            <!-- TMPL_IF NAME="uppercasesurnames" -->
+            <input style="text-transform:uppercase;" type="text" id="surname" name="surname" size="50"  value="<!-- TMPL_VAR NAME="surname" -->" />
+            <!-- TMPL_ELSE -->
+            <input type="text" id="surname" name="surname" size="20"  value="<!-- TMPL_VAR NAME="surname" -->" />
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="mandatorysurname" --><span class="required">Required</span><!-- /TMPL_IF -->
+        </li>
+                   
+        <li>
+            <!-- TMPL_IF NAME="mandatoryothernames" -->
+            <label for="othernames" class="required">
+            <!-- TMPL_ELSE -->
+            <label for="othernames">
+            <!-- /TMPL_IF -->
+            Other name: </label>
+            <input style="text-transform:uppercase;" type="text" id="othernames" name="othernames" size="50"  value="<!-- TMPL_VAR NAME="othernames" -->" />
+            <!-- TMPL_IF NAME="mandatoryothernames" --><span class="required">Required</span><!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="I" --><input type="hidden" name="sex" value="N" /><!-- /TMPL_IF -->
+        </li>
+        
+        <li>
+            <!-- TMPL_IF NAME="mandatoryfirstname" -->
+            <label for="firstname" class="required">
+            <!-- TMPL_ELSE -->
+            <label for="firstname">
+            <!-- /TMPL_IF -->
+            First name: </label>
+            <input type="text" id="firstname" name="firstname" size="20"  value="<!-- TMPL_VAR NAME="firstname" -->" />
+            <!-- TMPL_IF NAME="mandatoryfirstname" --><span class="required">Required</span><!-- /TMPL_IF -->
+        </li>
+        
+        <li>
+            <!-- TMPL_IF NAME="mandatorydateofbirth" -->
+            <label for="dateofbirth" class="required">
+            <!-- TMPL_ELSE -->
+            <label for="dateofbirth">
+            <!-- /TMPL_IF -->
+            Date of birth: </label>
+            <!-- TMPL_IF NAME="dateformat_metric" -->
+            <input type="text" id="dateofbirth" name="dateofbirth" size="20" onblur="CheckDate(this);" value="<!-- TMPL_VAR NAME="dateofbirth" -->" />
+            <!-- TMPL_ELSE -->
+            <input type="text" id="dateofbirth" name="dateofbirth" size="20" value="<!-- TMPL_VAR NAME="dateofbirth" -->" />
+            <!-- /TMPL_IF -->
+            <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" id="dateofbirth_button" alt="Show Calendar" />
+            <script language="JavaScript" type="text/javascript">
+            Calendar.setup(
+                {
+                inputField : "dateofbirth",
+                ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
+                button : "dateofbirth_button"
+                }
+            );
+            </script>
+            <!-- TMPL_IF NAME="mandatorydateofbirth" --><span class="required">Required</span><!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_dateofbirth" --><span class="required">(Error)</span><!-- /TMPL_IF -->
+            <div class="hint"><!-- TMPL_INCLUDE NAME="date-format.inc" --></div>
+        </li>
+        
+        <li class="radio">
+        <!-- TMPL_IF NAME="female" -->
+            <label for="sex-female">Female </label><input type="radio" name="sex" id="sex-female" value="F" checked="checked"  />
+        <!-- TMPL_ELSE -->
+            <label for="sex-female">Female </label><input type="radio" name="sex" id="sex-female" value="F" />
+        <!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="male" -->
+            <label for="sex-male">Male </label><input type="radio" name="sex" id="sex-male" value="M" checked="checked" />
+        <!-- TMPL_ELSE -->
+            <label for="sex-male">Male </label><input type="radio" name="sex" id="sex-male" value="M" />
+        <!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="mandatorysex" --><span class="required">Required</span><!-- /TMPL_IF -->
+        </li>
+            
+        </ol>
+        </fieldset>
+
+        <fieldset class="rows">
+        <legend>Coordinates</legend>
+        <ol>
+            <li>
+                <!-- TMPL_IF NAME="mandatoryaddress" -->
+                <label for="address" class="required">
+                <!-- TMPL_ELSE -->
+                <label for="address">
+                <!-- /TMPL_IF -->
+                Address: </label>
+                <input type="text" id="address" name="address" size="35" value="<!-- TMPL_VAR NAME="address" -->" />
+                <!-- TMPL_IF NAME="mandatoryaddress" --><span class="required">Required</span><!-- /TMPL_IF -->
+            </li>
+  
+            <li>
+                <!-- TMPL_IF NAME="mandatorycity" -->
+                <label for="city" class="required">
+                <!-- TMPL_ELSE -->
+                <label for="city">
+                <!-- /TMPL_IF -->
+                City, State: </label>
+                <input type="text" id="city" name="city" size="20" value="<!-- TMPL_VAR NAME="city" -->" />
+                <!-- TMPL_IF NAME="mandatorycity" --><span class="required">Required</span><!-- /TMPL_IF -->
+            </li>
+            
+            <li> 
+                <!-- TMPL_IF NAME="mandatoryzipcode" -->
+                <label for="zipcode" class="required">
+                <!-- TMPL_ELSE -->
+                <label for="zipcode">
+                <!-- /TMPL_IF -->
+                Zip/Postal code: </label>
+                <div class="autocomplete">
+                       <div id="zipcodeautocomplete" class="autocomplete">
+                        <input autocomplete="off" id="zipcode" name="zipcode" type="text" value="<!-- TMPL_VAR NAME="zipcode" -->" /> 
+                        <div id="ac_containerzip"></div>
+                           <!-- TMPL_IF NAME="mandatoryzipcode" --><span class="required">Required</span><!-- /TMPL_IF -->
+                           <div class="hint">For example: 75008</div>
+                       </div>       
+                   </div>
+            </li>
+            
+            <li> 
+                <!-- TMPL_IF NAME="mandatorycountry" -->
+                <label for="country" class="required">
+                <!-- TMPL_ELSE -->
+                <label for="country">
+                <!-- /TMPL_IF -->
+                Country: </label>
+                <div class="autocomplete">
+                    <div id="countryautocomplete" class="autocomplete">
+                        <input autocomplete="off" id="country" name="country" type="text" value="<!-- TMPL_VAR NAME="country" -->" /> 
+                        <div id="ac_containercountry"></div>
+                        <!-- TMPL_IF NAME="mandatorycountry" --><span class="required">Required</span><!-- /TMPL_IF -->
+                    </div>
+                </div>
+            </li>
+            
+            <li>
+                <!-- TMPL_IF NAME="mandatoryphone" --> 
+                <label for="phone" class="required">
+                <!-- TMPL_ELSE -->
+                <label for="phone">
+                <!-- /TMPL_IF -->
+                Phone (home): </label>
+                <input type="text" id="phone" name="phone" autocomplete="off" onblur="CheckPhone(this);" value="<!-- TMPL_VAR NAME="phone" -->" />
+                <!-- TMPL_IF NAME="mandatoryphone" --><span class="required">Required</span><!-- /TMPL_IF --><div class="hint">Shows on transit slips</div>
+            </li>
+   
+            <li>
+                <!-- TMPL_IF NAME="mandatorymobile" -->
+                <label for="mobile" class="required">
+                <!-- TMPL_ELSE -->
+                <label for="mobile">
+                <!-- /TMPL_IF -->
+                Phone (cell): </label>
+                <input type="text" id="mobile" name="mobile" autocomplete="off" onblur="CheckPhone(this);" value="<!-- TMPL_VAR NAME="mobile" -->" />
+                <!-- TMPL_IF NAME="mandatorymobile" --><span class="required">Required</span><!-- /TMPL_IF -->
+            </li>
+            
+            <li>
+                <!-- TMPL_IF NAME="mandatoryemail" -->
+                <label for="email" class="required">
+                <!-- TMPL_ELSE -->
+                <label for="email">
+                <!-- /TMPL_IF -->
+                E-mail: </label>
+                <input type="text" id="email" name="email" autocomplete="off" size="45" onblur="CheckMail(this);" value="<!-- TMPL_VAR NAME="email" -->" />  
+                <!-- TMPL_IF NAME="mandatoryemail" --><span class="required">Required</span><!-- /TMPL_IF -->
+                <div class="hint">For example: john.doe@mail.com</div>
+                <div class="hint">Shows on transit slips</div>
+            </li>
+        </ol>
+        </fieldset>
+        
+        <fieldset class="rows" id="memberentry_identity">
+            <legend>Password</legend>
+            <ol>
+                <li>
+                    <!-- TMPL_IF NAME="mandatorypassword" -->
+                    <label for="password" class="required">
+                    <!-- TMPL_ELSE -->
+                    <label for="password">
+                    <!-- /TMPL_IF -->
+                    Password: </label>
+                    <input type="password" id="password" name="password" size="20" autocomplete="off" />
+                    <!-- TMPL_IF NAME="mandatorypassword" --><span class="required">Required</span><!-- /TMPL_IF -->
+                    <!-- TMPL_IF NAME="minPasswordLength" --><div class="hint">Minimum password length: <!-- TMPL_VAR NAME="minPasswordLength" --></div><!-- /TMPL_IF -->
+                </li>
+                
+                <li>
+                    <!-- TMPL_IF NAME="mandatorypassword" -->
+                    <label for="confirmpassword" class="required">
+                    <!-- TMPL_ELSE -->
+                    <label for="confirmpassword">
+                    <!-- /TMPL_IF -->
+                    Confirm Password: </label>
+                    <input type="password" id="confirmpassword" name="confirmpassword" size="20" autocomplete="off" />
+                    <!-- TMPL_IF NAME="mandatorypassword" --><span class="required">Required</span><!-- /TMPL_IF -->
+                    <!-- TMPL_IF NAME="minPasswordLength" --><div class="hint">Minimum password length: <!-- TMPL_VAR NAME="minPasswordLength" --></div><!-- /TMPL_IF -->
+                </li>
+                
+                <li>
+                    <span class="label">
+                        <img src="<!-- TMPL_VAR NAME="cap_img_src" -->" />
+                    </span>
+                    <span>
+                      <input type="text" name="intext" size="10" autocomplete="off" />
+                    </span>
+                    <div class="hint">Please enter characters into the following text box.</div>
+                </li>
+            </ol>
+        </fieldset>
+
+        <fieldset class="action">
+            <input type="submit" class="submit" name="save" onclick="return check_form_borrowers();" value="Save" />
+            <a class="cancel" href="/cgi-bin/koha/opac-main.pl">Cancel</a>
+        </fieldset>
+    </form>
+    
+<!-- /TMPL_IF -->
+
+    </div>
+    </div>
+</div>
+<!-- TMPL_INCLUDE NAME="opac-bottom.inc" -->

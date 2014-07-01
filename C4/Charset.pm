@@ -33,7 +33,6 @@ BEGIN {
     require Exporter;
     @ISA    = qw(Exporter);
     @EXPORT = qw(
-        NormalizeString
         IsStringUTF8ish
         MarcToUTF8Record
         SetUTF8Flag
@@ -149,28 +148,27 @@ sub SetUTF8Flag{
 
 =head2 NormalizeString
 
-    my $normalized_string=NormalizeString($string,$nfd,$transform);
+    my $normalized_string=NormalizeString($string);
 
 Given a string
-nfd : If you want to set NFD and not NFC
+
+nfc : If you want to set NFC and not NFD
 transform : If you expect all the signs to be removed
-
 Sets the PERL UTF8 Flag on your initial data if need be
-and applies cleaning if required
+and applies cleaning if required 
 
-Returns a utf8 NFC normalized string
+Returns a utf8 NFD normalized string
 
 Sample code :
-   my $string=NormalizeString ("l'ornithoptère");
-   #results into ornithoptère in NFC form and sets UTF8 Flag
+    my $string=NormalizeString ("l'ornithoptère");
+    #results into ornithoptère in NFD form and sets UTF8 Flag
 
 =cut
 
-
 sub NormalizeString{
-	my ($string,$nfd,$transform)=@_;
+	my ($string,$nfc,$transform)=@_;
 	utf8::decode($string) unless (utf8::is_utf8($string));
-	if ($nfd){
+	if ($nfc){
 		$string= NFD($string);
 	}
 	else {

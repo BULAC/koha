@@ -2,6 +2,9 @@
 <title>Koha &rsaquo; Catalog &rsaquo; <!-- TMPL_IF NAME="searchdesc" -->Results of Search <!-- TMPL_IF NAME="query_desc" -->for '<!-- TMPL_VAR NAME="query_desc" -->'<!-- /TMPL_IF --><!-- TMPL_IF NAME="limit_desc" -->&nbsp;with limit(s):&nbsp;'<!-- TMPL_VAR NAME="limit_desc" -->'<!-- /TMPL_IF --><!-- TMPL_ELSE -->You did not specify any search criteria<!-- /TMPL_IF --></title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <script type="text/javascript" src="/intranet-tmpl/prog/en/lib/jquery/plugins/jquery.highlight-3.js"></script>
+<!-- PROGILONE - june 2010 - C1 -->
+    <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.checkboxes.min.js"></script>
+<!-- End PROGILONE -->
 <script type="text/javascript">
 //<![CDATA[
 var MSG_NO_ITEM_SELECTED = _("Nothing is selected.");
@@ -30,6 +33,37 @@ $(window).load(function() {
 function Dopop(link) {
         newin=window.open(link,'popup','width=500,height=500,toolbar=false,scrollbars=yes,resizeable=yes');
 }
+
+//PROGILONE - june 2010 - C1
+function updateDetailsLink() {
+    var checkedBoxes = $("#bookbag_form :checkbox:checked");
+    if ($(checkedBoxes).size() > 0) {
+        var fbox = $(checkedBoxes).get(0);
+        var trrecord = $(fbox).parent().parent();
+        var atitle = $(trrecord).find("a");
+        $(".details_link :a").attr("href", $(atitle).attr("href"));
+        $(".details_link").show();
+    } else {
+        $(".details_link").hide();
+    }
+}
+
+function storeCheckedBibNums() {
+    var bibnums = [];
+    var checkedBoxes = $("#bookbag_form :checkbox:checked");
+    for (var i = 0; i < $(checkedBoxes).size(); i++) {
+        var box = $(checkedBoxes).get(i);
+        bibnums[i] = $(box).attr('id').substr(3);
+    }
+    setContextBiblioNumbers(bibnums);
+};
+
+function onCheckboxChange() {
+    updateDetailsLink();
+    storeCheckedBibNums();
+}
+// End PROGILONE
+
 $(document).ready(function() {
 $('#sortbyform').find("input:submit").hide();
 $('#sort_by').change(function() {
@@ -92,6 +126,26 @@ $(".addtocart").show();
         $("#highlight_toggle_on" ).hide().click(function() {highlightOn() ;});
         $("#highlight_toggle_off").show().click(function() {highlightOff();});
     <!-- /TMPL_IF -->
+
+    // PROGILONE - june 2010 - C1
+    $("#bookbag_form").ready(function(){
+        $("#bookbag_form").unCheckCheckboxes();
+        var bibnums = getContextBiblioNumbers();
+        if (bibnums) {
+            for (var i=0; i < bibnums.length; i++) {    
+                var id = ('#bib' + bibnums[i]);    
+                if ($(id)) {
+                    $(id).attr('checked', true);
+                }
+            }
+        }
+        updateDetailsLink();
+    });
+    
+	$("#bookbag_form :checkbox").click(onCheckboxChange);
+    
+    setContextSearchHref(location.pathname + location.search);
+    // End PROGILONE
 });
 
 function highlightOff() {
@@ -107,10 +161,12 @@ function highlightOn() {
 }
 
 function selectAll () {
-    $(".selection").attr("checked", "checked");
+	$("#bookbag_form").checkCheckboxes();
+    onCheckboxChange(); // PROGILONE - june 2010 - C1
 }
 function clearAll () {
-    $(".selection").removeAttr("checked");
+	$("#bookbag_form").unCheckCheckboxes();
+    onCheckboxChange(); // PROGILONE - june 2010 - C1
 }
 function placeHold () {
     var checkedItems = $(".selection:checked");
@@ -163,10 +219,11 @@ function PopupZ3950() {
 function GetZ3950Terms(){
 	var strQuery="&frameworkcode=";
 	<!-- TMPL_LOOP NAME='z3950_search_params' -->
-		strQuery += "&" + "<!-- TMPL_VAR NAME="name" -->" + "=" + "<!-- TMPL_VAR NAME="encvalue" -->";
+		strQuery += "&" + "<!-- TMPL_VAR NAME="name" escape="html" -->" + "=" + "<!-- TMPL_VAR NAME="encvalue" escape="html" -->";
 	<!-- /TMPL_LOOP -->
 	return strQuery;
 }
+
 //]]>
 </script>
 </head>
@@ -233,7 +290,7 @@ function GetZ3950Terms(){
                 <a href="#" class="highlight_toggle" id="highlight_toggle_on">Highlight</a>
                 <!-- TMPL_IF NAME="CAN_user_reserveforothers" -->
                 	<!-- TMPL_IF NAME="DisplayMultiPlaceHold" -->
-                  <input type="button" onclick="placeHold(); return false;" value="Place Hold"/>
+                    <!-- B017 Holding on specific item-->
                 	<!-- /TMPL_IF -->
                 <!-- /TMPL_IF -->
 		<span class="addto"></span>
@@ -321,10 +378,10 @@ function GetZ3950Terms(){
             </form>
         <!-- TMPL_ELSE -->
 
-                <!-- TMPL_IF NAME="NoZebra" -->
-                <!-- ######### -->
-                <div id="facets">
+            <!-- ######### -->
+            <div id="facets">
                 <dl>
+                <!-- TMPL_IF NAME="NoZebra" -->
                 <!-- FACETS START -->
                 <!-- TMPL_IF NAME="opacfacets" -->
                     <dt id="facets1" onclick="var Elt=document.getElementById('facets_list');if (Elt.style.display!='block'){Elt.style.display='block';} else {Elt.style.display='none';}">
@@ -356,12 +413,13 @@ function GetZ3950Terms(){
                     </dd>
                 <!-- /TMPL_IF -->
                 <!-- FACETS END -->
+                <!-- /TMPL_IF --> <!-- NoZebra -->
                 </dl>
             </div>
             <!-- ######### -->
-            <!-- NoZebra --><!-- /TMPL_IF -->
 
             <div id="searchresults">
+                <!-- PROGILONE - june 2010 - C1 --><div class="details_link" style="display:none" ><a href="#" >Go to details &gt;&gt;</a></div>
                 <form action="/cgi-bin/koha/catalogue/search.pl" method="get" name="bookbag_form" id="bookbag_form">
                 <!-- TMPL_IF NAME="searchdesc" -->
                 <!-- TMPL_LOOP NAME="QUERY_INPUTS"-->
@@ -386,7 +444,7 @@ function GetZ3950Terms(){
                                 <td>
                                     <a class="p1" href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" ESCAPE="URL" -->">
 									
-                                        <img src="<!-- TMPL_IF NAME="normalized_isbn" -->http://images.amazon.com/images/P/<!-- TMPL_VAR name="normalized_isbn" -->.01.TZZZZZZZ.jpg<!-- TMPL_ELSE -->http://g-images.amazon.com/images/G/01/x-site/icons/no-img-sm.gif<!-- /TMPL_IF -->" alt="" class="thumbnail" />
+                                        <img src="<!-- TMPL_IF NAME="normalized_isbn" -->http://images.amazon.com/images/P/<!-- TMPL_VAR name="normalized_isbn" -->.01.TZZZZZZZ.jpg<!-- TMPL_ELSE -->http://g-images.amazon.com/images/G/01/x-site/icons/no-img-sm.gif<!-- /TMPL_IF -->" alt="image" class="thumbnail" /> 
                                     </a></td>
                             <!-- /TMPL_IF --><!-- /TMPL_IF -->
                             <td>
@@ -426,38 +484,35 @@ function GetZ3950Terms(){
                                         <!-- TMPL_ELSE -->
                                             &nbsp;
                                         <!-- /TMPL_IF -->
-                                        Description:
-                                        <!-- TMPL_IF name="place" --><!-- TMPL_VAR name="place" --> <!-- /TMPL_IF -->
-                                        <!-- TMPL_IF name="publishercode" --><!-- TMPL_VAR name="publishercode" --><!-- /TMPL_IF --> <!-- TMPL_IF name="publicationyear" --> <!-- TMPL_VAR name="publicationyear" --> <!-- TMPL_ELSIF name="copyrightdate"--> <!-- TMPL_VAR name="copyrightdate" --><!-- /TMPL_IF -->
+
+                                        <!-- TMPL_IF name="publishercode" --><!-- TMPL_VAR name="publishercode" --><!-- /TMPL_IF -->
 										<!-- TMPL_IF NAME="edition" -->Edition: <!-- TMPL_VAR NAME="edition" --><!-- /TMPL_IF -->
+                                        Description:
+                                        <!-- TMPL_IF name="place" --> ; <!-- TMPL_VAR name="place" --><!-- /TMPL_IF -->
+										<!-- TMPL_IF name="publicationyear" -->, <!-- TMPL_VAR name="publicationyear" -->
+										<!-- TMPL_ELSIF name="copyrightdate"-->, <!-- TMPL_VAR name="copyrightdate" --><!-- /TMPL_IF -->
                                         <!-- TMPL_IF name="pages" -->: <!-- TMPL_VAR name="pages" --><!-- /TMPL_IF -->
                                         <!-- TMPL_IF name="size" --> ; <!-- TMPL_VAR name="size" --><!-- /TMPL_IF --> <!-- TMPL_IF NAME="normalized_isbn" -->ISBN: <!-- TMPL_VAR NAME="normalized_isbn" --><!-- /TMPL_IF -->
                                         <!-- TMPL_VAR name="description" -->
                                         <!-- TMPL_IF name="timestamp" --> <i>(modified on <!-- TMPL_VAR name="timestamp" -->)</i><!-- /TMPL_IF -->
                                         <!-- TMPL_IF name="cn_class" -->[<a href="/cgi-bin/koha/catalogue/search.pl?q=callnum:<!-- TMPL_VAR NAME="cn_class" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="cn_class" --></a>]<!-- /TMPL_IF -->
                                     </p>
-                                    <!-- TMPL_IF NAME="searchhighlightblob" --><p class="searchhighlightblob"><!-- TMPL_VAR NAME="searchhighlightblob" --></p><!-- /TMPL_IF -->
+                                    <p class="searchhighlightblob"><!-- TMPL_VAR NAME="searchhighlightblob" --></p>
 
                                     <!-- TMPL_IF NAME="authorised_value_images" -->
                                 <p>
                                   <!-- TMPL_LOOP NAME="authorised_value_images" -->
-                                  <img src="<!-- TMPL_VAR name="imageurl" -->" alt="<!-- TMPL_VAR NAME="description" -->" />
+                                  <img src="<!-- TMPL_VAR name="imageurl" -->" />
                                   <!-- /TMPL_LOOP -->
                                 </p>
                                 <!-- /TMPL_IF -->
 
                                 <!-- /TMPL_IF -->
-                                  <p class="hold"><!-- TMPL_IF NAME="norequests" -->
-                                  <span class="noholdstext">No holds allowed</span>
-                              <!-- TMPL_ELSE -->
-                                  <a id="reserve_<!-- TMPL_VAR NAME="biblionumber" -->" href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Holds</a>
-                              <!-- /TMPL_IF -->
-                          <!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_catalogue" -->
-                          | <a href="/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Edit record</a>
-                          <!-- /TMPL_IF -->
-                          <!-- TMPL_IF NAME="CAN_user_editcatalogue_edit_items" -->
-                          | <a href="/cgi-bin/koha/cataloguing/additem.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Edit items</a>
-                          <!-- /TMPL_IF --></p>
+                                  <!-- TMPL_IF NAME="norequests" -->
+                                        <span class="noholdstext">No holds allowed</span>
+                                    <!-- TMPL_ELSE -->
+                                        <a class="reserve" id="reserve_<!-- TMPL_VAR NAME="biblionumber" -->" href="/cgi-bin/koha/reserve/request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Holds</a>
+                                    <!-- /TMPL_IF -->
                                 </td>
 
                                 <td><div class="availability">
@@ -469,7 +524,7 @@ function GetZ3950Terms(){
                                     <ul>
                                     <!-- TMPL_LOOP NAME="available_items_loop" -->
 
-                                        <!-- TMPL_IF NAME="noItemTypeImages" --><li><!-- TMPL_ELSE --><!-- TMPL_IF NAME="item-level_itypes" --><!-- TMPL_IF name="imageurl" --><li style="list-style: none; list-style-type: none;"><img src="<!-- TMPL_VAR name="imageurl" -->" title="<!-- TMPL_VAR name="description" -->" alt="<!-- TMPL_VAR name="description" -->" /><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><!-- /TMPL_IF -->
+                                        <!-- TMPL_IF NAME="noItemTypeImages" --><li><!-- TMPL_ELSE --><!-- TMPL_IF NAME="item-level_itypes" --><!-- TMPL_IF name="imageurl" --><li style="list-style: none; list-style-type: none;"><img src="<!-- TMPL_VAR name="imageurl" -->" title="<!-- TMPL_VAR name="description" -->" /><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="branchname" --><!-- TMPL_VAR NAME="branchname" --><!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="location" --><!-- TMPL_VAR NAME="location" --><!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="itemcallnumber" -->[<a href="/cgi-bin/koha/catalogue/search.pl?q=callnum:<!-- TMPL_VAR NAME="itemcallnumber" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="itemcallnumber" --></a>]<!-- /TMPL_IF -->
@@ -478,12 +533,12 @@ function GetZ3950Terms(){
                                     <!-- /TMPL_IF -->
 
                                    <!-- TMPL_IF NAME="onloan_items_loop" -->
-                                   <span class="status"><!-- TMPL_IF NAME="onloancount" --><!-- TMPL_VAR NAME="onloancount" --><!-- /TMPL_IF --> on loan:</span>
+                                   <span class="status"><!-- TMPL_IF NAME="onloancount" --><!-- TMPL_VAR NAME="onloancount" --><!-- /TMPL_IF --> on circulation:</span>
                                     <ul>
                                     <!-- TMPL_LOOP NAME="onloan_items_loop" -->
                                        <!-- TMPL_IF NAME="noItemTypeImages" --><li><!-- TMPL_ELSE --><!-- TMPL_IF NAME="item-level_itypes" -->
                                         <!-- TMPL_IF name="imageurl" -->
-                                        <li style="list-style: none; list-style-type: none;"><img src="<!-- TMPL_VAR name="imageurl" -->" title="<!-- TMPL_VAR name="description" -->" alt="<!-- TMPL_VAR name="description" -->" />
+                                        <li style="list-style: none; list-style-type: none;"><img src="<!-- TMPL_VAR name="imageurl" -->" title="<!-- TMPL_VAR name="description" -->" />
                                         <!-- TMPL_ELSE --><li><!-- /TMPL_IF -->
                                         <!-- TMPL_ELSE --><li><!-- /TMPL_IF --><!-- /TMPL_IF -->
 
@@ -500,7 +555,7 @@ function GetZ3950Terms(){
                                     <!-- TMPL_LOOP NAME="other_items_loop" -->
                                         <!-- TMPL_IF NAME="noItemTypeImages" --><li><!-- TMPL_ELSE --><!-- TMPL_IF NAME="item-level_itypes" -->
                                         <!-- TMPL_IF name="imageurl" -->
-                                        <li style="list-style: none; list-style-type: none;"><img src="<!-- TMPL_VAR name="imageurl" -->" title="<!-- TMPL_VAR name="description" -->" alt="<!-- TMPL_VAR name="description" -->" />
+                                        <li style="list-style: none; list-style-type: none;"><img src="<!-- TMPL_VAR name="imageurl" -->" title="<!-- TMPL_VAR name="description" -->" />
                                         <!-- TMPL_ELSE --><li><!-- /TMPL_IF -->
                                         <!-- TMPL_ELSE --><li><!-- /TMPL_IF --><!-- /TMPL_IF -->
 
@@ -508,7 +563,7 @@ function GetZ3950Terms(){
                                         <!-- TMPL_IF NAME="location" --><!-- TMPL_VAR NAME="location" --><!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="itemcallnumber" -->[<a href="/cgi-bin/koha/catalogue/search.pl?q=callnum:<!-- TMPL_VAR NAME="itemcallnumber" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="itemcallnumber" --></a>]<!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="wthdrawn" -->(Withdrawn)<!-- /TMPL_IF -->
-                                        <!-- TMPL_IF NAME="itemlost" -->(Lost)<!-- /TMPL_IF -->
+                                        <!-- TMPL_IF NAME="itemlost" -->(<!-- TMPL_VAR name="itemlost" -->)<!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="damaged" -->(Damaged)<!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="intransit" -->(In transit)<!-- /TMPL_IF -->
                                         <!-- TMPL_IF NAME="onhold" -->(On hold)<!-- /TMPL_IF -->
@@ -524,8 +579,9 @@ function GetZ3950Terms(){
                             </tr>
                         <!-- /TMPL_LOOP -->
                 </table>
-		</form>
-                </div>
+		</form>    
+    <!-- PROGILONE - june 2010 - C1 --><div class="details_link" style="display:none" ><a href="#" >Go to details &gt;&gt;</a></div>
+    </div>
         <!-- /TMPL_IF -->
         <!-- TMPL_INCLUDE NAME="page-numbers.inc" -->
     <!-- TMPL_ELSE -->

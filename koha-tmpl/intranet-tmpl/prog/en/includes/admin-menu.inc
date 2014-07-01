@@ -48,3 +48,12 @@
 	<!-- <li><a href="/cgi-bin/koha/admin/printers.pl">Network Printers</a></li> -->
 	<li><a href="/cgi-bin/koha/admin/z3950servers.pl">Z39.50 Client Targets</a></li>
 </ul>
+
+<!-- B05 -->
+<!-- TMPL_IF NAME="CAN_user_spacesAdministrationManagement" -->
+	<h5>Space administration</h5>
+	<ul>
+		<li><a href="/cgi-bin/koha/desk/desk.pl">Desk management</a></li>
+	    <li><a href="/cgi-bin/koha/spaces/spaces.pl?op=management">Space management</a></li>
+	</ul>
+<!-- /TMPL_IF -->

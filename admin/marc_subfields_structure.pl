@@ -258,6 +258,15 @@ if ( $op eq 'add_form' ) {
             -label    => '',
             -id       => "mandatory$i"
         );
+        #Progilone B10: allow readonly subfield
+        $row_data{readonly} = CGI::checkbox(
+            -name     => "readonly$i",
+            -checked  => $data->{'readonly'} ? 'checked' : '',
+            -value    => 1,
+            -label    => '',
+            -id       => "readonly$i"
+        );
+        #End Progilone
         $row_data{hidden} = CGI::escapeHTML( $data->{hidden} );
         $row_data{isurl}  = CGI::checkbox(
             -name     => "isurl$i",
@@ -331,6 +340,15 @@ if ( $op eq 'add_form' ) {
             -value    => 1,
             -label    => ''
         );
+        #Progilone B10: allow readonly subfield
+        $row_data{readonly} = CGI::checkbox(
+            -name     => "readonly$j",
+            -id       => "readonly$j",
+            -checked  => '',
+            -value    => 1,
+            -label    => ''
+        );
+        #End Progilone
         $row_data{isurl} = CGI::checkbox(
             -name     => "isurl$j",
             -id       => "isurl$j",
@@ -385,14 +403,16 @@ elsif ( $op eq 'add_validate' ) {
 # "replace marc_subfield_structure (tagfield,tagsubfield,liblibrarian,libopac,repeatable,mandatory,kohafield,tab,seealso,authorised_value,authtypecode,value_builder,hidden,isurl,frameworkcode, link,defaultvalue)
 #                                     values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 #     );
+	#Progilone B10: allow readonly subfield
     my $sth_insert = $dbh->prepare(qq{
-        insert into marc_subfield_structure (tagfield,tagsubfield,liblibrarian,libopac,repeatable,mandatory,kohafield,tab,seealso,authorised_value,authtypecode,value_builder,hidden,isurl,frameworkcode, link,defaultvalue)
-        values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        insert into marc_subfield_structure (tagfield,tagsubfield,liblibrarian,libopac,repeatable,mandatory,readonly,kohafield,tab,seealso,authorised_value,authtypecode,value_builder,hidden,isurl,frameworkcode, link,defaultvalue)
+        values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     });
     my $sth_update = $dbh->prepare(qq{
-        update marc_subfield_structure set tagfield=?, tagsubfield=?, liblibrarian=?, libopac=?, repeatable=?, mandatory=?, kohafield=?, tab=?, seealso=?, authorised_value=?, authtypecode=?, value_builder=?, hidden=?, isurl=?, frameworkcode=?,  link=?, defaultvalue=?
+        update marc_subfield_structure set tagfield=?, tagsubfield=?, liblibrarian=?, libopac=?, repeatable=?, mandatory=?, readonly=?, kohafield=?, tab=?, seealso=?, authorised_value=?, authtypecode=?, value_builder=?, hidden=?, isurl=?, frameworkcode=?,  link=?, defaultvalue=?
         where tagfield=? and tagsubfield=? and frameworkcode=?
     });
+    #End Progilone
     my @tagsubfield       = $input->param('tagsubfield');
     my @liblibrarian      = $input->param('liblibrarian');
     my @libopac           = $input->param('libopac');
@@ -415,6 +435,7 @@ elsif ( $op eq 'add_validate' ) {
         my $libopac          = $libopac[$i];
         my $repeatable       = $input->param("repeatable$i") ? 1 : 0;
         my $mandatory        = $input->param("mandatory$i") ? 1 : 0;
+        my $readonly         = $input->param("readonly$i") ? 1 : 0; #Progilone B10: allow readonly subfield
         my $kohafield        = $kohafield[$i];
         my $tab              = $tab[$i];
         my $seealso          = $seealso[$i];
@@ -436,6 +457,7 @@ elsif ( $op eq 'add_validate' ) {
                         $libopac,
                         $repeatable,
                         $mandatory,
+                        $readonly, #Progilone B10: allow readonly subfield
                         $kohafield,
                         $tab,
                         $seealso,
@@ -461,6 +483,7 @@ elsif ( $op eq 'add_validate' ) {
                         $libopac,
                         $repeatable,
                         $mandatory,
+                        $readonly, #Progilone B10: allow readonly subfield
                         $kohafield,
                         $tab,
                         $seealso,
@@ -544,6 +567,7 @@ else {    # DEFAULT
         $row_data{kohafield}        = $results->[$i]{'kohafield'};
         $row_data{repeatable}       = $results->[$i]{'repeatable'};
         $row_data{mandatory}        = $results->[$i]{'mandatory'};
+        $row_data{readonly}         = $results->[$i]{'readonly'}; #Progilone B10: allow readonly subfield
         $row_data{tab}              = $results->[$i]{'tab'};
         $row_data{seealso}          = $results->[$i]{'seealso'};
         $row_data{authorised_value} = $results->[$i]{'authorised_value'};

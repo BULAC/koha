@@ -40,15 +40,26 @@ use C4::Output;
 use C4::Members;
 use C4::Members::Attributes;
 use C4::Members::AttributeTypes;
-use C4::Dates;
+use C4::Dates qw/format_date/;
 use C4::Reserves;
 use C4::Circulation;
 use C4::Koha;
+use C4::Items;
 use C4::Letters;
 use C4::Biblio;
 use C4::Reserves;
 use C4::Branch; # GetBranchName
 use C4::Form::MessagingPreferences;
+use C4::Overdues qw/CheckBorrowerDebarred/; # PROGILONE - A2
+use C4::Utils::IState;
+# B032
+use C4::Stack::Search;
+use C4::Stack::Rules qw(CanRenewRequestStack CanCancelRequestStack);
+use C4::Utils::Components;
+use C4::Utils::Constants;
+# END B032
+# B011
+use C4::Jasper::JasperReport;
 
 #use Smart::Comments;
 #use Data::Dumper;
@@ -67,11 +78,14 @@ my $print = $input->param('print');
 my $override_limit = $input->param("override_limit") || 0;
 my @failedrenews = $input->param('failedrenew');
 my @failedreturns = $input->param('failedreturn');
+my @failedmaterialsinfo = $input->param('failedmaterialsinfo');
 my $error = $input->param('error');
 my %renew_failed;
 for my $renew (@failedrenews) { $renew_failed{$renew} = 1; }
 my %return_failed;
 for my $failedret (@failedreturns) { $return_failed{$failedret} = 1; }
+my %failed_materials_info;
+for my $material (@failedmaterialsinfo) { $failed_materials_info{$material} = 1; }
 
 my $template_name;
 my $quickslip = 0;
@@ -80,18 +94,10 @@ my $flagsrequired;
 if ($print eq "page") {
     $template_name = "members/moremember-print.tmpl";
     $flagsrequired = { borrowers => 1 };
-} elsif ($print eq "slip") {
-    $template_name = "members/moremember-receipt.tmpl";
-    # circ staff who process checkouts but can't edit
-    # patrons still need to be able to print receipts
-    $flagsrequired =  { circulate => "circulate_remaining_permissions" };
 } elsif ($print eq "qslip") {
     $template_name = "members/moremember-receipt.tmpl";
     $quickslip = 1;
     $flagsrequired =  { circulate => "circulate_remaining_permissions" };
-} elsif ($print eq "brief") {
-    $template_name = "members/moremember-brief.tmpl";
-    $flagsrequired = { borrowers => 1 };
 } else {
     $template_name = "members/moremember.tmpl";
     $flagsrequired = { borrowers => 1 };
@@ -108,6 +114,151 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     }
 );
 my $borrowernumber = $input->param('borrowernumber');
+
+if ( $print eq 'quitus' ) {
+	my @report_parameters_list = ();
+	my ( $report_directory, $report_name, $report_action ) = ( 'exports', 'quitus', 'visualization' );
+	my @report_errors = ();
+	my @report_infos = ();
+	
+	#Print only if borrower has no fines, no issues and no stacks
+	my ( $check_issues, $check_stacks, $check_fines ) = ( 0, 0, 0);
+	my ($overdue_count, $issue_count, $total_fines) = GetMemberIssuesAndFines( $borrowernumber );
+	if ( $issue_count > 0 ) {
+		
+	}
+	if ( $total_fines > 0 ) {
+		
+	}
+	my $stacks = GetStacksOfBorrower($borrowernumber);
+	my $stack_count = ( scalar @$stacks );
+	if ( ( scalar @$stacks ) > 0) {
+		
+	}
+	
+	if ( $issue_count > 0 || $total_fines > 0 || $stack_count > 0) {
+		push @report_infos, 
+			{ 
+				'quitus'=> 1, 
+				nb_issues => (($issue_count > 0) ? $issue_count : 0),
+				nb_stacks => (($stack_count > 0) ? $stack_count : 0),
+				total_fines => (($total_fines > 0) ? $total_fines : 0), 
+			};
+	} else {
+		push( @report_parameters_list, { borrower_number => $borrowernumber } );
+		my ( $report_zipdirectory, $report_zipfile, @report_results ) = GenerateZip( $report_directory, $report_name, $report_action, \@report_parameters_list );
+		
+		for ( my $i = 0; $i < scalar( @report_parameters_list ); $i++ ) {
+			if ( $report_results[$i] == 0) {
+				push @report_errors, { report_name => $report_name, borrower => $report_parameters_list[$i]->{ 'borrower_number' } }; 
+			}
+		}
+		
+		if ( ( scalar @report_errors ) < ( scalar @report_parameters_list ) ) {
+			#At least one report to send
+			$template->param(
+			    report_zipdirectory => $report_zipdirectory,
+				report_zipfile      => $report_zipfile,
+				report_print        => $report_action eq 'print' ? 1 : 0,
+			);
+		}
+	}
+		    
+	if ( scalar @report_errors ) {
+		$template->param(
+			report_errors => \@report_errors,
+		);
+	}
+	if ( scalar @report_infos ) {
+		$template->param(
+			report_infos => \@report_infos,
+		);
+	}
+} elsif ( $print eq 'card' ) {
+	my @report_parameters_list = ();
+	my ( $report_directory, $report_name, $report_action ) = ( 'exports', 'carte_usager', 'print' );
+	my @report_errors = ();
+	
+	push( @report_parameters_list, { borrower_number => $borrowernumber } );
+	my ( $report_zipdirectory, $report_zipfile, @report_results ) = GenerateZip( $report_directory, $report_name, $report_action, \@report_parameters_list );
+	
+	for ( my $i = 0; $i < scalar( @report_parameters_list ); $i++ ) {
+		if ( $report_results[$i] == 0) {
+			push @report_errors, { report_name => $report_name, borrower => $report_parameters_list[$i]->{ 'borrower_number' } }; 
+		}
+	}
+	
+	if ( ( scalar @report_errors ) < ( scalar @report_parameters_list ) ) {
+		#At least one report to send
+		$template->param(
+		    report_zipdirectory => $report_zipdirectory,
+			report_zipfile      => $report_zipfile,
+			report_print        => $report_action eq 'print' ? 1 : 0,
+		);
+	}
+		    
+	if ( scalar @report_errors ) {
+		$template->param(
+			report_errors => \@report_errors,
+		);
+	}
+} elsif ( $print eq 'confirmation' ) {
+	my @report_parameters_list = ();
+	my ( $report_directory, $report_name, $report_action ) = ( 'exports', 'bon_accord', 'print' );
+	my @report_errors = ();
+	
+	push( @report_parameters_list, { borrower_number => $borrowernumber } );
+	my ( $report_zipdirectory, $report_zipfile, @report_results ) = GenerateZip( $report_directory, $report_name, $report_action, \@report_parameters_list );
+	
+	for ( my $i = 0; $i < scalar( @report_parameters_list ); $i++ ) {
+		if ( $report_results[$i] == 0) {
+			push @report_errors, { report_name => $report_name, borrower => $report_parameters_list[$i]->{ 'borrower_number' } }; 
+		}
+	}
+	
+	if ( ( scalar @report_errors ) < ( scalar @report_parameters_list ) ) {
+		#At least one report to send
+		$template->param(
+		    report_zipdirectory => $report_zipdirectory,
+			report_zipfile      => $report_zipfile,
+			report_print        => $report_action eq 'print' ? 1 : 0,
+		);
+	}
+		    
+	if ( scalar @report_errors ) {
+		$template->param(
+			report_errors => \@report_errors,
+		);
+	}
+} elsif ( $print eq 'issue' ) {
+	my @report_parameters_list = ();
+	my ( $report_directory, $report_name, $report_action ) = ( 'exports', 'ticket_pret', 'print' );
+	my @report_errors = ();
+	
+	push( @report_parameters_list, { borrower_number => $borrowernumber } );
+	my ( $report_zipdirectory, $report_zipfile, @report_results ) = GenerateZip( $report_directory, $report_name, $report_action, \@report_parameters_list );
+	
+	for ( my $i = 0; $i < scalar( @report_parameters_list ); $i++ ) {
+		if ( $report_results[$i] == 0) {
+			push @report_errors, { report_name => $report_name, borrower => $report_parameters_list[$i]->{ 'borrower_number' } }; 
+		}
+	}
+	
+	if ( ( scalar @report_errors ) < ( scalar @report_parameters_list ) ) {
+		#At least one report to send
+		$template->param(
+		    report_zipdirectory => $report_zipdirectory,
+			report_zipfile      => $report_zipfile,
+			report_print        => $report_action eq 'print' ? 1 : 0,
+		);
+	}
+		    
+	if ( scalar @report_errors ) {
+		$template->param(
+			report_errors => \@report_errors,
+		);
+	}
+}
 
 #start the page and read in includes
 my $data           = GetMember( 'borrowernumber' => $borrowernumber );
@@ -133,7 +284,12 @@ $template->param( $data->{'categorycode'} => 1 );
 
 $debug and printf STDERR "dates (enrolled,expiry,birthdate) raw: (%s, %s, %s)\n", map {$data->{$_}} qw(dateenrolled dateexpiry dateofbirth);
 foreach (qw(dateenrolled dateexpiry dateofbirth)) {
-		my $userdate = $data->{$_};
+		# MAN 69
+		my $userdate;
+		unless ( $data->{'categorycode'} eq $PRE_REG_CATEGORY and $_ eq 'dateexpiry' ){
+			$userdate = $data->{$_};
+		}
+		# END MAN 69
 		unless ($userdate) {
 			$debug and warn sprintf "Empty \$data{%12s}", $_;
 			$data->{$_} = '';
@@ -145,16 +301,33 @@ foreach (qw(dateenrolled dateexpiry dateofbirth)) {
 }
 $data->{'IS_ADULT'} = ( $data->{'categorycode'} ne 'I' );
 
-for (qw(debarred gonenoaddress lost borrowernotes)) {
+# PROGILONE - A2
+for (qw(gonenoaddress lost borrowernotes)) {
 	 $data->{$_} and $template->param(flagged => 1) and last;
 }
+
+my $debar = CheckBorrowerDebarred($borrowernumber);
+if ($debar) {
+    $template->param( userdebarred => 1, flagged => 1 );
+    if ( $debar ne "9999-12-31" ) {
+        $template->param( userdebarreddate => C4::Dates::format_date($debar) );
+    }
+}
+my ($debar2, $nb_overdue) = CheckBorrowerDebarred2($borrowernumber);
+if ($debar2) {
+    $template->param( userdebarred2 => 1, flagged => 1 );
+    if ( $debar2 ne "9999-12-31" ) {
+        $template->param( userdebarred2date => C4::Dates::format_date($debar2) );
+    }
+}
+# END PROGILONE
 
 $data->{'ethnicity'} = fixEthnicity( $data->{'ethnicity'} );
 $data->{ "sex_".$data->{'sex'}."_p" } = 1;
 
 my $catcode;
 if ( $category_type eq 'C') {
-	if ($data->{guarantorid} ) {
+	if ($data->{'guarantorid'} ne '0' ) {
     	my $data2 = GetMember( 'borrowernumber' => $data->{'guarantorid'} );
     	foreach (qw(address city B_address B_city phone mobile zipcode country B_country)) {
     	    $data->{$_} = $data2->{$_};
@@ -171,7 +344,7 @@ if ( $category_type eq 'C') {
 if ( $data->{'ethnicity'} || $data->{'ethnotes'} ) {
     $template->param( printethnicityline => 1 );
 }
-if ( $category_type eq 'A' || $category_type eq 'I') {
+if ( $category_type eq 'A' ) {
     $template->param( isguarantee => 1 );
 
     # FIXME
@@ -191,7 +364,7 @@ if ( $category_type eq 'A' || $category_type eq 'I') {
         );
     }
     $template->param( guaranteeloop => \@guaranteedata );
-    ( $template->param( adultborrower => 1 ) ) if ( $category_type eq 'A' || $category_type eq 'I' );
+    ( $template->param( adultborrower => 1 ) ) if ( $category_type eq 'A' );
 }
 else {
     if ($data->{'guarantorid'}){
@@ -221,13 +394,28 @@ if ( C4::Context->preference("IndependantBranches") ) {
     $samebranch = 1;
 }
 my $branchdetail = GetBranchDetail( $data->{'branchcode'});
-@{$data}{keys %$branchdetail} = values %$branchdetail; # merge in all branch columns
+$data->{'branchname'} = $branchdetail->{branchname};
+
 
 my ( $total, $accts, $numaccts) = GetMemberAccountRecords( $borrowernumber );
 my $lib1 = &GetSortDetails( "Bsort1", $data->{'sort1'} );
 my $lib2 = &GetSortDetails( "Bsort2", $data->{'sort2'} );
+my $lib3 = &GetSortDetails( "Bsort3", $data->{'sort3'} );# B014 BUG 77
 $template->param( lib1 => $lib1 ) if ($lib1);
 $template->param( lib2 => $lib2 ) if ($lib2);
+$template->param( lib3 => $lib3 ) if ($lib3); # B014 BUG 77
+
+# MAN 71
+my $borrower = GetMemberDetails( $borrowernumber, 0 );
+if ( $borrower->{'flags'}->{'CHARGES'} ){
+$template->param(
+                charges    => 'true',
+                chargesmsg => $borrower->{'flags'}->{'CHARGES'}->{'message'},
+                chargesamount => $borrower->{'flags'}->{'CHARGES'}->{'amount'},
+                charges_is_blocker => 1
+                );
+}
+# END MAN 71
 
 # current issues
 #
@@ -294,9 +482,73 @@ for ( my $i = 0 ; $i < $issuecount ; $i++ ) {
 	$row{'can_confirm'} = ( !$renewokay && $renewerror ne 'on_reserve' );
 	$row{"norenew_reason_$renewerror"} = 1 if $renewerror;
 	$row{'renew_failed'}  = $renew_failed{ $issue->[$i]{'itemnumber'} };
-	$row{'return_failed'} = $return_failed{$issue->[$i]{'barcode'}};   
+	$row{'return_failed'} = $return_failed{$issue->[$i]{'barcode'}};
+	$row{'failed_materials_info'} = $failed_materials_info{$issue->[$i]{'barcode'}} || ($issue->[$i]{'materials'} && $issue->[$i]{'materials'} ne '');   
     push( @issuedata, \%row );
 }
+
+my $todaysdate = C4::Dates->new->output('iso');
+
+#
+# B032 - View stacks
+#
+my $stacks = GetStacksOfBorrower($borrowernumber);
+
+# Listbox of cancel codes (without id)
+my $CGIcancel = buildCGIcancelStack('sortCancel', undef, 1, '');
+$template->param( CGIcancel => $CGIcancel );
+
+# Add some details
+foreach my $stack (@$stacks) {
+    
+    # add item type image and description
+    my $itemtype = (C4::Context->preference('item-level_itypes')) ? $stack->{'itype'} : $stack->{'itemtype'};
+    if ($itemtype) {
+        my $itemtypeinfo = getitemtypeinfo($itemtype);
+        $stack->{'itemtype_code'}        = $itemtype;
+        $stack->{'itemtype_description'} = $itemtypeinfo->{'description'};
+        $stack->{'itemtype_image'}       = $itemtypeinfo->{'imageurl'};
+    }
+    
+    # add stack renewal infos
+    my ($date_renewal_iso, $renew_impossible, $renew_confirm) = CanRenewRequestStack( undef, $stack );
+    if (scalar keys %$renew_impossible) {
+        $stack->{'renew_impossible'} = [$renew_impossible];
+    }
+    else {
+        $stack->{'canRenew'} = 1;
+        if (scalar keys %$renew_confirm) {
+            $stack->{'renewMustConfirm'} = 1;
+            $stack->{'renew_confirm'} = [$renew_confirm];
+        }
+        $stack->{'end_date_renewal'}    = $date_renewal_iso;
+        $stack->{'end_date_renewal_ui'} = format_date($date_renewal_iso);
+    }
+    
+    # test if can cancel stack request
+    $stack->{'canCancel'} = CanCancelRequestStack( undef, $stack );
+    
+    $stack->{'failed_materials_info'} = $failed_materials_info{$stack->{'barcode'}} || ($stack->{'materials'} && $stack->{'materials'} ne '');
+    
+    # test if stack request is overdue
+    if ( $stack->{'end_date'} and $stack->{'end_date'} lt $todaysdate and $stack->{'istate'} eq $ISTATE_ON_STACK ) {
+        $stack->{'od'} = 1;
+    }
+    
+    my $itm = GetItem( $stack->{'itemnumber'} );
+    AddIStateInfos($itm);
+    $itm->{'istate_isme'} = 1;
+    my @items;
+    push @items, $itm;
+    $stack->{'items'} = \@items;
+}
+
+$template->param(
+    STACKS       => $stacks,
+    stacks_count => scalar @$stacks,
+    destination  => 'member',
+);
+# END B032
 
 ### ###############################################################################
 # BUILD HTML
@@ -423,9 +675,9 @@ $template->param(
     roaddetails     => $roaddetails,
     borrowernumber  => $borrowernumber,
     categoryname    => $data->{'description'},
+    userid          => $data->{'userid'}, # B014
     reregistration  => $reregistration,
     branch          => $branch,
-    todaysdate      => C4::Dates->today(),
     totalprice      => sprintf("%.2f", $totalprice),
     totaldue        => sprintf("%.2f", $total),
     totaldue_raw    => $total,
@@ -441,6 +693,7 @@ $template->param(
     "dateformat_" . (C4::Context->preference("dateformat") || '') => 1,
     samebranch     => $samebranch,
     quickslip		  => $quickslip,
+    enrolled_by     => $data->{'sca_enrolled_by'}
 );
 
 output_html_with_http_headers $input, $cookie, $template->output;

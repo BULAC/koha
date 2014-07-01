@@ -79,7 +79,6 @@ my $results = $stylesheet->transform($source);
 my $newxmlrecord = $stylesheet->output_string($results);
 #warn $newxmlrecord;
 print "Content-type: text/html\n\n";
-utf8::encode($newxmlrecord);
 print $newxmlrecord;
 
 } else {

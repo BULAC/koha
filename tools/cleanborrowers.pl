@@ -38,8 +38,8 @@ use CGI;
 use C4::Auth;
 use C4::Output;
 use C4::Dates qw/format_date format_date_in_iso/;
-use C4::Members;        # GetBorrowersWhoHavexxxBorrowed.
-use C4::Circulation;    # AnonymiseIssueHistory.
+use C4::Members;        # GetBorrowersWhoHaveNeitherBorrowedOrStackrequestedSince, GetBorrowersWithIssuesAndStackRequestsHistoryOlderThan
+use C4::Circulation;    # AnonymiseIssueHistory, AnonymiseStackHistory
 use Date::Calc qw/Today Add_Delta_YM/;
 
 my $cgi = new CGI;
@@ -72,7 +72,7 @@ if ( $params->{'step2'} ) {
     my $totalDel;
     my $membersToDelete;
     if ($checkboxes{borrower}) {
-        $membersToDelete = GetBorrowersWhoHaveNotBorrowedSince($filterdate1, 1);
+        $membersToDelete = GetBorrowersWhoHaveNeitherBorrowedOrStackrequestedSince($filterdate1, 1);
         $totalDel = scalar @$membersToDelete;
             
     }
@@ -80,7 +80,7 @@ if ( $params->{'step2'} ) {
     my $membersToAnonymize;
     if ($checkboxes{issue}) {
         $membersToAnonymize =
-          GetBorrowersWithIssuesHistoryOlderThan($filterdate2);
+          GetBorrowersWithIssuesAndStackRequestsHistoryOlderThan($filterdate2);
         $totalAno = scalar @$membersToAnonymize;
     }
 
@@ -110,7 +110,7 @@ if ( $params->{'step3'} ) {
     
     # delete members
     if ($do_delete) {
-        my $membersToDelete = GetBorrowersWhoHaveNotBorrowedSince($filterdate1, 1);
+        my $membersToDelete = GetBorrowersWhoHaveNeitherBorrowedOrStackrequestedSince($filterdate1, 1);
         $totalDel = scalar(@$membersToDelete);
         $radio    = $params->{'radio'};
         if ( $radio eq 'trash' ) {
@@ -135,6 +135,7 @@ if ( $params->{'step3'} ) {
     # Anonymising all members
     if ($do_anonym) {
         $totalAno = AnonymiseIssueHistory($filterdate2);
+        $totalAno += AnonymiseStackHistory($filterdate2);
         $template->param(
             filterdate1 => $filterdate2,
             do_anonym   => '1',

@@ -1,0 +1,12 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Tools &rsaquo; Duplications</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+</head>
+<frameset rows="140,*" frameborder="no" >
+    <frame src="/cgi-bin/koha/tools/repro-header.pl" name="header" scrolling="no">
+    <frameset cols="13%,87%">
+        <frame src="/cgi-bin/koha/tools/repro-menu.pl" name="menu" scrolling="auto">
+        <frame src="<!-- TMPL_VAR NAME="DuplicationUrl" -->reproduction/demande/demandeListPro.seam?demandeId=<!-- TMPL_VAR NAME="demandeId" -->&sessionID=<!-- TMPL_VAR NAME="kohaSessionId" -->" name="demande" scrolling="auto">
+    </frameset>
+</frameset>    
+</html>

@@ -42,7 +42,7 @@
     function GetZ3950Terms(){
         var strQuery="&frameworkcode=";
         <!-- TMPL_LOOP NAME='z3950_search_params' -->
-            strQuery += "&" + "<!-- TMPL_VAR NAME="name" -->" + "=" + "<!-- TMPL_VAR NAME="encvalue" -->";
+            strQuery += "&" + "<!-- TMPL_VAR NAME="name" escape="html" -->" + "=" + "<!-- TMPL_VAR NAME="encvalue" escape="html" -->";
         <!-- /TMPL_LOOP -->
         return strQuery;
     }

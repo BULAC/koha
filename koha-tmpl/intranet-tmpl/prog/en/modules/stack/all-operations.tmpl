@@ -1,0 +1,532 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Circulation &rsaquo; All operations</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script language="JavaScript" type="text/javascript">
+    //<![CDATA[
+    $(document).ready(function() {
+        
+        $('.op-button').hover(
+            function () {
+                $(this).addClass('op-has-mouse');
+            },
+            function () {
+                $(this).removeClass('op-has-mouse');
+            }
+        );
+        
+        $('.op-button').not('#op-stack-cancel').click(function () {
+            $(this).children('form').submit();
+        });
+        
+        $('.op-button#op-stack-cancel option').click(function () {
+            var mess = _('Are you sure you want to cancel this stack request?')
+            mess += '\n(' + $(this).text() + ')';
+            var is_confirmed = confirm(mess);
+            if (is_confirmed) {
+               $('.op-button#op-stack-cancel form').submit();
+            }
+        });
+        
+        $('.op-button#op-stack-cancel select').hide();
+        $('.op-button#op-stack-cancel').hover(
+            function () {
+                $(this).find('select').show();
+            },
+            function () {
+                $(this).find('select').hide();
+            }
+        );
+        
+    });
+    //]]>
+</script>
+<style type="text/css">
+    
+    .op-buttons {
+        margin-left: 60px;
+    }
+    
+    .op-button {
+            
+        width: 128px;
+        height: 136px;
+        
+        margin: 12px;
+        float: left;
+        
+        cursor: pointer;
+        
+        text-align: center;
+        
+        border-style: solid;
+        border-width: 2px 6px 6px 2px;
+        border-color: #F8F8F8 #E8E8E8 #E8E8E8 #F8F8F8;
+        
+        -moz-border-radius: 20px;
+        border-radius: 20px;
+        
+        background-position: 22px 32px;
+        background-repeat: no-repeat;
+        background-color: #F3F3F3;
+    }
+    
+    .op-button.op-has-mouse {
+        border-color: #E8E8E8 #F8F8F8 #F8F8F8 #E8E8E8;
+        border-width: 6px 2px 2px 6px;
+    }
+    
+    .op-button#op-loan-renew {
+        background-image: url("/intranet-tmpl/prog/img/allop-loan-renew.png");
+    }
+    .op-button#op-loan-return {
+        background-image: url("/intranet-tmpl/prog/img/allop-loan-return.png");
+    }
+    .op-button#op-loan-checkout {
+        background-image: url("/intranet-tmpl/prog/img/allop-loan-checkout.png");
+    }
+    
+    .op-button#op-stack-cancel {
+        background-image: url("/intranet-tmpl/prog/img/allop-stack-cancel.png");
+    }
+    .op-button#op-stack-checkout {
+        background-image: url("/intranet-tmpl/prog/img/allop-stack-checkout.png");
+    }
+    .op-button#op-stack-deliver {
+        background-image: url("/intranet-tmpl/prog/img/allop-stack-deliver.png");
+    }
+    .op-button#op-stack-renew {
+        background-image: url("/intranet-tmpl/prog/img/allop-stack-renew.png");
+    }
+    .op-button#op-stack-retriev {
+        background-image: url("/intranet-tmpl/prog/img/allop-stack-retriev.png");
+    }
+    .op-button#op-stack-return {
+        background-image: url("/intranet-tmpl/prog/img/allop-stack-return.png");
+    }
+    .op-button#op-stack-wait {
+        background-image: url("/intranet-tmpl/prog/img/allop-stack-wait.png");
+    }
+    
+    .op-button h4 {
+        margin-bottom: 1px;
+    }
+    
+    .op-button.op-disabled {
+        background-color: #FFFFCC;
+        
+        border-color: #FFFFCC;
+        border-width: 4px 4px 4px 4px;
+        
+        cursor: auto;
+        
+        color: #FF0000;
+    }
+    
+    .op-alert {
+        background-color: #FFFFCC;
+        
+        font-weight: bold;
+        color: #FF0000;
+    }
+    
+    .dialog h3 {
+        margin-bottom: .3em;
+    }
+    
+    #imp-messages li {
+        font-weight : bold;
+        font-size: 110%;
+        color: #900;
+    }
+    
+</style>
+</head>
+<body>
+<!-- B034 : all operations page -->
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="circ-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a> &rsaquo; All operations</div>
+<div id="doc" class="yui-t7">
+    <div id="bd">
+        <div id="yui-main">
+        
+        <!-- TMPL_IF NAME="post_ok" -->
+            <div class="dialog message">
+                <h3>
+                    <!-- TMPL_IF NAME="on_stackrq" -->
+                        Item is linked to stack request n&deg;<!-- TMPL_VAR NAME="request_number" -->
+                    <!-- TMPL_ELSIF NAME="on_issue" -->
+                        Item is on issue
+                    <!-- TMPL_ELSE -->
+                        Not checked out.<br/>
+                        Not on stack request.
+                    <!-- /TMPL_IF -->
+                </h3>
+                <div>
+                    <!-- TMPL_IF NAME="itemnotes" -->
+                    Item notes: <span class="circ-hlt"><!-- TMPL_VAR NAME="itemnotes" ESCAPE="HTML" --></span>
+                    <!-- /TMPL_IF -->
+                </div>
+                <div>
+                    <!-- TMPL_IF NAME="bornotes" -->
+                    Patron notes: <span class="circ-hlt"><!-- TMPL_VAR NAME="bornotes" ESCAPE="HTML" --></span><br/>
+                    <!-- /TMPL_IF -->
+                </div>
+                <div>
+                    <!-- TMPL_IF NAME="stackrq_notes" -->
+                    Stack request notes: <span class="circ-hlt"><!-- TMPL_VAR NAME="stackrq_notes" ESCAPE="HTML" --></span><br/>
+                    <!-- /TMPL_IF -->
+                </div>
+            </div>
+            
+            <!-- TMPL_IF NAME="alert_loop" -->
+            <div id="alert-messages" class="dialog alert">
+                <ul>
+                <!-- TMPL_LOOP NAME="alert_loop" -->
+                    <!-- TMPL_IF NAME="CANCELED" -->
+                        <li><strong>Request has been canceled (<!-- TMPL_VAR NAME="cancel_code_ui" -->)</strong></li>
+                    <!-- /TMPL_IF -->
+                    <!-- TMPL_IF NAME="IN_STORE" -->
+                        <li><strong>Item is in store</strong></li>
+                    <!-- /TMPL_IF -->
+                <!-- /TMPL_LOOP -->
+                </ul>
+            </div>
+            <!-- /TMPL_IF -->
+            
+            <!-- TMPL_LOOP NAME="renew_impossible" -->
+                <!-- TMPL_IF NAME="SPACE_BOOKING" -->
+                    <div id="renew-messages" class="dialog message">A request linked to a space can only be renewed by renewing the space booking.</div>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="ON_RESERVE" -->
+                    <div id="renew-messages" class="dialog message">There is an hold on the item and the request has already been renewed once.</div>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="BLOCKING_SR" -->
+                    <div id="renew-messages" class="dialog message">The request can not be renewed  and the item can not be checked-out because there exists another request on the item.</div>
+                <!-- /TMPL_IF -->
+            <!-- /TMPL_LOOP -->
+        
+            <!-- Item details -->
+            <div id="itemdetails" class="yui-b">
+            <table>
+                <thead><tr>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Barcode</th>
+                    <th>Call No.</th>
+                    <th>Item state</th>
+                </tr></thead>
+                <tbody><tr>
+                    <td>
+                        <!-- TMPL_IF NAME="title" -->
+                            <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME='biblionumber' -->">
+                                <strong><!-- TMPL_VAR NAME="title" ESCAPE="HTML" --></strong>
+                            </a>
+                        <!-- TMPL_ELSE -->
+                            <strong><!-- TMPL_VAR NAME="nc_title" ESCAPE="HTML" --></strong>
+                        <!-- /TMPL_IF -->
+                        
+                        <!-- TMPL_IF NAME="author" -->
+                            , by <!-- TMPL_VAR NAME="author" -->
+                        <!-- TMPL_ELSIF NAME="nc_author" -->
+                            , by <!-- TMPL_VAR NAME="nc_author" ESCAPE="HTML" -->
+                        <!-- /TMPL_IF -->
+                        
+                        <!-- TMPL_IF NAME="publishercode" -->; <!-- TMPL_VAR NAME="publishercode" --> <!-- /TMPL_IF -->
+                        
+                        <!-- TMPL_IF NAME="publicationyear" -->
+                            , <!-- TMPL_VAR NAME="publicationyear" -->
+                        <!-- TMPL_ELSIF NAME="nc_pubyear" -->
+                            , <!-- TMPL_VAR NAME="nc_pubyear" ESCAPE="HTML" -->
+                        <!-- /TMPL_IF -->
+                    </td>
+                    <td><!-- TMPL_VAR NAME="itemtype" --> <!-- TMPL_VAR NAME="ccode" --></td>
+                    <td>
+                        <!-- TMPL_IF NAME="item_barcode" -->
+                            <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME='biblionumber' -->&itemnumber=<!-- TMPL_VAR NAME='itemnumber' -->#item<!-- TMPL_VAR NAME='itemnumber' -->">
+                                <!-- TMPL_VAR NAME="item_barcode" -->
+                            </a>
+                        <!-- /TMPL_IF -->
+                    </td>
+                    <td>                 
+                        <!-- TMPL_IF NAME="itemcallnumber" -->
+                            <!-- TMPL_VAR NAME="itemcallnumber" ESCAPE="HTML" -->
+                        <!-- TMPL_ELSE -->
+                            <!-- TMPL_VAR NAME="nc_callnumber" ESCAPE="HTML" -->
+                        <!-- /TMPL_IF -->
+                    </td>
+                    <td><!-- TMPL_INCLUDE NAME="stack/istate.inc" --></td>
+                </tr></tbody>
+                </table>
+            </div>
+            
+            <!-- TMPL_IF EXPR="on_stackrq or on_issue" -->
+            <div id="circdetails" class="yui-b">
+            <table>
+                <thead><tr>
+                    <!-- TMPL_IF NAME="on_stackrq" -->
+                        <th>Stack state</th>
+                        <th>Begin date</th>
+                        <th>End date</th>
+                    <!-- TMPL_ELSE -->
+                        <th>Due date</th>
+                        <th>Checked out on</th>
+                    <!-- /TMPL_IF -->
+                    <th>Patron</th>
+                    <!-- TMPL_IF NAME="on_stackrq" -->
+                        <th>Year(s)</th>
+                        <th>Unit(s)</th>
+                        <th>Volum(s)<br/>Number(s)</th>
+                        <th>Delivery desk/space</th>
+                        <th>Origin</th>
+                    <!-- /TMPL_IF -->
+                    <th>Renewed</th>
+                </tr></thead>
+                <tbody>
+                <tr>
+                    <!-- TMPL_IF NAME="on_stackrq" -->
+                        <td><!-- TMPL_INCLUDE NAME="stack/stack-state.inc" --></td>
+                        <td><!-- TMPL_VAR NAME="begin_date_ui" --></td>
+                        <td><!-- TMPL_VAR NAME="end_date_ui" --></td>
+                    <!-- TMPL_ELSE -->
+                        <td>
+                            <!-- TMPL_IF NAME="overdue" --><span class="overdue"><!-- /TMPL_IF -->
+                            <!-- TMPL_VAR NAME="end_date_ui" -->
+                            <!-- TMPL_IF NAME="overdue" --> (overdue)</span><!-- /TMPL_IF -->
+                        </td>
+                        <td><!-- TMPL_VAR NAME="begin_date_ui" --></td>
+                    <!-- /TMPL_IF -->
+                    <td>
+                        <!-- TMPL_IF NAME="borrowernumber" -->
+                            <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<!-- TMPL_VAR NAME='borrowernumber' -->#stacks">
+                                <!-- TMPL_VAR Name="borsurname" -->, <!-- TMPL_VAR Name="borfirstname" --> (<!-- TMPL_VAR name="borcategorycode" -->)
+                            </a>
+                        <!-- /TMPL_IF -->
+                    </td>
+                    <!-- TMPL_IF NAME="on_stackrq" -->
+                        <td><!-- TMPL_VAR NAME="nc_years" --></td>
+                        <td><!-- TMPL_VAR NAME="nc_units" --></td>
+                        <td><!-- TMPL_VAR NAME="nc_numbers" --></td>
+                        <td><!-- TMPL_VAR NAME="delivery_desk_ui" --></td>
+                        <td><!-- TMPL_INCLUDE NAME="stack/stack-origin.inc" --></td>
+                    <!-- /TMPL_IF -->
+                    <td>
+                        <!-- TMPL_IF NAME="renewals" -->
+                            <!-- TMPL_VAR NAME="renewals" --> times<!-- TMPL_IF NAME="renew_date_ui" -->, <small>last on <!-- TMPL_VAR NAME="renew_date_ui" --></small><!-- /TMPL_IF -->
+                        <!-- TMPL_ELSE -->
+                            No
+                        <!-- /TMPL_IF -->
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            </div>
+            <!-- /TMPL_IF -->
+            
+            <!-- Operations -->
+            <div id="operations" class="yui-b">
+            
+            <div class="op-buttons">
+            
+                <!-- TMPL_IF NAME="allow_stack_deliver" -->
+                <div id="op-stack-deliver" class="op-button">
+                    <form action="/cgi-bin/koha/stack/stack-delivery.pl" method="post">
+                        <input type="hidden" name="barcode" value="<!-- TMPL_VAR NAME='item_barcode' -->" />
+                        <input type="hidden" name="op" value="Submit" />
+                        <h4>Deliver</h4>
+                    </form>
+                </div>
+                <!-- /TMPL_IF -->
+                
+                <!-- TMPL_IF NAME="allow_stack_return" -->
+                <div id="op-stack-return" class="op-button">
+                    <form action="/cgi-bin/koha/circ/returns.pl" method="post">
+                        <input type="hidden" name="barcode" value="<!-- TMPL_VAR NAME='item_barcode' -->" />
+                        <input type="hidden" name="op" value="Submit" />
+                        <h4>Check In</h4>
+                    </form>
+                </div>
+                <!-- /TMPL_IF -->
+                
+                <!-- TMPL_IF NAME="allow_stack_renew" -->
+                
+                    <!-- TMPL_IF EXPR="renewMustConfirm && !CAN_user_circulate_override_maxstackrenewalqty" -->
+                        <div id="op-stack-renew" class="op-button op-disabled">
+                            <h4>Not Renewable</h4>
+                            <!-- TMPL_LOOP NAME="renew_confirm" -->
+                                <!-- TMPL_IF NAME="TOO_MANY_RENEWALS" -->Quota reached
+                                <!-- TMPL_ELSIF NAME="TOO_MANY_RENEWAL_QTY" -->Quota reached
+                                <!-- /TMPL_IF -->
+                            <!-- /TMPL_LOOP -->
+                        </div>
+                    <!-- TMPL_ELSE -->
+                        <div id="op-stack-renew" class="op-button">
+                        <form action="/cgi-bin/koha/stack/renew-cancel-stacks.pl" method="post">
+                            <input type="hidden" name="stack_renew" value="<!-- TMPL_VAR NAME='request_number' -->" />
+                            <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME='borrowernumber' -->" />
+                            <input type="hidden" name="inp_barcode" value="<!-- TMPL_VAR NAME='inp_barcode' -->" />
+                            <input type="hidden" name="destination" value="allop" />
+                            <!-- TMPL_UNLESS NAME="item_in_desk" -->
+                                <input type="hidden" name="store" value="1" />
+                            <!-- /TMPL_UNLESS -->
+                            <input type="hidden" name="stack_renew_checked" value="Renew" />
+                            <h4>
+                                <!-- TMPL_UNLESS NAME="item_in_desk" -->Set in desk &amp;<!-- /TMPL_UNLESS -->
+                                Renew <small>untill <!-- TMPL_VAR NAME='end_date_renewal_ui' --></small>
+                            </h4>
+                            <!-- TMPL_IF NAME="renewMustConfirm" -->
+                                <div class="op-alert">
+                                    <!-- TMPL_LOOP NAME="renew_confirm" -->
+                                        <!-- TMPL_IF NAME="TOO_MANY_RENEWALS" -->Quota reached
+                                        <!-- TMPL_ELSIF NAME="TOO_MANY_RENEWAL_QTY" -->Quota reached
+                                        <!-- /TMPL_IF -->
+                                    <!-- /TMPL_LOOP -->
+                                </div>
+                                <input type="hidden" name="stack_override_limit" value="1" />
+                            <!-- /TMPL_IF -->
+                        </form>
+                        </div>
+                    <!-- /TMPL_IF -->
+                    
+                <!-- /TMPL_IF -->
+                
+                <!-- TMPL_IF NAME="allow_stack_checkout" -->
+                <div id="op-stack-checkout" class="op-button">
+                    <form action="/cgi-bin/koha/circ/circulation.pl" method="get">
+                        <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME='borrowernumber' -->" />
+                        <input type="hidden" name="barcode" value="<!-- TMPL_VAR NAME='item_barcode' -->" />
+                        <h4>Check Out</h4>
+                    </form>
+                </div>
+                <!-- /TMPL_IF -->
+                
+            </div>
+            
+            <!-- stack other operations -->
+            <div class="op-buttons">
+                
+                <!-- TMPL_IF NAME="allow_stack_retriev" -->
+                <div id="op-stack-retriev" class="op-button">
+                    <form action="/cgi-bin/koha/stack/stack-retrieval.pl" method="post">
+                        <input type="hidden" name="stack_barcode" value="<!-- TMPL_VAR NAME='request_number' -->" />
+                        <input type="hidden" name="op" value="Submit" />
+                        <h4>Retriev</h4>
+                    </form>
+                </div>
+                <!-- /TMPL_IF -->
+                
+                <!-- TMPL_IF NAME="allow_stack_wait" -->
+                <div id="op-stack-wait" class="op-button">
+                    <form action="/cgi-bin/koha/stack/all-operations.pl" method="post">
+                        <input type="hidden" name="input" value="<!-- TMPL_VAR NAME='item_barcode' -->" />
+                        <input type="hidden" name="opwait" value="Submit" />
+                        <h4>Set in desk</h4>
+                    </form>
+                </div>
+                <!-- /TMPL_IF -->
+                
+                <!-- TMPL_IF NAME="allow_stack_cancel" -->
+                <div id="op-stack-cancel" class="op-button">
+                    <form action="/cgi-bin/koha/stack/renew-cancel-stacks.pl" method="post">
+                        <input type="hidden" name="stack_cancel" value="<!-- TMPL_VAR NAME='request_number' -->" />
+                        <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME='borrowernumber' -->" />
+                        <input type="hidden" name="inp_barcode" value="<!-- TMPL_VAR NAME='inp_barcode' -->" />
+                        <input type="hidden" name="destination" value="allop" />
+                        <input type="hidden" name="stack_cancel_checked" value="Cancel" />
+                        <h4>Cancel</h4>
+                        <div><!-- TMPL_VAR NAME="CGIcancel" --></div>
+                    </form>
+                </div>
+                <!-- /TMPL_IF -->
+                
+            </div>
+            
+            <!-- loan operations -->
+            <div class="op-buttons">
+            
+                 <!-- TMPL_IF NAME="allow_loan_checkout" -->
+                 <div id="op-loan-checkout" class="op-button">
+                    <form action="/cgi-bin/koha/circ/circulation.pl" method="get">
+                        <h4>Check Out</h4>
+                    </form>
+                 </div>
+                 <!-- /TMPL_IF -->
+                 
+                 <!-- TMPL_IF NAME="allow_loan_return" -->
+                 <div id="op-loan-return" class="op-button">
+                    <form action="/cgi-bin/koha/circ/returns.pl" method="post">
+                        <input type="hidden" name="barcode" value="<!-- TMPL_VAR NAME='item_barcode' -->" />
+                        <input type="hidden" name="op" value="Submit" />
+                        <h4>Check In</h4>
+                    </form>
+                </div>
+                <!-- /TMPL_IF -->
+                
+                <!-- TMPL_IF NAME="allow_loan_renew" -->
+                <div id="op-loan-renew" class="op-button">
+                    <form action="/cgi-bin/koha/reserve/renewscript.pl" method="post" class="checkboxed">
+                        <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME='borrowernumber' -->" />
+                        <input type="hidden" name="branch" value="<!-- TMPL_VAR NAME='branch' -->" />
+                        <input type="hidden" name="items[]" value="<!-- TMPL_VAR NAME='itemnumber' -->" />
+                        <input type="hidden" name="cardnumber" value="<!-- TMPL_VAR NAME='borcardnumber' -->" />
+                        <input type="hidden" name="destination" value="circ" />
+                        <input type="hidden" name="renew_checked" value="Renew" />
+                        <h4>Renew</h4>
+                    </form>
+                </div>
+                <!-- /TMPL_IF -->
+                
+            </div>
+            
+            </div>
+            
+            <!-- TMPL_IF NAME="impossible_loop" -->
+            <div id="imp-messages" class="dialog alert">
+                <ul>
+                <!-- TMPL_LOOP NAME="impossible_loop" -->
+                    <!-- TMPL_IF NAME="NOT_LOANABLE" -->
+                        <li>Item status doesn't allow check out (<!-- TMPL_VAR NAME="NOT_LOANABLE" -->)</li>
+                    <!-- /TMPL_IF -->
+                    <!-- TMPL_IF NAME="NOT_AVAILABLE" -->
+                        <li>Item is not available for circulation</li>
+                    <!-- /TMPL_IF -->
+                <!-- /TMPL_LOOP -->
+                </ul>
+            </div>
+            <!-- /TMPL_IF -->
+            
+        <!-- TMPL_ELSE -->
+            
+            <!-- TMPL_IF NAME="post_err_loop" -->
+                <div class="dialog alert">
+                    <h3>Error:</h3>
+                    <ul>
+                    <!-- TMPL_LOOP NAME="post_err_loop" -->
+                        <!-- TMPL_IF NAME="NO_ITEM_FOUND" -->
+                            <li>No item was found with barcode <strong><!-- TMPL_VAR NAME="inp_barcode" --></strong></li>
+                        <!-- /TMPL_IF -->
+                        <!-- TMPL_IF NAME="NO_SR_FOUND" -->
+                            <li>No stack request was found with barcode <strong><!-- TMPL_VAR NAME="inp_barcode" --></strong></li>
+                        <!-- /TMPL_IF -->
+                    <!-- /TMPL_LOOP -->
+                    </ul>
+                </div>
+            <!-- /TMPL_IF -->
+                    
+            <form method="get" action="/cgi-bin/koha/stack/all-operations.pl" >
+                <div class="yui-u first">
+                    <fieldset>
+                        <legend>All operations</legend>
+                            <label for="any_barcode">Enter item or stack request barcode: </label>
+                            <input name="input" id="any_barcode" size="14" class="focus"/>
+                            <input type="submit" class="submit" value="Submit" />
+                    </fieldset>
+                </div>
+            </form>
+            
+        <!-- /TMPL_IF -->
+        
+        </div>
+    </div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

@@ -1,12 +1,153 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <title>Koha &rsaquo; Patrons &rsaquo; 
-<!-- TMPL_IF NAME="opadd" -->Add<!-- TMPL_ELSE --> Modify<!--/TMPL_IF--> <!--TMPL_IF Name="categoryname"--> <!--TMPL_VAR Name="categoryname"--> patron<!-- TMPL_ELSE --><!--TMPL_IF Name="I"--> Organization patron<!--/TMPL_IF --><!--TMPL_IF Name="A"--> Adult patron<!--/TMPL_IF --><!--TMPL_IF Name="C"--> Child patron<!--/TMPL_IF --><!--TMPL_IF Name="P"--> Professional patron<!--/TMPL_IF --><!--TMPL_IF Name="S"--> Staff patron<!--/TMPL_IF --><!--/TMPL_IF --><!--TMPL_UNLESS Name="opadd"--> <!-- TMPL_VAR NAME="surname" -->, <!-- TMPL_VAR name="firstname" --><!--/TMPL_UNLESS--></title>
+<!-- TMPL_IF NAME="opadd" -->    Add<!-- TMPL_ELSE --> Modify<!-- /TMPL_IF --> <!-- TMPL_IF NAME="categoryname" --> <!-- TMPL_VAR NAME="categoryname" --> patron<!-- TMPL_ELSE --><!-- TMPL_IF NAME="I" --> Organization patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="A" --> Adult patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="C" --> Child patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="P" --> Professional patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="S" --> Staff patron<!-- /TMPL_IF --><!-- /TMPL_IF --><!-- TMPL_UNLESS Name="opadd" --> <!-- TMPL_VAR NAME="surname" -->, <!-- TMPL_VAR NAME="firstname" --><!-- /TMPL_UNLESS --></title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script type="text/javascript" src="<!-- TMPL_VAR NAME='themelang' -->/js/members.js"></script>
 <!-- TMPL_INCLUDE NAME="calendar.inc" -->
 <script type="text/JavaScript" language="JavaScript">
 //<![CDATA[
+  
+ YAHOO.util.Event.onContentReady("entryform", function() {
+    new function() {
+       
+        this.oACDSzip = new YAHOO.widget.DS_XHR("/cgi-bin/koha/members/ysearch.pl", ["\n", "\t"]);
+        this.oACDSzip.scriptQueryAppend = "type=zip";
+        this.oACDSzip.responseType = YAHOO.widget.DS_XHR.TYPE_FLAT;
+        //this.oACDSzip.maxCacheEntries =60; //pb avec ce cache ??
+        this.oACDSzip.queryMatchSubset = true;
+        this.oACDSzip.minQueryLength = 1;
+        this.oACDSzip.queryDelay = 0.1;
+        this.oACDSzip.maxResultsDisplayed = 30;
+
+        this.oACDScountry = new YAHOO.widget.DS_XHR("/cgi-bin/koha/members/ysearch.pl", ["\n", "\t"]);
+        this.oACDScountry.scriptQueryAppend = "type=country";
+        this.oACDScountry.responseType = YAHOO.widget.DS_XHR.TYPE_FLAT;
+        //this.oACDScountry.maxCacheEntries =60; //pb avec ce cache ??
+        this.oACDScountry.queryMatchSubset = true;
+        this.oACDScountry.minQueryLength = 1;
+        this.oACDScountry.queryDelay = 0.1;
+        this.oACDScountry.maxResultsDisplayed = 30;
+        
+         // Show custom message if no results found  
+        // Instantiate first AutoComplete
+<!-- TMPL_IF NAME="step_1" -->        
+       var myInput = document.getElementById('zipcode');
+    
+        var myContainer = document.getElementById('ac_containerzip');
+       this.oAutoComp = new YAHOO.widget.AutoComplete(myInput,myContainer,this.oACDSzip);
+       this.oAutoComp.itemSelectEvent.subscribe(function(sType, aArgs) {  
+            var oMyAcInstance = aArgs[0]; // your AutoComplete instance  
+            var elListItem = aArgs[1]; //the <li> element selected in the suggestion  
+                               //container  
+            var aData = aArgs[2]; //array of the data for the item as returned by the DataSource  
+            document.getElementById('zipcode').value = aData[1];  
+            document.getElementById('city').value = aData[0];  
+               });
+    
+       
+      
+       this.oAutoComp.formatResult = function(oResultItem, sQuery) {
+           var city        = oResultItem[0];
+           var zipcode      =          oResultItem[1];
+          
+           var aMarkup = [
+               "<div class=\"zip-result\">",
+               zipcode,
+               " ",
+               city,
+               "<\/div>"];
+           return (aMarkup.join(""));
+       };
+       
+       var  myInput2 = document.getElementById('country');
+    
+        var myContainer2 = document.getElementById('ac_containercountry');
+       this.oAutoComp2 = new YAHOO.widget.AutoComplete(myInput2,myContainer2,this.oACDScountry);
+       this.oAutoComp2.itemSelectEvent.subscribe(function(sType, aArgs) {  
+            var oMyAcInstance = aArgs[0]; // your AutoComplete instance  
+            var elListItem = aArgs[1]; //the <li> element selected in the suggestion  
+                               //container  
+            var aData = aArgs[2]; //array of the data for the item as returned by the DataSource  
+            document.getElementById('country').value = aData;  
+               });
+    
+       
+      
+       this.oAutoComp2.formatResult = function(oResultItem, sQuery) {
+           var country        = oResultItem;
+          
+           var aMarkup = [
+               "<div class=\"country-result\">",
+               country,
+               "<\/div>"];
+           return (aMarkup.join(""));
+       };
+     
+   <!-- /TMPL_IF -->      
+   <!-- TMPL_IF NAME="step_6" -->
+   
+       var myInput3 = document.getElementById('B_zipcode');
+    
+       var myContainer3 = document.getElementById('ac_containerBzip');
+      this.oAutoComp3 = new YAHOO.widget.AutoComplete(myInput3,myContainer3,this.oACDSzip);
+      this.oAutoComp3.itemSelectEvent.subscribe(function(sType, aArgs) {  
+           var oMyAcInstance = aArgs[0]; // your AutoComplete instance  
+           var elListItem = aArgs[1]; //the <li> element selected in the suggestion  
+                              //container  
+           var aData = aArgs[2]; //array of the data for the item as returned by the DataSource  
+           document.getElementById('B_zipcode').value = aData[1];  
+           document.getElementById('B_city').value = aData[0];  
+              });
+   
+      
+     
+      this.oAutoComp3.formatResult = function(oResultItem, sQuery) {
+          var city        = oResultItem[0];
+          var zipcode      =          oResultItem[1];
+         
+          var aMarkup = [
+              "<div class=\"Bzip-result\">",
+              zipcode,
+              " ",
+              city,
+              "<\/div>"];
+          return (aMarkup.join(""));
+      };
+      
+
+      var  myInput4 = document.getElementById('B_country');
+    
+       var myContainer4 = document.getElementById('ac_containerBcountry');
+      this.oAutoComp4 = new YAHOO.widget.AutoComplete(myInput4,myContainer4,this.oACDScountry);
+      this.oAutoComp4.itemSelectEvent.subscribe(function(sType, aArgs) {  
+           var oMyAcInstance = aArgs[0]; // your AutoComplete instance  
+           var elListItem = aArgs[1]; //the <li> element selected in the suggestion  
+                              //container  
+           var aData = aArgs[2]; //array of the data for the item as returned by the DataSource  
+           document.getElementById('B_country').value = aData;  
+              });
+   
+      
+     
+      this.oAutoComp4.formatResult = function(oResultItem, sQuery) {
+          var country        = oResultItem;
+         
+          var aMarkup = [
+              "<div class=\"Bcountry-result\">",
+              country,
+              "<\/div>"];
+          return (aMarkup.join(""));
+      };
+   
+      <!-- /TMPL_IF -->    
+    
+}
+});    
+    
     $(document).ready(function() {
-		$("fieldset.rows input").keydown(function(e){ return checkEnter(e); });
+        
+        
+        $("fieldset.rows input").keydown(function(e){ return checkEnter(e); });
         $("#guarantordelete").click(function() {
             $("#contact-details").hide().find('a').remove();
             $("#guarantorid, #contactname, #contactfirstname").each(function () { this.value = "" });
@@ -15,20 +156,45 @@
                 .parent().find('span').remove();
             $("#guarantorsearch").val("Set to Patron");
         });
-        $("#select_city").change(function(){
-            var myRegEx=new RegExp(/(.*)\|(.*)/);
-            document.form.select_city.value.match(myRegEx);
-            document.form.zipcode.value=RegExp.$1;
-            document.form.city.value=RegExp.$2;
-        });
+      if ( $("input[name='debarred']:checked").val()=="1"){
+            $("#datedebar1").css("display", "inline");}
+            else{
+            $("#datedebar1").css("display", "none");}
+          if ( $("input[name='debarred2']:checked").val()=="1"){
+                $("#datedebar2").css("display", "inline");}
+                else{
+            $("#datedebar2").css("display", "none");}
+        
+        
+     
     });
 
+    
+    function show_date(name){
+        if (name=="debarred"){
+            document.getElementById('datedebar1').style.display="inline";
+        }
+        if (name=="debarred2"){
+            document.getElementById('datedebar2').style.display="inline";
+        }
+    }
+    
+    
+    function hide_date(name){
+        if (name=="debarred"){
+            document.getElementById('datedebar1').style.display="none";
+        }
+        if (name=="debarred2"){
+            document.getElementById('datedebar2').style.display="none";
+        }
+    }
     function clear_entry(node) {
         var original = node.parentNode.parentNode;
         $("input[type=text]", original).attr('value', '');
         $("select", original).attr('value', '');
     }
 
+   
     function clone_entry(node) {
         var original = node.parentNode.parentNode;
         var clone = original.cloneNode(true);
@@ -45,184 +211,352 @@
         $("select", clone).attr('name', function() {
             return this.name.replace(/patron_attr_\d+/, 'patron_attr_' + newId);
         });
-        $("input#patron_attr_" + newId, clone).attr('value','');
-        $("select#patron_attr_" + newId, clone).attr('value','');
         original.parentNode.insertBefore(clone, original.nextSibling);
     }
-		var MSG_SEPARATOR = _("Separator must be / in field ");
-        var MSG_INCORRECT_DAY = _("Invalid day entered in field ");
-        var MSG_INCORRECT_MONTH = _("Invalid month entered in field ");
-        var MSG_INCORRECT_YEAR = _("Invalid year entered in field ");
-        var MSG_DUPLICATE_PATRON = _("Warning: Duplicate patron");
-        var MSG_DUPLICATE_ORGANIZATION = _("Warning: Duplicate organization");
-        var MSG_LATE_EXPIRY = _("Warning: Expiration date falls before enrollment date");
-        var MSG_MISSING_MANDATORY = _("The following fields are mandatory:");
-        var MSG_DUPLICATE_SUSPICION = _("Please confirm whether this is a duplicate patron");
+
+    // MAN 69
+    function Check(oldvalue, newvalue) {
+        
+        if ( oldvalue != newvalue ){
+            if (oldvalue == "11PREINS" ) {
+                $('#dateexpiry').val('');
+            } else {
+                var alertDialog = confirm("Warning : You change the category of patron !!! Expiry date will be initialised");
+                   if ( alertDialog ){
+                       $('#dateexpiry').val('');
+                   } 
+                   else{
+                       $('#categorycode').val(oldvalue);
+                   }
+            }
+        }
+    }
+    // END MAN 69
+
 //]]>
 </script>
-<script type="text/javascript" src="<!-- TMPL_VAR NAME='themelang' -->/js/members.js"></script>
 </head>
 <body>
+<!-- B014 : lots of modifications on all file -->
+
 <!-- TMPL_INCLUDE NAME="header.inc" -->
 <!-- TMPL_INCLUDE NAME="patron-search.inc" -->
 
 <div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/members/members-home.pl">Patrons</a>  &rsaquo; 
 <!-- TMPL_IF NAME="opadd" -->
-		Add<!--TMPL_IF Name="categoryname"--> <!--TMPL_VAR Name="categoryname"--> patron<!-- TMPL_ELSE --><!--TMPL_IF Name="I"--> Organization patron<!--/TMPL_IF --><!--TMPL_IF Name="A"--> Adult patron<!--/TMPL_IF --><!--TMPL_IF Name="C"--> Child patron<!--/TMPL_IF --><!--TMPL_IF Name="P"--> Professional patron<!--/TMPL_IF --><!--TMPL_IF Name="S"--> Staff patron<!--/TMPL_IF --><!--/TMPL_IF -->
-<!-- TMPL_VAR NAME="surname" --> <!-- TMPL_VAR name="firstname" -->
+        Add<!-- TMPL_IF NAME="categoryname" --> <!-- TMPL_VAR NAME="categoryname" --> patron<!-- TMPL_ELSE --><!-- TMPL_IF NAME="I" --> Organization patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="A" --> Adult patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="C" --> Child patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="P" --> Professional patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="S" --> Staff patron<!-- /TMPL_IF --><!-- /TMPL_IF -->
+<!-- TMPL_VAR NAME="surname" --> <!-- TMPL_VAR NAME="firstname" -->
 <!-- TMPL_ELSE --> 
-<a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR name="firstname" --> <!-- TMPL_VAR NAME="surname" --></a> &rsaquo; <strong>Modify<!--TMPL_IF Name="categoryname"--> <!--TMPL_VAR Name="categoryname"--> patron<!-- TMPL_ELSE --><!--TMPL_IF Name="I"--> Organization patron<!--/TMPL_IF --><!--TMPL_IF Name="A"--> Adult patron<!--/TMPL_IF --><!--TMPL_IF Name="C"--> Child patron<!--/TMPL_IF --><!--TMPL_IF Name="P"--> Professional patron<!--/TMPL_IF --><!--TMPL_IF Name="S"--> Staff patron<!--/TMPL_IF --><!--/TMPL_IF -->
+<a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --></a> &rsaquo; <strong>Modify<!-- TMPL_IF NAME="categoryname" --> <!-- TMPL_VAR NAME="categoryname" --> patron<!-- TMPL_ELSE --><!-- TMPL_IF NAME="I" --> Organization patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="A" --> Adult patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="C" --> Child patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="P" --> Professional patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="S" --> Staff patron<!-- /TMPL_IF --><!-- /TMPL_IF -->
 </strong><!-- /TMPL_IF --></div>
 
 <!-- TMPL_IF NAME="opadd" --><div id="doc" class="yui-t7"><!-- TMPL_ELSE --><div id="doc3" class="yui-t2"><!-- /TMPL_IF -->
    
    <div id="bd">
-	<div id="yui-main">
-	<div class="yui-b">
+    <div id="yui-main">
+    <div class="yui-b">
 
-	<!-- TMPL_IF NAME="no_add" --><div class="dialog alert"><h3>Cannot add patron</h3>
-		<!-- TMPL_IF NAME="no_branches" --><p>There are <strong>no libraries defined</strong>. <!-- TMPL_IF NAME="CAN_user_parameters" -->Please <a href="/cgi-bin/koha/admin/branches.pl">add a library</a>.<!-- TMPL_ELSE -->An administrator must define at least one library.<!-- /TMPL_IF --></p><!-- /TMPL_IF -->
-		<!-- TMPL_IF NAME="no_categories" --><p>There are <strong>no patron categories defined</strong>. <!-- TMPL_IF NAME="CAN_user_parameters" -->Please <a href="/cgi-bin/koha/admin/categorie.pl">add a patron category</a>.<!-- TMPL_ELSE -->An administrator must define at least one patron category.</p><!-- /TMPL_IF --><!-- /TMPL_IF --></div><!-- /TMPL_IF -->
 
-	<!-- TMPL_UNLESS NAME="no_add" -->
-	<!-- TMPL_IF NAME="opadd" -->
-	<h1>
-		Add<!--TMPL_IF Name="categoryname"--> <!--TMPL_VAR Name="categoryname"--> patron<!-- TMPL_ELSE --><!--TMPL_IF Name="I"--> Organization patron<!--/TMPL_IF --><!--TMPL_IF Name="A"--> Adult patron<!--/TMPL_IF --><!--TMPL_IF Name="C"--> Child patron<!--/TMPL_IF --><!--TMPL_IF Name="P"--> Professional patron<!--/TMPL_IF --><!--TMPL_IF Name="S"--> Staff patron<!--/TMPL_IF --><!--/TMPL_IF --> <!-- TMPL_VAR name="firstname" --> <!-- TMPL_VAR NAME="surname" --> 
-	</h1>
-	<!-- TMPL_ELSE -->
-	<h1>
-		Modify<!--TMPL_IF Name="categoryname"--> <!--TMPL_VAR Name="categoryname"--> patron<!-- TMPL_ELSE --><!--TMPL_IF Name="I"--> Organization patron<!--/TMPL_IF --><!--TMPL_IF Name="A"--> Adult patron<!--/TMPL_IF --><!--TMPL_IF Name="C"--> Child patron<!--/TMPL_IF --><!--TMPL_IF Name="P"--> Professional patron<!--/TMPL_IF --><!--TMPL_IF Name="S"--> Staff patron<!--/TMPL_IF --><!--/TMPL_IF -->
-<!-- TMPL_VAR name="firstname" --> <!-- TMPL_VAR NAME="surname" --> 
-	</h1>
-	<!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="opadd" -->
+    <h1>
+        Add<!-- TMPL_IF NAME="categoryname" --> <!-- TMPL_VAR NAME="categoryname" --> patron<!-- TMPL_ELSE --><!-- TMPL_IF NAME="I" --> Organization patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="A" --> Adult patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="C" --> Child patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="P" --> Professional patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="S" --> Staff patron<!-- /TMPL_IF --><!-- /TMPL_IF --> <!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --> 
+    </h1>
+    <!-- TMPL_ELSE -->
+    <h1>
+        Modify<!-- TMPL_IF NAME="categoryname" --> <!-- TMPL_VAR NAME="categoryname" --> patron<!-- TMPL_ELSE --><!-- TMPL_IF NAME="I" --> Organization patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="A" --> Adult patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="C" --> Child patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="P" --> Professional patron<!-- /TMPL_IF --><!-- TMPL_IF NAME="S" --> Staff patron<!-- /TMPL_IF --><!-- /TMPL_IF -->
+<!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --> 
+    </h1>
+    <!-- /TMPL_IF -->
   
-	<!-- TMPL_IF NAME="check_member" -->
-			<div class="dialog alert">
-				<h3>Duplicate patron record?</h3>
-				<p><a class="popup" href="javascript:Dopop('moremember.pl?print=brief&amp;borrowernumber=<!--TMPL_VAR NAME="check_member"-->');" >View existing record</a></p>
-				<form action="/cgi-bin/koha/members/memberentry.pl" method="get"><input type="hidden" name="op" value="modify" /><input type="hidden" name="borrowernumber" value="<!--TMPL_VAR NAME="check_member"-->" /><input type="hidden" name="category_type" value="<!--TMPL_VAR NAME="check_categorytype"-->" /><input class="edit" type="submit" value="It is a duplicate. Edit existing record" /></form>
+    <!-- TMPL_IF NAME="check_member" -->
+        <div>
+        <form name="form_double" action="/cgi-bin/koha/members/memberentry.pl" method="post">
+            <div class="dialog alert">
+                <h3>Duplicate suspected</h3>
+                <a href="javascript:Dopop('borrowers_details.pl?borrowernumber=<!-- TMPL_VAR NAME='check_member' -->');" >Detail</a>
+                Duplicate ?
+                <a href="/cgi-bin/koha/members/memberentry.pl?op=modify&amp;borrowernumber=<!-- TMPL_VAR NAME='check_member4 -->&amp;category_type=<!-- TMPL_VAR NAME='check_categorytype' -->">Yes</a>
+                &nbsp;&nbsp;&nbsp; No, it is not
+                <!-- TMPL_IF NAME="checked" -->
+                    <input type="checkbox" checked="checked" name="answernodouble" />
+                <!-- TMPL_ELSE -->
+                    <input type="checkbox" name="answernodouble" />
+                <!-- /TMPL_IF -->
+            </div>
+        </form>
+        </div>
+    <!-- /TMPL_IF -->
 
-				<form name="form_double" action="/cgi-bin/koha/members/memberentry.pl" method="post">
-				<input type="hidden" name="nodouble" value="1" />
-				<input class="new" type="submit" value="Not a duplicate. Save as new record" />
-			</div>
-	<!--/TMPL_IF-->
+    <!-- TMPL_IF NAME="debug" -->
+        <div id="debug">
+                <div>Debug is on (level <!-- TMPL_VAR NAME="debug" -->)</div>
+        </div>
+        
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="nok" -->
+        <div class="dialog alert">
+            <p>The following fields are wrong. Please fix them.</p>
+            
+            <!-- TMPL_IF NAME="TOTAL" -->
+             <!-- TMPL_IF NAME="ERRORS" -->
+                <!-- TMPL_IF NAME="TCOUNTS" -->
+                    <h3>Patron Image(s) Uploaded With Some Errors. </h3>
+                <!-- TMPL_ELSE -->
+                    <h3>Patron Image Failed to Upload</h3>
+                <!-- /TMPL_IF -->
+            <!-- /TMPL_IF -->
+            <ul class="data">
+                <li>Unpacking completed</li>
+                  <li><!-- TMPL_VAR NAME="TOTAL" --> directorie(s) scanned.</li>
+                    <li><!-- TMPL_VAR NAME="HANDLED" --> directorie(s) processed.</li>
+                </ul>
+                <!-- TMPL_LOOP NAME="COUNTS" -->
+                <ul class="data">
+                    <!-- TMPL_IF NAME="TCOUNTS" -->
+                        <li><!-- TMPL_VAR NAME="TCOUNTS" --> image(s) moved into the database:</li>
+                    <!-- /TMPL_IF -->
+                    <!-- TMPL_LOOP name="filenames" -->
+                        <li>
+                            <!-- TMPL_VAR NAME="source" --> - Cardnumber: <!-- TMPL_VAR NAME="cardnumber" -->
+                            <!-- TMPL_IF NAME="filerrors" -->
+                                <br/> <strong>WARNING:</strong> This image <i>not</i> imported because 
+                                <!-- TMPL_LOOP NAME="filerrors" -->
+                                    <!-- TMPL_IF NAME="DBERR" -->the database returned an error. Please refer to the error log for more details.
+                                    <!-- TMPL_ELSIF NAME="IMGEXISTS" -->this patron does not exist in the database.
+                                    <!-- TMPL_ELSIF NAME="MIMERR" -->the image format is unrecognized.
+                                    <!-- TMPL_ELSIF NAME="CORERR" -->the image file is corrupted.
+                                    <!-- TMPL_ELSIF NAME="OPNERR" -->Koha was unable to open the image for reading.
+                                    <!-- TMPL_ELSIF NAME="OVRSIZ" -->the image file is too big.
+                                    <!-- TMPL_ELSIF NAME="CRDFIL" -->the <!-- TMPL_VAR NAME="CRDFIL" --> is missing.
+                                    <!-- TMPL_ELSE -->of an unknown error. Please refer to the error log for more details.
+                                    <!-- /TMPL_IF -->
+                                <!-- /TMPL_LOOP -->
+                            <!-- /TMPL_IF -->
+                        </li>
+                    <!-- /TMPL_LOOP -->
+                </ul>
+                <!-- /TMPL_LOOP -->
+           
+            <!-- /TMPL_IF -->
+            <ul>    
+             <!-- BUG 68 -->
+             <!-- TMPL_IF NAME="ERROR_login_exist" -->
+             <li><b>Login already exists.</b></li>
+             <!-- /TMPL_IF -->
+             <!-- TMPL_IF NAME="ERROR_email_exist" -->
+             <li><b>Email already exists.</b></li>
+             <!-- /TMPL_IF -->
+             <!-- BUG 68 -->
+             
+             <!-- TMPL_IF NAME="IMGFILE" -->
+             <!-- TMPL_IF NAME="NOTZIP" -->
+                <li><b>The upload file does not appear to be a zip file.  The extention is not '.zip'.</b></li>
+            
+            <!-- TMPL_ELSIF NAME="NOWRITETEMP" -->
+                <li><b>This script is not able to create/write to the necessary temporary directory.</b></li>
+            
+            <!-- TMPL_ELSIF NAME="EMPTYUPLOAD" -->
+                <li><b>The upload file appears to be empty.</b></li>
+            
+            <!-- TMPL_ELSIF NAME="UZIPFAIL" -->
+                <li><b>Failed to unpack. Please verify the integrity of the zip file and retry.</b></li>
+            
+            <!-- TMPL_ELSIF NAME="OPNLINK" -->
+                <li><b>Cannot open the file to read. Please verify that it exists.</b></li>
 
-	<!-- TMPL_IF Name="debug" -->
-		<div id="debug">
-				<div>Debug is on (level <!-- TMPL_VAR NAME="debug" -->)</div>
-		</div>
-	<!-- /TMPL_IF -->
-	<!-- TMPL_IF Name="nok" -->
-		<div class="dialog alert">
-			<p>The following fields are wrong. Please fix them.</p>
-			<ul>
-			<!-- TMPL_IF NAME="ERROR_login_exist" -->
-				<li id="ERROR_login_exist">Login/password already exists.</li>
-			<!-- /TMPL_IF -->
-			<!-- TMPL_IF NAME="ERROR_cardnumber" -->
-				<li id="ERROR_cardnumber">Cardnumber already in use.</li>
-			<!-- /TMPL_IF -->
-			<!-- TMPL_IF NAME="ERROR_age_limitations" -->
-				<li id="ERROR_age_limitations">Patron's age is incorrect for their category.  
-					Ages allowed are <!-- TMPL_VAR NAME="ERROR_age_limitations"-->.</li>
-			<!-- /TMPL_IF -->
-			<!-- TMPL_IF NAME="ERROR_branch" -->
-				<li id="ERROR_branch">Library is invalid.</li>
-			<!-- /TMPL_IF -->   
-			<!-- TMPL_IF NAME="ERROR_dateofbirth" -->
-				<li id="ERROR_dateofbirth">Date of birth is invalid.</li>
-			<!-- /TMPL_IF -->
-			<!-- TMPL_IF NAME="ERROR_dateenrolled" -->
-				<li id="ERROR_dateenrolled">Date of enrollment is invalid.</li>
-			<!-- /TMPL_IF -->
-			<!-- TMPL_IF NAME="ERROR_dateexpiry" -->
-				<li id="ERROR_dateexpiry">Date of expiration is invalid.</li>
-			<!-- /TMPL_IF -->
-			<!-- TMPL_IF NAME="ERROR_short_password" -->
-				<li id="ERROR_short_password">Password must be at least <!-- TMPL_VAR NAME="minPasswordLength" --> characters long.</li>
-			<!-- /TMPL_IF -->
+            <!-- TMPL_ELSIF NAME="OPNIMG" -->
+                <li><b>Cannot open the image to read. Please verify that it exists.</b></li>
+            
+            <!-- TMPL_ELSIF NAME="DELERR" -->
+                <li><b>Unrecognized or missing field delimeter. Please verify that you are using either a single quote or a tab.</b></li>
+            <!-- TMPL_ELSE -->
+                <li><b>An unknown error has occurred. Please review the error log for more details.</b></li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_ELSE -->
+            <!-- TMPL_IF NAME="ERROR_cardnumber" -->
+                <li id="ERROR_cardnumber">Cardnumber already in use.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_age_limitations" -->
+                <li id="ERROR_age_limitations">Patron's age is incorrect for their category.  
+                    Ages allowed are <!-- TMPL_VAR NAME="ERROR_age_limitations" -->.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_branch" -->
+                <li id="ERROR_branch">Library is invalid.</li>
+            <!-- /TMPL_IF -->   
+            <!-- TMPL_IF NAME="ERROR_dateofbirth" -->
+                <li id="ERROR_dateofbirth">Date of birth is invalid.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_debarred" -->
+                <li id="ERROR_debarred">Debarred date for loan is invalid.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_debarred2" -->
+                <li id="ERROR_debarred2">Debarred date for communication is invalid.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_dateenrolled" -->
+                <li id="ERROR_dateenrolled">Date of enrollment is invalid.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_dateexpiry" -->
+                <li id="ERROR_dateexpiry">Date of expiration is invalid.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_short_password" -->
+                <li id="ERROR_short_password">Password must be at least <!-- TMPL_VAR NAME="minPasswordLength" --> characters long.</li>
+            <!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="ERROR_extended_unique_id_failed" -->
                 <li id="ERROR_extended_unique_id_failed">The attribute value 
                     <!-- TMPL_VAR NAME="ERROR_extended_unique_id_failed" --> is already is use by another patron record.</li>
-			<!-- /TMPL_IF -->
-			</ul>
-		</div>
-	<!-- /TMPL_IF -->
-	
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_INALCO_CARD_NOT_EXIST" -->
+            	<li id="ERROR_INALCO_CARD_NOT_EXIST">The card has not already been enrolled in access control by INALCO.</li>
+           	<!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_ADD_PARTITION" -->
+                <li id="ERROR_ADD_PARTITION">Error while trying to add the partition in the the access control system.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_RETRIEVE_CARD" -->
+                <li id="ERROR_RETRIEVE_CARD">Error while trying to retrieve the card in the the access control system.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_CREATE_CARD" -->
+                <li id="ERROR_CREATE_CARD">Error while trying to create the card in the the access control system.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_REMOVE_CARD" -->
+                <li id="ERROR_REMOVE_CARD">Error while trying to remove the card in the the access control system.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_RETRIEVE_CARDHOLDER" -->
+                <li id="ERROR_RETRIEVE_CARDHOLDER">Error while trying to retrieve the cardholder in the the access control system.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_CREATE_CARDHOLDER" -->
+                <li id="ERROR_CREATE_CARDHOLDER">Error while trying to create the cardholder in the the access control system.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_UPDATE_CARDHOLDER" -->
+                <li id="ERROR_UPDATE_CARDHOLDER">Error while trying to update the cardholder in the the access control system.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_REMOVE_CARDHOLDER" -->
+                <li id="ERROR_REMOVE_CARDHOLDER">Error while trying to remove the cardholder in the the access control system.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_RETRIEVE_STATE_ENTITY" -->
+                <li id="ERROR_RETRIEVE_STATE_ENTITY">Error while trying to retrieve the state of an entity in the the access control system.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_SET_STATE_ENTITY" -->
+                <li id="ERROR_SET_STATE_ENTITY">Error while trying to set the state of an entity in the the access control system.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_RETRIEVE_GROUP" -->
+                <li id="ERROR_RETRIEVE_GROUP">Error while trying to retrieve the cardholder group in the the access control system.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_ADD_GROUP_TO_CARDHOLDER" -->
+                <li id="ERROR_ADD_GROUP_TO_CARDHOLDER">Error while trying to create the cardholder group in the the access control system.</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_REMOVE_GROUP_TO_CARDHOLDER" -->
+                <li id="ERROR_REMOVE_GROUP_TO_CARDHOLDER">Error while trying to remove the cardholder group in the the access control system.</li>
+            <!-- /TMPL_IF -->
+           	
+            <!-- /TMPL_IF -->
+            </ul>
+        </div>
+    <!-- /TMPL_IF -->
+    
   
-<!-- TMPL_UNLESS NAME="check_member" --><form name="form" id="entryform"  action="/cgi-bin/koha/members/memberentry.pl" method="post">
-<input type="hidden" name="nodouble"  value="<!-- TMPL_VAR NAME="nodouble" -->" /> <!-- /TMPL_UNLESS -->
+<form name="form" id="entryform"  action="/cgi-bin/koha/members/memberentry.pl" method="post" enctype="multipart/form-data"> 
 <!--    field always hidden in different form (1,2,3) -->
-<input type="hidden" name="BorrowerMandatoryField" value="<!--TMPL_VAR NAME="BorrowerMandatoryField"-->" />
-<input type="hidden" name="category_type" value="<!-- TMPL_VAR name="category_type" -->" />
+<input type="hidden" name="BorrowerMandatoryField" value="<!-- TMPL_VAR NAME="BorrowerMandatoryField" -->" />
+<input type="hidden" name="category_type" value="<!-- TMPL_VAR NAME="category_type" -->" />
 <input type="hidden" name="updtype" value="<!-- TMPL_VAR NAME="updtype" -->" />
 <input type="hidden" name="select_roadtype" value="<!-- TMPL_VAR NAME="select_roadtype" -->" />
 <input type="hidden" name="destination" value="<!-- TMPL_VAR NAME="destination" -->" />
 <input type="hidden" name="check_member" value="<!-- TMPL_VAR NAME="check_member" -->" />
 <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME="borrowernumber" -->" />
-<!--TMPL_IF Name="step"--><input type="hidden" name="step"  value="<!-- TMPL_VAR NAME="step" -->" /><!--/TMPL_IF-->
+<input type="hidden" name="nodouble"  value="<!-- TMPL_VAR NAME="nodouble" -->" />
+<input type="hidden" name="old_category" value="<!-- TMPL_VAR NAME="categorycode" -->" />
+<input type="hidden" name="old_cardnumber" value="<!-- TMPL_VAR NAME="cardnumber" -->" />
+<input type="hidden" name="old_enrolled_by" value="<!-- TMPL_VAR NAME="sca_enrolled_by" -->" />
+<input type="hidden" name="old_userid" value="<!-- TMPL_VAR NAME="userid" -->" />
+<input type="hidden" name="print_confirmation" value="<!-- TMPL_VAR NAME="print_confirmation" -->" />
+<!-- TMPL_IF NAME="step" --><input type="hidden" name="step"  value="<!-- TMPL_VAR NAME="step" -->" /><!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="opadd" --><input type="hidden" name="op" value="insert" /><!-- TMPL_ELSE --><input type="hidden" name="op" value="save" /><!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="11PREINS" --><!-- Progilone B014 -->
+    <input type="hidden" name="branchcode" value="NOLOC" />
+    <input type="hidden" name="categorycode" value="11PREINS" />
+    <input type="hidden" name="dateenrolled" value="<!-- TMPL_VAR NAME="dateenrolled" -->" />
+    <input type="hidden" name="dateexpiry" value="" />
+<!-- /TMPL_IF -->
 
-<!--TMPL_IF Name="step_1"-->
-	<fieldset class="rows" id="memberentry_identity">
-		<legend><!--TMPL_IF Name="I"-->Organization <!--TMPL_ELSE-->Patron <!--/TMPL_IF-->identity</legend>
-		<ol>
-		<!-- TMPL_UNLESS name="I" -->
-		<!-- TMPL_IF NAME="title_cgipopup" -->
+<!-- TMPL_IF NAME="step_1" -->
+
+    <fieldset class="rows" id="memberentry_identity">
+        <legend><!-- TMPL_IF NAME="I" -->Organization <!-- TMPL_ELSE -->Patron <!-- /TMPL_IF -->identity</legend>
+        <ol>
+        
+        <!-- TMPL_UNLESS name="opadd" -->
+        <!-- TMPL_IF NAME="picture" -->
+        <li><img src="/cgi-bin/koha/members/patronimage.pl?crdnum=<!-- TMPL_VAR NAME='cardnumber' -->" id="patronimage" alt="<!-- TMPL_VAR NAME='firstname' --> <!-- TMPL_VAR NAME='surname' --> (<!-- TMPL_VAR NAME='cardnumber' -->)" border="0" style="max-width : 140px; margin: .3em 0 .3em .3em; padding: .2em; border: 1px solid #CCCCCC; width:auto !important; width:130px;" /></li>
+        <!-- TMPL_ELSE -->
+        <li><img src="/intranet-tmpl/prog/img/patron-blank.png" alt="<!-- TMPL_VAR NAME='firstname' --> <!-- TMPL_VAR NAME='surname' --> (<!-- TMPL_VAR NAME='cardnumber' -->)" border="0" style="margin: .3em 0 .3em .3em; padding: .2em; border: 1px solid #CCCCCC;" /></li>
+        <!-- /TMPL_IF -->
+        <!-- /TMPL_UNLESS -->
+    
+        <!-- TMPL_UNLESS name="I" -->
+        <!-- TMPL_IF NAME="title_cgipopup" -->
             <li>
             <!-- TMPL_IF NAME="mandatorytitle" -->
                 <label for="btitle" class="required">
             <!-- TMPL_ELSE -->
                 <label for="btitle">
-            <!-- /TMPL_IF-->
+            <!-- /TMPL_IF -->
             Salutation: </label>
             <!-- TMPL_VAR NAME="borrotitlepopup" -->
             <!-- TMPL_IF NAME="mandatorytitle" --><span class="required">Required</span><!-- /TMPL_IF -->
             </li>
-		<!-- /TMPL_IF -->
+        <!-- /TMPL_IF -->
         <!-- /TMPL_UNLESS -->
-		<li>
-		<!-- TMPL_IF NAME="mandatorysurname" -->
-		<label for="surname" class="required">
-		<!-- TMPL_ELSE -->
-		<label for="surname">
-		<!-- /TMPL_IF-->
-		Surname: </label>
-		<!-- TMPL_IF NAME="uppercasesurnames" -->
-		<input style="text-transform:uppercase;" type="text" id="surname" name="surname" size="20"  value="<!-- TMPL_VAR NAME="surname" -->" />
-		<!-- TMPL_ELSE -->
-		<input type="text" id="surname" name="surname" size="20"  value="<!-- TMPL_VAR NAME="surname" -->" />
-		<!-- /TMPL_IF -->
-		<!-- TMPL_IF NAME="mandatorysurname" --><span class="required">Required</span><!-- /TMPL_IF -->
-		</li>
-		<!-- TMPL_UNLESS name="I" -->
+        <li>
+        <!-- TMPL_IF NAME="mandatorysurname" -->
+        <label for="surname" class="required">
+        <!-- TMPL_ELSE -->
+        <label for="surname">
+        <!-- /TMPL_IF -->
+        Surname: </label>
+        <!-- TMPL_IF NAME="uppercasesurnames" -->
+        <input style="text-transform:uppercase;" type="text" id="surname" name="surname" size="50"  value="<!-- TMPL_VAR NAME="surname" -->" />
+        <!-- TMPL_ELSE -->
+        <input type="text" id="surname" name="surname" size="20"  value="<!-- TMPL_VAR NAME="surname" -->" />
+        <!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="mandatorysurname" --><span class="required">Required</span><!-- /TMPL_IF -->
+        </li>
+        
             <li>
-                <!-- TMPL_IF NAME="mandatoryfirstname" -->
+            <!-- TMPL_IF NAME="mandatoryothernames" -->
+                <label for="othernames" class="required">
+            <!-- TMPL_ELSE -->
+                <label for="othernames">
+                <!-- /TMPL_IF -->
+            Other name: </label>
+                <input style="text-transform:uppercase;" type="text" id="othernames" name="othernames" size="50"  value="<!-- TMPL_VAR NAME="othernames" -->" />
+            <!-- TMPL_IF NAME="mandatoryothernames" --><span class="required">Required</span><!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="I" --><input type="hidden" name="sex" value="N" /><!-- /TMPL_IF -->
+            </li>
+             <!-- TMPL_UNLESS name="I" -->
+            <li>
+            <!-- TMPL_IF NAME="mandatoryfirstname" -->
                 <label for="firstname" class="required">
-                <!-- TMPL_ELSE -->
+            <!-- TMPL_ELSE -->
                 <label for="firstname">
-                <!-- /TMPL_IF-->
-                First name: </label>
+            <!-- /TMPL_IF -->
+            First name: </label>
                 <input type="text" id="firstname" name="firstname" size="20"  value="<!-- TMPL_VAR NAME="firstname" -->" />
-                <!-- TMPL_IF NAME="mandatoryfirstname" --><span class="required">Required</span><!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="mandatoryfirstname" --><span class="required">Required</span><!-- /TMPL_IF -->
             </li>
             <li>
-                <!-- TMPL_IF NAME="mandatorydateofbirth" -->
+            <!-- TMPL_IF NAME="mandatorydateofbirth" -->
                 <label for="dateofbirth" class="required">
-                <!-- TMPL_ELSE -->
+            <!-- TMPL_ELSE -->
                 <label for="dateofbirth">
-                <!-- /TMPL_IF-->
-                Date of birth: </label>
-				
-	<!-- TMPL_IF NAME="metric" -->			
+            <!-- /TMPL_IF -->
+            Date of birth: </label>
+            <!-- TMPL_IF NAME="metric" -->            
                 <input type="text" id="dateofbirth" name="dateofbirth" size="20" onchange="CheckDate(document.form.dateofbirth);" value="<!-- TMPL_VAR NAME="dateofbirth" -->" />
-<!-- TMPL_ELSE -->
+            <!-- TMPL_ELSE -->
                 <input type="text" id="dateofbirth" name="dateofbirth" size="20" value="<!-- TMPL_VAR NAME="dateofbirth" -->" />
-<!-- /TMPL_IF -->
-
-                <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" id="dateofbirth_button" alt="Show Calendar" />
-        <script language="JavaScript" type="text/javascript">
+            <!-- /TMPL_IF -->
+                <img src="<!-- TMPL_VAR NAME='themelang' -->/lib/calendar/cal.gif" id="dateofbirth_button" alt="Show Calendar" />
+                <script language="JavaScript" type="text/javascript">
             Calendar.setup(
             {
                 inputField : "dateofbirth",
@@ -230,547 +564,563 @@
                 button : "dateofbirth_button"
             }
             );
-        </script>
-        <!-- TMPL_IF NAME="mandatorydateofbirth" --><span class="required">Required</span><!-- /TMPL_IF -->
-        <!-- TMPL_IF NAME="ERROR_dateofbirth" --><span class="required">(Error)</span><!-- /TMPL_IF -->
-		<div class="hint"><!-- TMPL_INCLUDE NAME="date-format.inc" --></div>
-            </li>
-            <li>
-                <!-- TMPL_IF NAME="mandatoryinitials" -->
-                    <label for="initials" class="required">
-                <!-- TMPL_ELSE -->
-                    <label for="initials">
-                <!-- /TMPL_IF-->
-                Initials: </label>
-                <input type="text" id="initials" name="initials" size="20"  value="<!-- TMPL_VAR NAME="initials" -->" />	
-                <!-- TMPL_IF NAME="mandatoryinitials" --><span class="required">Required</span><!-- /TMPL_IF -->
-            </li>
-        <!-- /TMPL_UNLESS -->
-		<li>
-			<!-- TMPL_IF NAME="mandatoryothernames" -->
-			<label for="othernames" class="required">
-			<!-- TMPL_ELSE -->
-			<label for="othernames">
-			<!-- /TMPL_IF-->
-			Other name: </label>
-			<input type="text" id="othernames" name="othernames" size="20"  value="<!-- TMPL_VAR NAME="othernames" -->" />
-<!-- TMPL_IF NAME="mandatoryothernames" --><span class="required">Required</span><!-- /TMPL_IF -->
-		<!-- TMPL_IF NAME="I" --><input type="hidden" name="sex" value="N" /><!-- /TMPL_IF -->
-		</li>
-    <!--TMPL_UNLESS Name="I"-->
-		<li class="radio">
-		
-		<!-- TMPL_IF NAME="female" -->
-				<label for="sex-female">Female </label><input type="radio" name="sex" id="sex-female" value="F" checked="checked"  />
-<!-- TMPL_ELSE -->
-				<label for="sex-female">Female </label><input type="radio" name="sex" id="sex-female" value="F" />
-<!-- /TMPL_IF -->
-		<!-- TMPL_IF NAME="male" -->
-		<label for="sex-male">Male </label><input type="radio" name="sex" id="sex-male" value="M" checked="checked" />
-<!-- TMPL_ELSE -->
-				<label for="sex-male">Male </label><input type="radio" name="sex" id="sex-male" value="M" />
-<!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="none" -->
-				<label for="sex-none">N/A </label><input type="radio" name="sex" id="sex-none" value=""  checked="checked"  />
-<!-- TMPL_ELSE -->
-				<label for="sex-none">N/A </label><input type="radio" name="sex" id="sex-none" value="" />
-<!-- /TMPL_IF -->
-       	</li>
-    <!--/TMPL_UNLESS-->
-		</ol>
-	</fieldset>
-	
-<!--TMPL_IF Name="showguarantor"--><input type="hidden" id="guarantorid" name="guarantorid"   value="<!-- TMPL_VAR NAME="guarantorid" -->" />
+                </script>
+             <!-- TMPL_IF NAME="mandatorydateofbirth" --><span class="required">Required</span><!-- /TMPL_IF -->
+             <!-- TMPL_IF NAME="ERROR_dateofbirth" --><span class="required">(Error)</span><!-- /TMPL_IF -->
+             <div class="hint"><!-- TMPL_INCLUDE NAME="date-format.inc" --></div>
+             </li>
+              <!-- /TMPL_UNLESS -->
+             
+             
+             <!-- TMPL_UNLESS Name="I" -->
+             <li class="radio">
+             <!-- TMPL_IF NAME="female" -->
+                <label for="sex-female">Female </label><input type="radio" name="sex" id="sex-female" value="F" checked="checked"  />
+             <!-- TMPL_ELSE -->
+                <label for="sex-female">Female </label><input type="radio" name="sex" id="sex-female" value="F" />
+             <!-- /TMPL_IF -->
+             <!-- TMPL_IF NAME="male" -->
+                <label for="sex-male">Male </label><input type="radio" name="sex" id="sex-male" value="M" checked="checked" />
+             <!-- TMPL_ELSE -->
+                <label for="sex-male">Male </label><input type="radio" name="sex" id="sex-male" value="M" />
+             <!-- /TMPL_IF -->
+             <!-- TMPL_IF NAME="none" -->
+                <label for="sex-none">N/A </label><input type="radio" name="sex" id="sex-none" value=""  checked="checked"  />
+             <!-- TMPL_ELSE -->
+                <label for="sex-none">N/A </label><input type="radio" name="sex" id="sex-none" value="" />
+             <!-- /TMPL_IF -->
+                </li>
+             <!-- /TMPL_UNLESS -->
+             
+             <li>
+             <!-- TMPL_UNLESS NAME="11PREINS" --><!-- Progilone B014 -->
+                 <div id="manage-patron-image">
+                 <!-- TMPL_IF NAME="CAN_user_tools_batch_upload_patron_images" -->
+                    <!-- TMPL_IF NAME="picture" -->
+                        <label for="image">Manage Patron Image</label>
+                        <div class="hint">To change the image for <!-- TMPL_VAR NAME="title" --> <!-- TMPL_VAR NAME="surname" -->, select a new image file.</div>
+                    <!-- TMPL_ELSE -->
+                        <label for="image">Upload Patron Image</label>
+                        <div class="hint">
+                            <!-- TMPL_VAR NAME="title" --> <!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --> does not currently have an image available. To import an image for <!-- TMPL_VAR NAME="title" --> <!-- TMPL_VAR NAME="surname" -->, enter the name of an image file to upload.
+                        </div>
+                    <!-- /TMPL_IF -->
+                        <div class="hint">Only PNG, GIF, JPEG, XPM formats are supported.</div>
+                        
+                        <input type="hidden" id="image" name="filetype" value="image" />
+                        <label for="uploadfile">Select the file to upload: </label>
+                        <input type="file" id="uploadfile" name="uploadfile" />
+                 <!-- /TMPL_IF -->
+                 </div>
+             <!-- /TMPL_UNLESS -->
+             </li>
+        </ol>
+       </fieldset>
+    
+    <!-- TMPL_IF NAME="showguarantor" --><input type="hidden" id="guarantorid" name="guarantorid"   value="<!-- TMPL_VAR NAME="guarantorid" -->" />
     <fieldset class="rows">
         <legend>Guarantor Information</legend>
         <ol>
-<!--TMPL_IF Name="P"-->
-	        <!-- TMPL_IF NAME="guarantorid" -->
-	        <li id="contact-details">
-	        <!-- TMPL_ELSE -->
-	        <li id="contact-details" style="display: none">
-	        <!-- /TMPL_IF -->
-	            <span class="label">Organization #:</span> <!-- TMPL_IF NAME="guarantorid" --> <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="guarantorid" -->" target="blank"><!-- TMPL_VAR NAME="guarantorid" --></a><!-- /TMPL_IF -->
-	        </li>
-	        <li>
-	            <label for="contactname">Organization name: </label>
-	            <!-- TMPL_IF NAME="guarantorid" -->
-	            <span><!-- TMPL_VAR NAME="contactname" --></span>
-	            <input name="contactname" id="contactname" type="hidden" size="20" value="<!-- TMPL_VAR NAME="contactname" -->" />
-	            <!-- TMPL_ELSE -->
-	            <input name="contactname" id="contactname" type="text" size="20" value="<!-- TMPL_VAR NAME="contactname" -->" />
-	            <!-- /TMPL_IF -->
-	        </li>
-<!-- TMPL_ELSE -->
- <!-- TMPL_IF NAME="C" -->
- <!-- TMPL_IF NAME="guarantorid" -->
- <li id="contact-details">
- <!-- TMPL_ELSE -->
- <li id="contact-details" style="display: none">
- <!-- /TMPL_IF -->
-     <span class="label">Patron #:</span> <!-- TMPL_IF NAME="guarantorid" --> <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="guarantorid" -->" target="blank"><!-- TMPL_VAR NAME="guarantorid" --></a><!-- /TMPL_IF -->
- </li>
- <li>
-     <label for="contactname">Surname: </label>
-     <!-- TMPL_IF NAME="guarantorid" -->
-     <span><!-- TMPL_VAR NAME="contactname" --></span>
-     <input name="contactname" id="contactname" type="hidden" size="20" value="<!-- TMPL_VAR NAME="contactname" -->" />
-     <!-- TMPL_ELSE -->
-     <input name="contactname" id="contactname" type="text" size="20" value="<!-- TMPL_VAR NAME="contactname" -->" />
-     <!-- /TMPL_IF -->
- </li>
- <li>
-     <label for="contactfirstname">First name: </label>
-     <!-- TMPL_IF NAME="guarantorid" -->
-     <span><!-- TMPL_VAR NAME="contactfirstname" --></span>
-     <input name="contactfirstname" id="contactfirstname" type="hidden" size="20" value="<!-- TMPL_VAR NAME="contactfirstname" -->" />
-     <!-- TMPL_ELSE -->
-     <input name="contactfirstname" id="contactfirstname" type="text" size="20" value="<!-- TMPL_VAR NAME="contactfirstname" -->" />
-     <!-- /TMPL_IF -->
- </li>
- <!-- TMPL_IF name="relshiploop" -->
- <li>
-     <label for="relationship">Relationship: </label>
-     <select name="relationship" id="relationship" >
-         <!-- TMPL_LOOP name="relshiploop" -->
-         <!-- TMPL_IF name="selected" -->
-         <option value="<!-- TMPL_VAR name="relationship" -->" selected="selected" ><!-- TMPL_VAR name="relationship" --></option>
-         <!-- TMPL_ELSE -->
-         <option value="<!-- TMPL_VAR name="relationship" -->"><!-- TMPL_VAR name="relationship" --></option>
-         <!-- /TMPL_IF -->
-         <!-- /TMPL_LOOP -->
-     </select>
- </li>
- <!-- /TMPL_IF -->
- <!-- /TMPL_IF -->
-<!--/TMPL_IF -->
+        <!-- TMPL_IF NAME="P" -->
+            <!-- TMPL_IF NAME="guarantorid" -->
+            <li id="contact-details">
+            <!-- TMPL_ELSE -->
+            <li id="contact-details" style="display: none">
+            <!-- /TMPL_IF -->
+                <span class="label">Organization #:</span> <!-- TMPL_IF NAME="guarantorid" --> <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="guarantorid" -->" target="blank"><!-- TMPL_VAR NAME="guarantorid" --></a><!-- /TMPL_IF -->
+            </li>
+            <li>
+                <label for="contactname">Organization name: </label>
+            <!-- TMPL_IF NAME="guarantorid" -->
+                <span><!-- TMPL_VAR NAME="contactname" --></span>
+                <input name="contactname" id="contactname" type="hidden" size="20" value="<!-- TMPL_VAR NAME="contactname" -->" />
+            <!-- TMPL_ELSE -->
+                <input name="contactname" id="contactname" type="text" size="20" value="<!-- TMPL_VAR NAME="contactname" -->" />
+            <!-- /TMPL_IF -->
+            </li>
+        <!-- TMPL_ELSE -->
+            <!-- TMPL_IF NAME="C" -->
+                <!-- TMPL_IF NAME="guarantorid" -->
+                <li id="contact-details">
+                <!-- TMPL_ELSE -->
+                <li id="contact-details" style="display: none">
+                <!-- /TMPL_IF -->
+                <span class="label">Patron #:</span> <!-- TMPL_IF NAME="guarantorid" --> <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="guarantorid" -->" target="blank"><!-- TMPL_VAR NAME="guarantorid" --></a><!-- /TMPL_IF -->
+                </li>
+                <li>
+                    <label for="contactname">Surname: </label>
+                <!-- TMPL_IF NAME="guarantorid" -->
+                    <span><!-- TMPL_VAR NAME="contactname" --></span>
+                    <input name="contactname" id="contactname" type="hidden" size="20" value="<!-- TMPL_VAR NAME="contactname" -->" />
+                <!-- TMPL_ELSE -->
+                    <input name="contactname" id="contactname" type="text" size="20" value="<!-- TMPL_VAR NAME="contactname" -->" />
+                <!-- /TMPL_IF -->
+                </li>
+                <li>
+                    <label for="contactfirstname">First name: </label>
+                <!-- TMPL_IF NAME="guarantorid" -->
+                    <span><!-- TMPL_VAR NAME="contactfirstname" --></span>
+                    <input name="contactfirstname" id="contactfirstname" type="hidden" size="20" value="<!-- TMPL_VAR NAME="contactfirstname" -->" />
+                <!-- TMPL_ELSE -->
+                    <input name="contactfirstname" id="contactfirstname" type="text" size="20" value="<!-- TMPL_VAR NAME="contactfirstname" -->" />
+                <!-- /TMPL_IF -->
+                </li>
+                <!-- TMPL_IF NAME="relshiploop" -->
+                <li>
+                    <label for="relationship">Relationship: </label>
+                    <select name="relationship" id="relationship" >
+                    <!-- TMPL_LOOP name="relshiploop" -->
+                    <!-- TMPL_IF NAME="selected" -->
+                        <option value="<!-- TMPL_VAR NAME="relationship" -->" selected="selected" ><!-- TMPL_VAR NAME="relationship" --></option>
+                    <!-- TMPL_ELSE -->
+                        <option value="<!-- TMPL_VAR NAME="relationship" -->"><!-- TMPL_VAR NAME="relationship" --></option>
+                    <!-- /TMPL_IF -->
+                    <!-- /TMPL_LOOP -->
+                    </select>
+                </li>
+                <!-- /TMPL_IF -->
+            <!-- /TMPL_IF -->
+        <!-- /TMPL_IF -->
         <li>
             <span class="label">&nbsp;</span>
-            <!-- TMPL_IF NAME="guarantorid" -->
-            <input id="guarantorsearch" type="button" value="Change" onclick="Dopopguarantor('guarantor_search.pl?category_type=<!-- TMPL_VAR NAME="category_type" -->');" />
-            <!-- TMPL_ELSE -->
-            <input id="guarantorsearch" type="button" value="Set to Patron" onclick="Dopopguarantor('guarantor_search.pl?category_type=<!-- TMPL_VAR NAME="category_type" -->');" />
-            <!-- /TMPL_IF -->
-            <input id="guarantordelete" type="button" value="Delete" />
+        <!-- TMPL_IF NAME="guarantorid" -->
+            <input id="guarantorsearch" type="button" value="Change" onclick="Dopopguarantor('guarantor_search.pl');" />
+        <!-- TMPL_ELSE -->
+            <input id="guarantorsearch" type="button" value="Set to Patron" onclick="Dopopguarantor('guarantor_search.pl');" />
+        <!-- /TMPL_IF -->
+        <input id="guarantordelete" type="button" value="Delete" />
         </li>
         </ol>
     </fieldset>
-
-<!--/TMPL_IF-->
-<fieldset class="rows">
-    <legend>Main address</legend><ol>
-    <li>
-      <!-- TMPL_IF NAME="mandatorystreetnumber" -->
-      <label for="streetnumber" class="required">
-      <!--TMPL_ELSE-->
-      <label for="streetnumber">
-      <!-- /TMPL_IF-->
-      Street number: </label>
-      <input type="text" id="streetnumber" name="streetnumber" size="5" value="<!-- TMPL_VAR NAME="streetnumber" -->" />
-<!-- TMPL_IF NAME="mandatorystreetnumber" --><span class="required">Required</span><!-- /TMPL_IF -->
-    </li>
-    <!-- TMPL_IF NAME="road_cgipopup" -->
-      <li>
-      <!-- TMPL_IF NAME="mandatorystreettype" -->
-      <label for="streettype" class="required">
-      <!--TMPL_ELSE-->
-      <label for="streettype">
-      <!-- /TMPL_IF-->
-      Street type: </label>
-      <!-- TMPL_VAR NAME="roadpopup" -->
-	  <!-- TMPL_IF NAME="mandatorystreettype" --><span class="required">Required</span><!-- /TMPL_IF -->
-      </li>
-    <!--/TMPL_IF--> 
-    <li>
-      <!-- TMPL_IF NAME="mandatoryaddress" -->
-      <label for="address" class="required">
-      <!--TMPL_ELSE-->
-      <label for="address">
-      <!--/TMPL_IF-->
-      Address: </label>
-      <input type="text" id="address" name="address" size="35" value="<!-- TMPL_VAR NAME="address" -->" />
-	  <!-- TMPL_IF NAME="mandatoryaddress" --><span class="required">Required</span><!-- /TMPL_IF -->
-    </li>
-    <li>
+    <!-- /TMPL_IF -->
+    
+    <fieldset class="rows">
+        <legend>Main address</legend><ol>
+        <!-- TMPL_IF NAME="road_cgipopup" -->
+        <li>
+        <!-- TMPL_IF NAME="mandatorystreettype" -->
+            <label for="streettype" class="required">
+        <!-- TMPL_ELSE -->
+            <label for="streettype">
+        <!-- /TMPL_IF -->
+        Street type: </label>
+        <!-- TMPL_VAR NAME="roadpopup" -->
+        <!-- TMPL_IF NAME="mandatorystreettype" --><span class="required">Required</span><!-- /TMPL_IF -->
+        </li>
+        <!-- /TMPL_IF --> 
+        <li>
+        <!-- TMPL_IF NAME="mandatoryaddress" -->
+            <label for="address" class="required">
+        <!-- TMPL_ELSE -->
+            <label for="address">
+        <!-- /TMPL_IF -->
+        Address: </label>
+            <input type="text" id="address" name="address" size="35" value="<!-- TMPL_VAR NAME="address" -->" />
+        <!-- TMPL_IF NAME="mandatoryaddress" --><span class="required">Required</span><!-- /TMPL_IF -->
+        </li>
+        <li>
       <!-- TMPL_IF NAME="mandatoryaddress2" -->
       <label for="address2" class="required">
-      <!--TMPL_ELSE-->
+      <!-- TMPL_ELSE -->
       <label for="address2">
-      <!-- /TMPL_IF-->
+      <!-- /TMPL_IF -->
       Address 2: </label>
-      <input type="text" id="address2" name="address2" size="35" value="<!-- TMPL_VAR NAME="address2" -->" />
-	  <!-- TMPL_IF NAME="mandatoryaddress2" --><span class="required">Required</span><!-- /TMPL_IF -->
-    </li>  
-    <li>
-      <!-- TMPL_IF NAME="mandatorycity" -->
-        <label for="city" class="required">
-      <!--TMPL_ELSE-->
-        <label for="city">
-      <!-- /TMPL_IF-->
-      City, State: </label>
-        
-        <input type="text" id="city" name="city" size="20" value="<!-- TMPL_VAR NAME="city" -->" />
-        <!-- TMPL_IF NAME="city_cgipopup" -->or <strong>choose</strong>
-        <select id="select_city" name="select_city">
-        <!-- TMPL_LOOP NAME="city_loop" -->
-            <!-- TMPL_IF NAME="selected" -->
-            <option value="<!-- TMPL_VAR NAME="city_zipcode"-->|<!-- TMPL_VAR NAME="city_name" -->" selected="selected">
-            <!-- TMPL_ELSE -->
-            <option value="<!-- TMPL_VAR NAME="city_zipcode"-->|<!-- TMPL_VAR NAME="city_name" -->">
-            <!-- /TMPL_IF -->
-                <!-- TMPL_VAR NAME="city_name" --> <!-- TMPL_VAR NAME="city_zipcode" -->
-            </option>
-        <!-- /TMPL_LOOP -->
-        </select>
-        <!-- /TMPL_IF -->
-	  <!-- TMPL_IF NAME="mandatorycity" --><span class="required">Required</span><!-- /TMPL_IF -->
-    </li>
-    <li> 
+        <input type="text" id="address2" name="address2" size="35" value="<!-- TMPL_VAR NAME="address2" -->" />
+      <!-- TMPL_IF NAME="mandatoryaddress2" --><span class="required">Required</span><!-- /TMPL_IF -->
+      </li>
+      
+      <li> 
       <!-- TMPL_IF NAME="mandatoryzipcode" -->
         <label for="zipcode" class="required">
-      <!--TMPL_ELSE-->
+      <!-- TMPL_ELSE -->
         <label for="zipcode">
-      <!-- /TMPL_IF-->
+      <!-- /TMPL_IF -->
       Zip/Postal code: </label>
-      <input type="text" name="zipcode" id="zipcode" size="10" value="<!-- TMPL_VAR NAME="zipcode" -->" />
-	  <!-- TMPL_IF NAME="mandatoryzipcode" --><span class="required">Required</span><!-- /TMPL_IF -->
-    </li>
+       <div class="autocomplete">
+           <div id="zipcodeautocomplete" class="autocomplete">
+                <input autocomplete="off" id="zipcode" name="zipcode" type="text" value="<!-- TMPL_VAR NAME="zipcode" -->" /> 
+                <div id="ac_containerzip"></div>
+       <!-- TMPL_IF NAME="mandatoryzipcode" --><span class="required">Required</span><!-- /TMPL_IF -->
+           </div>       
+       </div>
+      </li>
+         <li>
+      <!-- TMPL_IF NAME="mandatorycity" -->
+        <label for="city" class="required">
+      <!-- TMPL_ELSE -->
+        <label for="city">
+      <!-- /TMPL_IF -->
+      City, State: </label>
+        <input type="text" id="city" name="city" size="20" value="<!-- TMPL_VAR NAME="city" -->" />
+        <!-- TMPL_IF NAME="mandatorycity" --><span class="required">Required</span><!-- /TMPL_IF -->
+     </li>
+   
+     
+   
     
-    <li> 
-      <!-- TMPL_IF NAME="mandatorycountry" -->
+     <li> 
+     <!-- TMPL_IF NAME="mandatorycountry" -->
         <label for="country" class="required">
-      <!--TMPL_ELSE-->
+     <!-- TMPL_ELSE -->
         <label for="country">
-      <!-- /TMPL_IF-->
-      Country: </label>
-      <input type="text" name="country" id="country" size="20" value="<!-- TMPL_VAR NAME="country" -->" />
-	  <!-- TMPL_IF NAME="mandatorycountry" --><span class="required">Required</span><!-- /TMPL_IF -->
+     <!-- /TMPL_IF -->
+     Country: </label>
+         <div class="autocomplete">
+                 <div id="countryautocomplete" class="autocomplete">
+                <input autocomplete="off" id="country" name="country" type="text" value="<!-- TMPL_VAR NAME="country" -->" /> 
+                <div id="ac_containercountry"></div>
+                </div>
+        </div>
+       
+     <!-- TMPL_IF NAME="mandatorycountry" --><span class="required">Required</span><!-- /TMPL_IF -->
     </li>    
   
-	</ol>
+    </ol>
     </fieldset>
-  <fieldset class="rows" id="memberentry_contact">
+    
+    <fieldset class="rows" id="memberentry_contact">
     <legend>Contact</legend><ol>
       <li>
       <!-- TMPL_IF NAME="mandatoryphone" --> 
       <label for="phone" class="required">
-      <!--TMPL_ELSE-->
+      <!-- TMPL_ELSE -->
       <label for="phone">
-      <!-- /TMPL_IF-->
+      <!-- /TMPL_IF -->
       Phone (home): </label>
       <input type="text" id="phone" name="phone" value="<!-- TMPL_VAR NAME="phone" -->" />
-	  <!-- TMPL_IF NAME="mandatoryphone" --><span class="required">Required</span><!-- /TMPL_IF --><div class="hint">Shows on transit slips</div>
+      <!-- TMPL_IF NAME="mandatoryphone" --><span class="required">Required</span><!-- /TMPL_IF --><div class="hint">Shows on transit slips</div>
 
     </li>
     <li>
       <!-- TMPL_IF NAME="mandatoryphonepro" -->
-      <label for="phonepro" class="required">
-      <!--TMPL_ELSE-->
-      <label for="phonepro">
-      <!-- /TMPL_IF-->
+      <label for="phonepro" class="required" style="visibility:hidden">
+      <!-- TMPL_ELSE -->
+      <label for="phonepro" style="visibility:hidden">
+      <!-- /TMPL_IF -->
       Phone (work): </label>
-      <input type="text" id="phonepro" name="phonepro" value="<!-- TMPL_VAR NAME="phonepro" -->" />
-	  <!-- TMPL_IF NAME="mandatoryphonepro" --><span class="required">Required</span><!-- /TMPL_IF -->
+      <input type="hidden" id="phonepro" name="phonepro" value="<!-- TMPL_VAR NAME="phonepro" -->" />
+      <!-- TMPL_IF NAME="mandatoryphonepro" --><span class="required">Required</span><!-- /TMPL_IF -->
     </li>
     <li>
       <!-- TMPL_IF NAME="mandatorymobile" -->
       <label for="mobile" class="required">
-      <!--TMPL_ELSE-->
+      <!-- TMPL_ELSE -->
       <label for="mobile">
-      <!-- /TMPL_IF-->
+      <!-- /TMPL_IF -->
       Phone (cell): </label>
       <input type="text" id="mobile" name="mobile" value="<!-- TMPL_VAR NAME="mobile" -->" />
-	  <!-- TMPL_IF NAME="mandatorymobile" --><span class="required">Required</span><!-- /TMPL_IF -->
+      <!-- TMPL_IF NAME="mandatorymobile" --><span class="required">Required</span><!-- /TMPL_IF -->
     </li>
     <li>
       <!-- TMPL_IF NAME="mandatoryemail" -->
       <label for="email" class="required">
-      <!--TMPL_ELSE-->
+      <!-- TMPL_ELSE -->
       <label for="email">
-      <!-- /TMPL_IF-->
+      <!-- /TMPL_IF -->
       Email (home): </label>
       <input type="text" id="email" name="email" size="45" value="<!-- TMPL_VAR NAME="email" -->" />  
-	  <!-- TMPL_IF NAME="mandatoryemail" --><span class="required">Required</span><!-- /TMPL_IF --><div class="hint">Shows on transit slips</div>
+      <!-- TMPL_IF NAME="mandatoryemail" --><span class="required">Required</span><!-- /TMPL_IF --><div class="hint">Shows on transit slips</div>
 
     </li>
     <li>
       <!-- TMPL_IF NAME="mandatoryemailpro" --> 
       <label for="emailpro" class="required">
-      <!--TMPL_ELSE-->
+      <!-- TMPL_ELSE -->
       <label for="emailpro">
-      <!-- /TMPL_IF-->
+      <!-- /TMPL_IF -->
       Email (work): </label>
       <input type="text" id="emailpro" name="emailpro" size="45" value="<!-- TMPL_VAR NAME="emailpro" -->" />
-	  <!-- TMPL_IF NAME="mandatoryemailpro" --><span class="required">Required</span><!-- /TMPL_IF -->
+      <!-- TMPL_IF NAME="mandatoryemailpro" --><span class="required">Required</span><!-- /TMPL_IF -->
     </li>
     <li>
       <!-- TMPL_IF NAME="mandatoryfax" -->
       <label for="fax" class="required">
-      <!--TMPL_ELSE-->
+      <!-- TMPL_ELSE -->
       <label for="fax">
-      <!-- /TMPL_IF-->
+      <!-- /TMPL_IF -->
       Fax: </label>
       <input type="text" id="fax" name="fax" value="<!-- TMPL_VAR NAME="fax" -->" />
-	  <!-- TMPL_IF NAME="mandatoryfax" --><span class="required">Required</span><!-- /TMPL_IF -->
+      <!-- TMPL_IF NAME="mandatoryfax" --><span class="required">Required</span><!-- /TMPL_IF -->
     </li>
-	</ol>
+    </ol>
   </fieldset>
 
 
 <!-- ************************ STEP_1 *********************** -->
-<!--/TMPL_IF -->
-<!--TMPL_IF Name="step_6"-->
+<!-- /TMPL_IF -->
+<!-- TMPL_IF NAME="step_6" -->
 
-		<fieldset class="rows" id="memberentry_address">
-		<legend>Alternate address</legend><ol>
-			<li>
-				<!-- TMPL_IF NAME="mandatoryB_address" -->
-					<label for="B_address" class="required">
-				<!--TMPL_ELSE-->
-					<label for="B_address">
-				<!-- /TMPL_IF-->
-				Address: </label>
-				<input type="text" id="B_address" name="B_address" size="40" value="<!-- TMPL_VAR NAME="B_address" -->" />
-	  <!-- TMPL_IF NAME="mandatoryB_address" --><span class="required">Required</span><!-- /TMPL_IF -->
-			</li>
-			<li>
-				<!-- TMPL_IF NAME="mandatoryB_address2" -->
-					<label for="B_address2" class="required">
-				<!--TMPL_ELSE-->
-					<label for="B_address2">
-				<!-- /TMPL_IF-->
-				Address 2: </label>
-				<input type="text" id="B_address2" name="B_address2" size="40" value="<!-- TMPL_VAR NAME="B_address2" -->" />
-	  <!-- TMPL_IF NAME="mandatoryB_address2" --><span class="required">Required</span><!-- /TMPL_IF -->
-			</li>			
-			<li>
-				<!-- TMPL_IF NAME="mandatoryB_city" -->
-					<label for="B_city" class="required" >
-				<!--TMPL_ELSE-->
-					<label for="B_city">
-				<!-- /TMPL_IF-->
-				City, State: </label>
-				<input type="text" id="B_city" name="B_city" size="20" value="<!-- TMPL_VAR NAME="B_city" -->" />
-	  <!-- TMPL_IF NAME="mandatoryB_city" --><span class="required">Required</span><!-- /TMPL_IF -->
-			</li>
-			<li>
-				<!-- TMPL_IF NAME="mandatoryB_zipcode" -->
-					<label for="B_zipcode" class="required">
-				<!--TMPL_ELSE-->
-					<label for="B_zipcode">
-				<!-- /TMPL_IF-->
-				Zip/Postal code: </label>
-				<input type="text" id="B_zipcode" name="B_zipcode" maxlength="10" size="10" value="<!-- TMPL_VAR NAME="B_zipcode" -->" />
-	  <!-- TMPL_IF NAME="mandatoryB_zipcode" --><span class="required">Required</span><!-- /TMPL_IF -->
-			</li>
-			<li>
-				<!-- TMPL_IF NAME="mandatoryB_country" -->
-					<label for="B_country" class="required">
-				<!--TMPL_ELSE-->
-					<label for="B_country">
-				<!-- /TMPL_IF-->
-				Country: </label>
-				<input type="text" id="B_country" name="B_country" size="20" value="<!-- TMPL_VAR NAME="B_country" -->" />
-	  <!-- TMPL_IF NAME="mandatoryB_country" --><span class="required">Required</span><!-- /TMPL_IF -->
-			</li>
+    
+        <fieldset class="rows" id="memberentry_address">
+        <legend>Alternate address</legend><ol>
+            <li>
+                <!-- TMPL_IF NAME="mandatoryB_address" -->
+                    <label for="B_address" class="required">
+                <!-- TMPL_ELSE -->
+                    <label for="B_address">
+                <!-- /TMPL_IF -->
+                Address: </label>
+                <input type="text" id="B_address" name="B_address" size="40" value="<!-- TMPL_VAR NAME="B_address" -->" />
+      <!-- TMPL_IF NAME="mandatoryB_address" --><span class="required">Required</span><!-- /TMPL_IF -->
+            </li>
+            <li>
+                <!-- TMPL_IF NAME="mandatoryB_address2" -->
+                    <label for="B_address2" class="required">
+                <!-- TMPL_ELSE -->
+                    <label for="B_address2">
+                <!-- /TMPL_IF -->
+                Address 2: </label>
+                <input type="text" id="B_address2" name="B_address2" size="40" value="<!-- TMPL_VAR NAME="B_address2" -->" />
+      <!-- TMPL_IF NAME="mandatoryB_address2" --><span class="required">Required</span><!-- /TMPL_IF -->
+            </li>    
+                
+                
+            
+            <li>
+            <!-- TMPL_IF NAME="mandatoryB_zipcode" -->
+                    <label for="B_zipcode" class="required">
+            <!-- TMPL_ELSE -->
+                    <label for="B_zipcode">
+            <!-- /TMPL_IF -->
+                Zip/Postal code: </label>
+                  <div class="autocomplete">
+                    <div id="Bzipcodeautocomplete" class="autocomplete">
+                <input autocomplete="off" id="B_zipcode" name="B_zipcode" maxlength="10" type="text" value="<!-- TMPL_VAR NAME="B_zipcode" -->" /> 
+                <div id="ac_containerBzip"></div>
+                </div>
+        </div>
+            <!-- TMPL_IF NAME="mandatoryB_zipcode" --><span class="required">Required</span><!-- /TMPL_IF -->
+            </li>
+    
+            <li>
+                <!-- TMPL_IF NAME="mandatoryB_city" -->
+                    <label for="B_city" class="required" >
+                <!-- TMPL_ELSE -->
+                    <label for="B_city">
+                <!-- /TMPL_IF -->
+                City, State: </label>
+                <input type="text" id="B_city" name="B_city" size="20" value="<!-- TMPL_VAR NAME="B_city" -->" />
+                 <!-- TMPL_IF NAME="mandatoryB_city" --><span class="required">Required</span><!-- /TMPL_IF -->
+            </li>
+                
+            
+            <li>
+                <!-- TMPL_IF NAME="mandatoryB_country" -->
+                    <label for="B_country" class="required">
+                <!-- TMPL_ELSE -->
+                    <label for="B_country">
+                <!-- /TMPL_IF -->
+                Country: </label>
+                <div class="autocomplete">
+                 <div id="Bcountryautocomplete" class="autocomplete">
+                <input autocomplete="off" id="B_country" name="B_country" type="text" value="<!-- TMPL_VAR NAME="B_country" -->" /> 
+                <div id="ac_containerBcountry"></div>
+                </div>
+            </div>
+        
+      <!-- TMPL_IF NAME="mandatoryB_country" --><span class="required">Required</span><!-- /TMPL_IF -->
+      
+            </li>
+            
             <li>
                 <!-- TMPL_IF NAME="mandatoryB_phone" -->
                 <label for="B_phone" class="required">
-                <!--TMPL_ELSE-->
+                <!-- TMPL_ELSE -->
                 <label for="B_phone">
-                <!-- /TMPL_IF-->
+                <!-- /TMPL_IF -->
                 Phone: </label>  
                 <input type="text" id="B_phone" name="B_phone" value="<!-- TMPL_VAR NAME="B_phone" -->" />
                 <!-- TMPL_IF NAME="mandatoryB_phone" --><span class="required">Required</span><!-- /TMPL_IF -->
             </li>
-			<li> 
+            <li> 
         <!-- TMPL_IF NAME="mandatoryB_email" -->
           <label for="B_email" class="required">
-        <!--TMPL_ELSE-->
+        <!-- TMPL_ELSE -->
           <label for="B_email">
-        <!-- /TMPL_IF-->
+        <!-- /TMPL_IF -->
         Email: </label>
         <input type="text" id="B_email" name="B_email" size="45" value="<!-- TMPL_VAR NAME="B_email" -->" />
-		<!-- TMPL_IF NAME="mandatoryB_email" --><span class="required">Required</span><!-- /TMPL_IF --> </li>
+        <!-- TMPL_IF NAME="mandatoryB_email" --><span class="required">Required</span><!-- /TMPL_IF --> </li>
             <li>
-                <!-- TMPL_IF NAME="mandatorycontactnote" -->
-                <label for="contactnote" class="required">
-                <!--TMPL_ELSE-->
-                <label for="contactnote">
-                <!-- /TMPL_IF-->
-                Contact note: </label>
-                <textarea id="contactnote" name="contactnote" cols="40" rows="2"><!-- TMPL_VAR NAME="contactnote" --></textarea>
-        <!-- TMPL_IF NAME="mandatorycontactnote" --><span class="required">Required</span><!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="mandatorynote" -->
+                <label for="note" class="required">
+                <!-- TMPL_ELSE -->
+                <label for="note">
+                <!-- /TMPL_IF -->
+                Note: </label>
+                <textarea id="note" name="note" cols="40" rows="2"><!-- TMPL_VAR NAME="note" --></textarea>
+        <!-- TMPL_IF NAME="mandatorynote" --><span class="required">Required</span><!-- /TMPL_IF -->
             </li>
-			</ol>
-		</fieldset>
-<!-- /TMPL_IF -->		
-<!--TMPL_IF Name="step_2"-->
-		<fieldset class="rows" id="memberentry_altaddress">       
-		    <legend>Alternate Contact</legend><ol>
-			<li>
-			    <!-- TMPL_IF NAME="mandatoryaltcontactsurname" -->
-				<label for="altcontactsurname" class="required">
-				<!-- TMPL_ELSE -->
-				<label for="altcontactsurname">
-				<!-- /TMPL_IF -->
-				Surname:</label>
-				<input type="text" name="altcontactsurname" id="altcontactsurname" value="<!-- TMPL_VAR NAME="altcontactsurname" -->" />
-				<!-- TMPL_IF NAME="mandatoryaltcontactsurname" --><span class="required">Required</span><!-- /TMPL_IF -->
-			</li>
-			<li>
-			    <!-- TMPL_IF NAME="mandatoryaltcontactfirstname" -->
-				<label for="altcontactfirstname" class="required">
-				<!-- TMPL_ELSE -->
-				<label for="altcontactfirstname">
-				<!-- /TMPL_IF -->
-				First name:</label>
-				<input type="text" name="altcontactfirstname" id="altcontactfirstname" value="<!-- TMPL_VAR NAME="altcontactfirstname" -->" />
-				<!-- TMPL_IF NAME="mandatoryaltcontactfirstname" --><span class="required">Required</span><!-- /TMPL_IF -->
-			</li>
-			<li>
-			    <!-- TMPL_IF NAME="mandatoryaltcontactaddress1" -->
-				<label for="altcontactaddress1" class="required">
-				<!-- TMPL_ELSE -->
-				<label for="altcontactaddress1">
-				<!-- /TMPL_IF -->
-				Address:</label>
-				<input type="text" name="altcontactaddress1" id="altcontactaddress1" value="<!-- TMPL_VAR NAME="altcontactaddress1" -->" size="40" />
-				<!-- TMPL_IF NAME="mandatoryaltcontactaddress1" --><span class="required">Required</span><!-- /TMPL_IF -->
-			</li>
-			<li>
-			    <!-- TMPL_IF NAME="mandatoryaltcontactaddress2" -->
-				<label for="altcontactaddress2" class="required">
-				<!-- TMPL_ELSE -->
-				<label for="altcontactaddress2">
-				<!-- /TMPL_IF -->
-				Address 2:</label>
-				<input type="text" name="altcontactaddress2" id="altcontactaddress2" value="<!-- TMPL_VAR NAME="altcontactaddress2" -->" size="40" />
-				<!-- TMPL_IF NAME="mandatoryaltcontactaddress2" --><span class="required">Required</span><!-- /TMPL_IF -->
-			</li>
-			<li>
-			    <!-- TMPL_IF NAME="mandatoryaltcontactaddress3" -->
-				<label for="altcontactaddress3" class="required">
-				<!-- TMPL_ELSE -->
-				<label for="altcontactaddress3">
-				<!-- /TMPL_IF -->
-				City, State:</label>
-				<input type="text" name="altcontactaddress3" id="altcontactaddress3" value="<!-- TMPL_VAR NAME="altcontactaddress3" -->" size="40" />
-				<!-- TMPL_IF NAME="mandatoryaltcontactaddress3" --><span class="required">Required</span><!-- /TMPL_IF -->
-			</li>
-			<li>
-			    <!-- TMPL_IF NAME="mandatoryaltcontactzipcode" -->
-				<label for="altcontactzipcode" class="required">
-				<!-- TMPL_ELSE -->
-				<label for="altcontactzipcode">
-				<!-- /TMPL_IF -->
-				Zip/Postal code:</label>
-				<input type="text" name="altcontactzipcode" id="altcontactzipcode" value="<!-- TMPL_VAR NAME="altcontactzipcode" -->" size="5" />
-				<!-- TMPL_IF NAME="mandatoryaltcontactzipcode" --><span class="required">Required</span><!-- /TMPL_IF -->
-			</li>
-			<li>
-			    <!-- TMPL_IF NAME="mandatoryaltcontactcountry" -->
-				<label for="altcontactcountry" class="required">
-				<!-- TMPL_ELSE -->
-				<label for="altcontactcountry">
-				<!-- /TMPL_IF -->
-				Country:</label>
-				<input type="text" name="altcontactcountry" id="altcontactcountry" value="<!-- TMPL_VAR NAME="altcontactcountry" -->" size="20" />
-				<!-- TMPL_IF NAME="mandatoryaltcontactcountry" --><span class="required">Required</span><!-- /TMPL_IF -->
-			</li>			
-			<li>
-			    <!-- TMPL_IF NAME="mandatoryaltcontactphone" -->
-				<label for="altcontactphone" class="required">
-				<!-- TMPL_ELSE -->
-				<label for="altcontactphone">
-				<!-- /TMPL_IF -->
-				Phone:</label>
-				<input type="text" name="altcontactphone" id="altcontactphone" value="<!-- TMPL_VAR NAME="altcontactphone" -->" />
-				<!-- TMPL_IF NAME="mandatoryaltcontactphone" --><span class="required">Required</span><!-- /TMPL_IF -->
-			</li>
+            </ol>
+        </fieldset>
+<!-- /TMPL_IF -->        
+<!-- TMPL_IF NAME="step_2" -->
+        <fieldset class="rows" id="memberentry_altaddress">       
+            <legend>Alternate Contact</legend><ol>
+            <li>
+                <!-- TMPL_IF NAME="mandatoryaltcontactsurname" -->
+                <label for="altcontactsurname" class="required">
+                <!-- TMPL_ELSE -->
+                <label for="altcontactsurname">
+                <!-- /TMPL_IF -->
+                Surname:</label>
+                <input type="text" name="altcontactsurname" id="altcontactsurname" value="<!-- TMPL_VAR NAME="altcontactsurname" -->" />
+                <!-- TMPL_IF NAME="mandatoryaltcontactsurname" --><span class="required">Required</span><!-- /TMPL_IF -->
+            </li>
+            <li>
+                <!-- TMPL_IF NAME="mandatoryaltcontactfirstname" -->
+                <label for="altcontactfirstname" class="required">
+                <!-- TMPL_ELSE -->
+                <label for="altcontactfirstname">
+                <!-- /TMPL_IF -->
+                First name:</label>
+                <input type="text" name="altcontactfirstname" id="altcontactfirstname" value="<!-- TMPL_VAR NAME="altcontactfirstname" -->" />
+                <!-- TMPL_IF NAME="mandatoryaltcontactfirstname" --><span class="required">Required</span><!-- /TMPL_IF -->
+            </li>
+            <li>
+                <!-- TMPL_IF NAME="mandatoryaltcontactaddress1" -->
+                <label for="altcontactaddress1" class="required">
+                <!-- TMPL_ELSE -->
+                <label for="altcontactaddress1">
+                <!-- /TMPL_IF -->
+                Address:</label>
+                <input type="text" name="altcontactaddress1" id="altcontactaddress1" value="<!-- TMPL_VAR NAME="altcontactaddress1" -->" size="40" />
+                <!-- TMPL_IF NAME="mandatoryaltcontactaddress1" --><span class="required">Required</span><!-- /TMPL_IF -->
+            </li>
+            <li>
+                <!-- TMPL_IF NAME="mandatoryaltcontactaddress2" -->
+                <label for="altcontactaddress2" class="required">
+                <!-- TMPL_ELSE -->
+                <label for="altcontactaddress2">
+                <!-- /TMPL_IF -->
+                Address 2:</label>
+                <input type="text" name="altcontactaddress2" id="altcontactaddress2" value="<!-- TMPL_VAR NAME="altcontactaddress2" -->" size="40" />
+                <!-- TMPL_IF NAME="mandatoryaltcontactaddress2" --><span class="required">Required</span><!-- /TMPL_IF -->
+            </li>
+            <li>
+                <!-- TMPL_IF NAME="mandatoryaltcontactaddress3" -->
+                <label for="altcontactaddress3" class="required">
+                <!-- TMPL_ELSE -->
+                <label for="altcontactaddress3">
+                <!-- /TMPL_IF -->
+                City, State:</label>
+                <input type="text" name="altcontactaddress3" id="altcontactaddress3" value="<!-- TMPL_VAR NAME="altcontactaddress3" -->" size="40" />
+                <!-- TMPL_IF NAME="mandatoryaltcontactaddress3" --><span class="required">Required</span><!-- /TMPL_IF -->
+            </li>
+            <li>
+                <!-- TMPL_IF NAME="mandatoryaltcontactzipcode" -->
+                <label for="altcontactzipcode" class="required">
+                <!-- TMPL_ELSE -->
+                <label for="altcontactzipcode">
+                <!-- /TMPL_IF -->
+                Zip/Postal code:</label>
+                <input type="text" name="altcontactzipcode" id="altcontactzipcode" value="<!-- TMPL_VAR NAME="altcontactzipcode" -->" size="5" />
+                <!-- TMPL_IF NAME="mandatoryaltcontactzipcode" --><span class="required">Required</span><!-- /TMPL_IF -->
+            </li>
+            <li>
+                <!-- TMPL_IF NAME="mandatoryaltcontactcountry" -->
+                <label for="altcontactcountry" class="required">
+                <!-- TMPL_ELSE -->
+                <label for="altcontactcountry">
+                <!-- /TMPL_IF -->
+                Country:</label>
+                <input type="text" name="altcontactcountry" id="altcontactcountry" value="<!-- TMPL_VAR NAME="altcontactcountry" -->" size="20" />
+                <!-- TMPL_IF NAME="mandatoryaltcontactcountry" --><span class="required">Required</span><!-- /TMPL_IF -->
+            </li>            
+            <li>
+                <!-- TMPL_IF NAME="mandatoryaltcontactphone" -->
+                <label for="altcontactphone" class="required">
+                <!-- TMPL_ELSE -->
+                <label for="altcontactphone">
+                <!-- /TMPL_IF -->
+                Phone:</label>
+                <input type="text" name="altcontactphone" id="altcontactphone" value="<!-- TMPL_VAR NAME="altcontactphone" -->" />
+                <!-- TMPL_IF NAME="mandatoryaltcontactphone" --><span class="required">Required</span><!-- /TMPL_IF -->
+            </li>
             </ol>
         </fieldset>
 
 
   <!-- TMPL_IF NAME="I" -->
-	<!-- TMPL_IF NAME="memberofinstution" -->
-	<fieldset class="rows" id="memberentry_organisation">
-		<legend>Organizations</legend><ol>
-		<li>
-			<!-- TMPL_IF NAME="mandatoryphone" --> 
-			<label for="organisations" class="required">
-			<!--TMPL_ELSE-->
-			<label for="organisations">
-			<!-- /TMPL_IF-->
-			Organization(s): </label>
-			<!-- TMPL_VAR NAME="CGIorganisations" -->
-	  <!-- TMPL_IF NAME="mandatoryphone" --><span class="required">Required</span><!-- /TMPL_IF -->
-		</li>
-		</ol>
-	</fieldset>
-	<!-- /TMPL_IF -->
+    <!-- TMPL_IF NAME="memberofinstution" -->
+    <fieldset class="rows" id="memberentry_organisation">
+        <legend>Organizations</legend><ol>
+        <li>
+            <!-- TMPL_IF NAME="mandatoryphone" --> 
+            <label for="organisations" class="required">
+            <!-- TMPL_ELSE -->
+            <label for="organisations">
+            <!-- /TMPL_IF -->
+            Organization(s): </label>
+            <!-- TMPL_VAR NAME="CGIorganisations" -->
+      <!-- TMPL_IF NAME="mandatoryphone" --><span class="required">Required</span><!-- /TMPL_IF -->
+        </li>
+        </ol>
+    </fieldset>
+    <!-- /TMPL_IF -->
   <!-- /TMPL_IF -->
               
 <!-- /TMPL_IF -->
-<!--TMPL_IF Name="step_3"-->
-
+<!-- TMPL_IF NAME="step_3" -->
+<!-- TMPL_UNLESS NAME="11PREINS" --><!-- Progilone B014 -->
   <fieldset class="rows" id="memberentry_library_management">
     <legend>Library Management</legend><ol>
    <li> <!-- TMPL_IF NAME="mandatorycardnumber" -->
       <label for="cardnumber" class="required">
-    <!--TMPL_ELSE -->
+    <!-- TMPL_ELSE -->
       <label for="cardnumber">
-    <!-- /TMPL_IF--> 
+    <!-- /TMPL_IF --> 
     Card number: </label>
     <input type="text" id="cardnumber" name="cardnumber" size="20" value="<!-- TMPL_VAR NAME="cardnumber" -->" />
-	  <!-- TMPL_IF NAME="mandatorycardnumber" --><span class="required">Required</span><!-- /TMPL_IF --></li>
+      <!-- TMPL_IF NAME="mandatorycardnumber" --><span class="required">Required</span><!-- /TMPL_IF --></li>
     <li>
       <!-- TMPL_IF NAME="mandatorybranchcode" -->
         <label for="branchcode" class="required">
-      <!--TMPL_ELSE-->
+      <!-- TMPL_ELSE -->
         <label for="branchcode">
-      <!-- /TMPL_IF-->
+      <!-- /TMPL_IF -->
       Library: </label>
       <!-- TMPL_VAR NAME="CGIbranch" -->
-	  <!-- TMPL_IF NAME="mandatorybranchcode" --><span class="required">Required</span><!-- /TMPL_IF -->
+      <!-- TMPL_IF NAME="mandatorybranchcode" --><span class="required">Required</span><!-- /TMPL_IF -->
     </li>
     <li>
+    <!-- TMPL_IF NAME="typeloop" -->
         <label for="categorycode">Category: </label>
-        <select id="categorycode" name="categorycode">
+        <select id="categorycode" name="categorycode" onChange="Check('<!-- TMPL_VAR NAME='categorycode' -->',this.value);"> <!-- MAN69 add onChange -->
         <!-- TMPL_LOOP NAME="typeloop" -->
-			<!-- TMPL_LOOP NAME="categoryloop" -->
-				<!-- TMPL_IF NAME="__first__" -->
-					<!-- TMPL_IF NAME="typename_C" --><optgroup label="Child"><!-- /TMPL_IF -->
-					<!-- TMPL_IF NAME="typename_A" --><optgroup label="Adult"><!-- /TMPL_IF -->
-					<!-- TMPL_IF NAME="typename_S" --><optgroup label="Staff"><!-- /TMPL_IF -->
-					<!-- TMPL_IF NAME="typename_I" --><optgroup label="Organization"><!-- /TMPL_IF -->
-					<!-- TMPL_IF NAME="typename_P" --><optgroup label="Professional"><!-- /TMPL_IF -->
-					<!-- TMPL_IF NAME="typename_X" --><optgroup label="Statistical"><!-- /TMPL_IF -->
-			    <!-- /TMPL_IF -->
-				<!-- TMPL_IF NAME="categorycodeselected" -->
-               <option value="<!-- TMPL_VAR NAME="categorycode" -->" selected="selected"><!-- TMPL_VAR NAME="categoryname" --></option>
-				<!-- TMPL_ELSE -->
-<option value="<!-- TMPL_VAR NAME="categorycode" -->"><!-- TMPL_VAR NAME="categoryname" --></option>
-				<!-- /TMPL_IF -->
-				<!-- TMPL_IF NAME="__last__" -->
-			        </optgroup>
-				<!-- /TMPL_IF -->
-            <!-- /TMPL_LOOP -->
-       <!-- /TMPL_LOOP -->
-       </select>
+            <!-- TMPL_IF EXPR="typename eq 'C'" --><optgroup label="Child"><!-- /TMPL_IF -->
+            <!-- TMPL_IF EXPR="typename eq 'A'" --><optgroup label="Adult"><!-- /TMPL_IF -->
+            <!-- TMPL_IF EXPR="typename eq 'S'" --><optgroup label="Staff"><!-- /TMPL_IF -->
+            <!-- TMPL_IF EXPR="typename eq 'I'" --><optgroup label="Organization"><!-- /TMPL_IF -->
+            <!-- TMPL_IF EXPR="typename eq 'P'" --><optgroup label="Professional"><!-- /TMPL_IF -->
+            <!-- TMPL_IF EXPR="typename eq 'X'" --><optgroup label="Statistical"><!-- /TMPL_IF -->
+                <!-- TMPL_LOOP NAME="categoryloop" -->
+                    <!-- TMPL_IF NAME="categorycodeselected" -->
+                        <option value="<!-- TMPL_VAR NAME="categorycode" -->" selected="selected"><!-- TMPL_VAR NAME="categoryname" --></option>
+                    <!-- TMPL_ELSE -->
+                        <option value="<!-- TMPL_VAR NAME="categorycode" -->"><!-- TMPL_VAR NAME="categoryname" --></option>
+                    <!-- /TMPL_IF -->
+                <!-- /TMPL_LOOP -->
+            </optgroup>
+        <!-- /TMPL_LOOP -->
+        </select>
+    <!-- TMPL_ELSE -->
+        <span class="problem">There is no category type to add <!-- TMPL_IF NAME="A" -->an Adult<!-- /TMPL_IF --><!-- TMPL_IF NAME="C" -->a Child<!-- /TMPL_IF --><!-- TMPL_IF NAME="I" -->an Institution<!-- /TMPL_IF --><!-- TMPL_IF NAME="P" -->a professionnal<!-- /TMPL_IF --><!-- TMPL_IF NAME="S" -->a Staff Member<!-- /TMPL_IF -->.</span>
+              <a href="/cgi-bin/koha/admin/categorie.pl">Please create one</a>
+    <!-- /TMPL_IF -->
     </li>
     <li>
       <!-- TMPL_IF NAME="mandatorysort1" -->
         <label for="sort1" class="required">
       <!-- TMPL_ELSE -->
         <label for="sort1">
-      <!-- /TMPL_IF-->
+      <!-- /TMPL_IF -->
       Sort 1: </label>
-      <!--TMPL_IF NAME="CGIsort1" --> 
+      <!-- TMPL_IF NAME="CGIsort1" --> 
         <!-- TMPL_VAR NAME="CGIsort1" -->
-      <!--TMPL_ELSE-->
+      <!-- TMPL_ELSE -->
         <input  type="text" id="sort1" name="sort1" size="20"  value="<!-- TMPL_VAR NAME="sort1" -->" />
-	  <!-- TMPL_IF NAME="mandatorysort1" --><span class="required">Required</span><!-- /TMPL_IF -->
+      <!-- TMPL_IF NAME="mandatorysort1" --><span class="required">Required</span><!-- /TMPL_IF -->
       <!-- /TMPL_IF -->   
     </li>
     <li>
@@ -778,168 +1128,266 @@
     <label for="sort2" class="required">
     <!-- TMPL_ELSE -->
     <label for="sort2">
-    <!-- /TMPL_IF-->
+    <!-- /TMPL_IF -->
     Sort 2: </label>
-    <!--TMPL_IF NAME="CGIsort2" --> 
+    <!-- TMPL_IF NAME="CGIsort2" --> 
       <!-- TMPL_VAR NAME="CGIsort2" -->
-    <!--TMPL_ELSE-->
+    <!-- TMPL_ELSE -->
       <input  type="text" id="sort2" name="sort2" size="20"  value="<!-- TMPL_VAR NAME="sort2" -->" />
-	  <!-- TMPL_IF NAME="mandatorysort2" --><span class="required">Required</span><!-- /TMPL_IF -->
+      <!-- TMPL_IF NAME="mandatorysort2" --><span class="required">Required</span><!-- /TMPL_IF -->
     <!-- /TMPL_IF --> 
     </li>
-	</ol>
-  </fieldset>
-	<fieldset class="rows" id="memberentry_subscription">
-	<legend>Library set-up</legend><ol>
-		<li>
-			<!-- TMPL_IF NAME="mandatorydateenrolled" -->
-			<label for="dateenrolled" class="required">
-			<!--TMPL_ELSE-->
-			<label for="dateenrolled">
-			<!-- /TMPL_IF-->
-			Registration date: </label>
-			<input type="text" id="dateenrolled" name="dateenrolled"  maxlength="10" size="10" <!-- TMPL_IF NAME="metric" -->onchange="CheckDate(document.form.dateenrolled);check_manip_date('verify');"<!-- /TMPL_IF--> value="<!-- TMPL_VAR NAME="dateenrolled" -->" />
-            <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" id="dateenrolled_button" alt="Show Calendar" />
-      <script language="JavaScript" type="text/javascript">
-        Calendar.setup(
-          {
-            inputField : "dateenrolled",
-            ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
-            button : "dateenrolled_button"
-          }
-        );
-      </script>
-		<!-- TMPL_IF NAME="mandatorydateenrolled" --><span class="required">Required</span><!-- /TMPL_IF -->
-		<!-- TMPL_IF NAME="ERROR_dateenrolled" --><span class="required">(Error)</span><!-- /TMPL_IF -->
-		<div class="hint"><!-- TMPL_INCLUDE NAME="date-format.inc" --></div>
-		</li>
-		<li>
-			<!-- TMPL_IF NAME="mandatorydateexpiry" -->
-			<label for="dateexpiry" class="required">
-			<!--TMPL_ELSE-->
-			<label for="dateexpiry">
-			<!-- /TMPL_IF-->
-			Expiry date (leave blank for auto calc) </label>
-			<input type="text" id="dateexpiry" name="dateexpiry" maxlength="10"  size="10" <!-- TMPL_IF NAME="metric" -->onchange="CheckDate(document.form.dateexpiry);check_manip_date('verify');"<!-- /TMPL_IF--> value="<!-- TMPL_UNLESS NAME="opadd" --><!-- TMPL_VAR NAME="dateexpiry" --><!-- /TMPL_UNLESS -->" />
-            <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" id="dateexpiry_button" alt="Show Calendar" />
-      <script language="JavaScript" type="text/javascript">
-        Calendar.setup(
-          {
-            inputField : "dateexpiry",
-            ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
-            button : "dateexpiry_button"
-          }
-        );
-      </script>
-		<!-- TMPL_IF NAME="mandatorydateexpiry" --><span class="required">Required</span><!-- /TMPL_IF -->
-		<!-- TMPL_IF NAME="ERROR_dateexpiry" --><span class="required">(Error)</span><!-- /TMPL_IF -->
-		<div class="hint"><!-- TMPL_INCLUDE NAME="date-format.inc" --></div>
-		</li>
-		<li>
-			<!-- TMPL_IF NAME="mandatoryopacnote" -->
-				<label for="opacnote" class="required">
-			<!--TMPL_ELSE-->
-				<label for="opacnote">
-			<!-- /TMPL_IF-->	
-			OPAC note: </label>
-			<textarea id="opacnote" name="opacnote" cols="55" rows="5"><!-- TMPL_VAR NAME="opacnote" --></textarea>
-			<div class="hint">This message appears on this patron's user page in the OPAC</div>
-	  <!-- TMPL_IF NAME="mandatoryopacnote" --><span class="required">Required</span><!-- /TMPL_IF -->
-		</li>
-		<li>
-			<!-- TMPL_IF NAME="mandatoryborrowernotes" -->	
-				<label for="borrowernotes" class="required">
-			<!--TMPL_ELSE-->
-				<label for="borrowernotes">
-			<!-- /TMPL_IF-->
-			Circulation note: </label>
-			<textarea id="borrowernotes" name="borrowernotes" cols="55" rows="5"><!-- TMPL_VAR NAME="borrowernotes" --></textarea>
-			<div class="hint">This message displays when checking out to this patron</div>
-	  <!-- TMPL_IF NAME="mandatoryborrowernotes" --><span class="required">Required</span><!-- /TMPL_IF -->
-		</li>
-		</ol>
-	</fieldset>
-	<fieldset class="rows" id="memberentry_userid">
-		<legend>OPAC login</legend><ol>
-		<li>
-			<!-- TMPL_IF NAME="mandatoryuserid" -->
-			<label for="userid" class="required">
-			<!--TMPL_ELSE-->
-			<label for="userid">
-			<!-- /TMPL_IF-->
-			OPAC Login: </label>
-
-<!-- TMPL_IF NAME="NoUpdateLogin" -->
-<input type="text" id="userid" name="userid" size="20" disabled="disabled" value="<!-- TMPL_VAR NAME="userid" -->" />
-<!-- TMPL_ELSE -->
-<input type="text" id="userid" name="userid" size="20" value="<!-- TMPL_VAR NAME="userid" -->" />
-<!-- /TMPL_IF -->
-
-	  <!-- TMPL_IF NAME="mandatoryuserid" --><span class="required">Required</span><!-- /TMPL_IF -->
-		</li>
-		<li>
-			<!-- TMPL_IF NAME="mandatorypassword" -->
-			<label for="password" class="required">
-			<!--TMPL_ELSE-->
-			<label for="password">
-			<!-- /TMPL_IF-->
-			Password: </label>
-			<!--TMPL_IF NAME="opadd"-->
-			<!-- TMPL_IF NAME="NoUpdateLogin" -->
-				<input type="text" id="password" name="password" size="20"  disabled="disabled" value="<!-- TMPL_VAR NAME="password" -->" />
-<!-- TMPL_ELSE -->
-				<input type="text" id="password" name="password" size="20" value="<!-- TMPL_VAR NAME="password" -->" />
-<!-- /TMPL_IF -->
-			<!--TMPL_ELSE-->
-			<!--TMPL_IF NAME="password"-->
-				<!-- TMPL_IF NAME="NoUpdateLogin" -->
-					<input type="text" id="password" name="password" size="20"  disabled="disabled" value="****" />
-				<!-- TMPL_ELSE -->
-					<input type="text" id="password" name="password" size="20" value="****" />
-				<!-- /TMPL_IF -->
-			<!--TMPL_ELSE-->
-				<!-- TMPL_IF NAME="NoUpdateLogin" -->
-					<input type="text" id="password" name="password" size="20"  disabled="disabled" value="" />
-				<!-- TMPL_ELSE -->
-					<input type="text" id="password" name="password" size="20" value="" />
-				<!-- /TMPL_IF -->
-			<!--/TMPL_IF-->
-			<!--/TMPL_IF-->
-	  <!-- TMPL_IF NAME="mandatorypassword" --><span class="required">Required</span><!-- /TMPL_IF --><!-- TMPL_IF NAME="ERROR_short_password" --><span class="required">Password is too short</span><!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="minPasswordLength" --><div class="hint">Minimum password length: <!-- TMPL_VAR NAME="minPasswordLength" --></div><!-- /TMPL_IF -->
-		</li></ol>
-		</fieldset>
-		<!--this zones are not necessary in modif mode -->
-		<!-- TMPL_UNLESS NAME="opadd" -->
-		<fieldset class="rows">
-			<legend>Patron Account Flags</legend>
-			<ol class="radio">
-			<!-- TMPL_LOOP NAME="flagloop" -->
-				<li><label class="radio" for="yes<!-- TMPL_VAR name="name" -->">
-				<!-- TMPL_IF EXPR="key eq 'gonenoaddress'" -->Gone no Address:<!-- /TMPL_IF -->
-				<!-- TMPL_IF EXPR="key eq 'debarred'" -->Debarred:<!-- /TMPL_IF -->
-				<!-- TMPL_IF EXPR="key eq 'lost'" -->Lost Card:<!-- /TMPL_IF -->
+     <li>
+    <!-- TMPL_IF NAME="mandatorysort3" -->
+    <label for="sort3" class="required">
+    <!-- TMPL_ELSE -->
+    <label for="sort3">
+    <!-- /TMPL_IF -->
+    Sort 3: </label>
+    <!-- TMPL_IF NAME="CGIsort3" --> 
+      <!-- TMPL_VAR NAME="CGIsort3" -->
+    <!-- TMPL_ELSE -->
+      <input  type="text" id="sort3" name="sort3" size="20"  value="<!-- TMPL_VAR NAME="sort3" -->" />
+      <!-- TMPL_IF NAME="mandatorysort3" --><span class="required">Required</span><!-- /TMPL_IF -->
+    <!-- /TMPL_IF --> 
+    </li>
+    
+ 
+        <li>
+            <!-- TMPL_IF NAME="mandatorydateenrolled" -->
+            <label for="dateenrolled" class="required">
+            <!-- TMPL_ELSE -->
+            <label for="dateenrolled">
+            <!-- /TMPL_IF -->
+            Registration date: </label>
+            <input type="text" id="dateenrolled" name="dateenrolled"  maxlength="10" size="10" value="<!-- TMPL_VAR NAME='dateenrolled' -->" />
+            <img src="<!-- TMPL_VAR NAME='themelang' -->/lib/calendar/cal.gif" id="dateenrolled_button" alt="Show Calendar" />
+            <script language="JavaScript" type="text/javascript">
+                <!-- TMPL_IF NAME="metric" -->
+                $('#dateenrolled').change(function() {
+                    CheckDate(document.form.dateenrolled);
+                    check_manip_date('verify');
+                });
+                <!-- /TMPL_IF -->
+                
+                Calendar.setup(
+                    {
+                        inputField : "dateenrolled",
+                        ifFormat : "<!-- TMPL_VAR NAME='DHTMLcalendar_dateformat' -->",
+                        button : "dateenrolled_button"
+                    }
+                );
+            </script>
+        <!-- TMPL_IF NAME="mandatorydateenrolled" --><span class="required">Required</span><!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="ERROR_dateenrolled" --><span class="required">(Error)</span><!-- /TMPL_IF -->
+        <div class="hint"><!-- TMPL_INCLUDE NAME="date-format.inc" --></div>
+        </li>
+        <li>
+            <!-- TMPL_IF NAME="mandatorydateexpiry" -->
+            <label for="dateexpiry" class="required">
+            <!-- TMPL_ELSE -->
+            <label for="dateexpiry">
+            <!-- /TMPL_IF -->
+            Expiry date (leave blank for auto calc) </label>
+            <!-- TMPL_IF NAME='opadd' -->
+                <input type="text" id="dateexpiry" name="dateexpiry" maxlength="10"  size="10" value="" />
+            <!-- TMPL_ELSE -->
+                <input type="text" id="dateexpiry" name="dateexpiry" maxlength="10"  size="10" value="<!-- TMPL_VAR NAME='dateexpiry' -->" />
+            <!-- /TMPL_IF -->
+            
+            <img src="<!-- TMPL_VAR NAME='themelang' -->/lib/calendar/cal.gif" id="dateexpiry_button" alt="Show Calendar" />
+            <script language="JavaScript" type="text/javascript">
+                <!-- TMPL_IF NAME="metric" -->
+                $('#dateexpiry').change(function() {
+                    CheckDate(document.form.dateexpiry);
+                    check_manip_date('verify');
+                });
+                <!-- /TMPL_IF -->
+                
+                Calendar.setup(
+                    {
+                        inputField : "dateexpiry",
+                        ifFormat : "<!-- TMPL_VAR NAME='DHTMLcalendar_dateformat' -->",
+                        button : "dateexpiry_button"
+                    }
+                );
+            </script>
+        <!-- TMPL_IF NAME="mandatorydateexpiry" --><span class="required">Required</span><!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="ERROR_dateexpiry" --><span class="required">(Error)</span><!-- /TMPL_IF -->
+        <div class="hint"><!-- TMPL_INCLUDE NAME="date-format.inc" --></div>
+        </li>
+        <li>
+            <!-- TMPL_IF NAME="mandatoryopacnote" -->
+                <label for="opacnote" class="required">
+            <!-- TMPL_ELSE -->
+                <label for="opacnote">
+            <!-- /TMPL_IF -->    
+            OPAC note: </label>
+            <textarea id="opacnote" name="opacnote" cols="55" rows="5"><!-- TMPL_VAR NAME="opacnote" --></textarea>
+            <div class="hint">This message appears on this patron's user page in the OPAC</div>
+      <!-- TMPL_IF NAME="mandatoryopacnote" --><span class="required">Required</span><!-- /TMPL_IF -->
+        </li>
+        <li>
+            <!-- TMPL_IF NAME="mandatoryborrowernotes" -->    
+                <label for="borrowernotes" class="required">
+            <!-- TMPL_ELSE -->
+                <label for="borrowernotes">
+            <!-- /TMPL_IF -->
+            Internal note: </label>
+            <textarea id="borrowernotes" name="borrowernotes" cols="55" rows="5"><!-- TMPL_VAR NAME="borrowernotes" --></textarea>
+            <div class="hint">This message displays when checking out to this patron</div>
+      <!-- TMPL_IF NAME="mandatoryborrowernotes" --><span class="required">Required</span><!-- /TMPL_IF -->
+        </li>
+        </ol>
+    </fieldset>
+<!-- /TMPL_UNLESS -->
+    <fieldset class="rows" id="memberentry_userid">
+        <legend>OPAC login</legend><ol>
+        <!-- TMPL_UNLESS NAME="11PREINS" --><!-- Progilone B014 -->
+	        <li>
+	            <!-- TMPL_IF NAME="mandatoryuserid" -->
+	            <label for="userid" class="required">
+	            <!-- TMPL_ELSE -->
+	            <label for="userid">
+	            <!-- /TMPL_IF -->
+	            OPAC Login: </label>
+	            
+	            <!-- TMPL_IF NAME="NoUpdateLogin" -->
+	            <input type="text" id="userid" name="userid" size="20" disabled="disabled" value="<!-- TMPL_VAR NAME='userid' -->" />
+	            <!-- TMPL_ELSE -->
+	            <input type="text" id="userid" name="userid" size="20" value="<!-- TMPL_VAR NAME='userid' -->" />
+	            <!-- /TMPL_IF -->
+	            
+	            <!-- TMPL_IF NAME="mandatoryuserid" --><span class="required">Required</span><!-- /TMPL_IF -->
+	        </li>
+        <!-- /TMPL_UNLESS -->
+        <li>
+            <!-- TMPL_IF NAME="mandatorypassword" -->
+                <label for="password" class="required">
+            <!-- TMPL_ELSE -->
+                <label for="password">
+            <!-- /TMPL_IF -->
+            Password: </label>
+            <!-- TMPL_IF NAME="opadd" -->
+            <!-- TMPL_IF NAME="NoUpdateLogin" -->
+                <input type="password" id="password" name="password" size="20"  disabled="disabled" value="<!-- TMPL_VAR NAME='password' -->" />
+            <!-- TMPL_ELSE -->
+                <input type="password" id="password" name="password" size="20" value="<!-- TMPL_VAR NAME='password' -->" />
+            <!-- /TMPL_IF -->
+            <!-- TMPL_ELSE -->
+            <!-- TMPL_IF NAME="password" -->
+                <!-- TMPL_IF NAME="NoUpdateLogin" -->
+                    <input type="password" id="password" name="password" size="20"  disabled="disabled" value="****" />
+                <!-- TMPL_ELSE -->
+                    <input type="password" id="password" name="password" size="20" value="****" />
+                <!-- /TMPL_IF -->
+            <!-- TMPL_ELSE -->
+                <!-- TMPL_IF NAME="NoUpdateLogin" -->
+                    <input type="password" id="password" name="password" size="20"  disabled="disabled" value="" />
+                <!-- TMPL_ELSE -->
+                    <input type="password" id="password" name="password" size="20" value="" />
+                <!-- /TMPL_IF -->
+            <!-- /TMPL_IF -->
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="mandatorypassword" --><span class="required">Required</span><!-- /TMPL_IF --><!-- TMPL_IF NAME="ERROR_short_password" --><span class="required">Password is too short</span><!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="minPasswordLength" --><div class="hint">Minimum password length: <!-- TMPL_VAR NAME="minPasswordLength" --></div><!-- /TMPL_IF -->
+        </li></ol>
+        </fieldset>
+        <!--this zones are not necessary in modif mode -->
+        <!-- TMPL_UNLESS NAME="opadd" -->
+        <fieldset class="rows">
+            <legend>Patron Account Flags</legend>
+            <ol class="radio">
+            <!-- TMPL_LOOP NAME="flagloop" -->
+                <li>
+                <label class="radio" for="yes<!-- TMPL_VAR NAME='name' -->">
+                
+                <!-- TMPL_IF EXPR="key eq 'gonenoaddress'" -->Gone no Address:<!-- /TMPL_IF -->
+                
+                <!-- TMPL_IF EXPR="key eq 'debarred'" -->Debarred for loan :
+                <div id="datedebar1" style="display:none;">
+                    <label for="datedebarred"> until </label>
+                    <input type="text" id="datedebarred" name="datedebarred" maxlength="10"  size="10" value="<!-- TMPL_VAR NAME='datedebarred' -->" />
+                    <img src="<!-- TMPL_VAR NAME='themelang' -->/lib/calendar/cal.gif" id="datedebarred_button" alt="Show Calendar" />
+                    <script language="JavaScript" type="text/javascript">
+                        <!-- TMPL_IF NAME="metric" -->
+                        $("#datedebarred").change(function() {
+                            CheckDate(document.form.datedebarred);
+                        });
+                        <!-- /TMPL_IF -->
+                        
+                        Calendar.setup(
+                            {
+                                inputField : "datedebarred",
+                                ifFormat : "<!-- TMPL_VAR NAME='DHTMLcalendar_dateformat' -->",
+                                button : "datedebarred_button"
+                            }
+                        );
+                    </script>
+                </div>
+                <!-- /TMPL_IF -->
+                
+                <!-- TMPL_IF EXPR="key eq 'debarred2'" -->Debarred for communication :
+                <div id="datedebar2" style="display:none;">
+                    <label for="datedebarred2"> until </label>
+                    <input type="text" id="datedebarred2" name="datedebarred2" maxlength="10"  size="10" value="<!-- TMPL_VAR NAME='datedebarred2' -->" />
+                    <img src="<!-- TMPL_VAR NAME='themelang' -->/lib/calendar/cal.gif" id="datedebarred2_button" alt="Show Calendar" />
+                    <script language="JavaScript" type="text/javascript">
+                        <!-- TMPL_IF NAME="metric" -->
+                        $("#datedebarred2").change(function() {
+                            CheckDate(document.form.datedebarred2);
+                        });
+                        <!-- /TMPL_IF -->
+                        
+                        Calendar.setup(
+                            {
+                                inputField : "datedebarred2",
+                                ifFormat : "<!-- TMPL_VAR NAME='DHTMLcalendar_dateformat' -->",
+                                button : "datedebarred2_button"
+                            }
+                        );
+                    </script>
+                </div>
+                <!-- /TMPL_IF -->
+                
+                <!-- TMPL_IF EXPR="key eq 'lost'" -->Lost Card:<!-- /TMPL_IF -->
+                
+                <!-- TMPL_IF EXPR="key eq 'docs'" -->Required documents:<!-- /TMPL_IF -->
+                
                 </label>
-				
-				<label for="yes<!-- TMPL_VAR NAME="name" -->">Yes </label>
-				<!-- TMPL_IF NAME="yes" -->
-				<input type="radio" id="yes<!-- TMPL_VAR NAME="name" -->" name="<!-- TMPL_VAR NAME="name" -->" value="1" checked="checked" />
-				<!-- TMPL_ELSE -->
-				<input type="radio" id="yes<!-- TMPL_VAR NAME="name" -->" name="<!-- TMPL_VAR NAME="name" -->" value="1" />
-				<!-- /TMPL_IF -->
-				
-				<label for="no<!-- TMPL_VAR NAME="name" -->">No </label>
-				<!-- TMPL_IF NAME="no" -->
-				<input type="radio" id="no<!-- TMPL_VAR NAME="name" -->" name="<!-- TMPL_VAR NAME="name" -->" value="0" checked="checked"/>
-				<!-- TMPL_ELSE -->
-				<input type="radio" id="no<!-- TMPL_VAR NAME="name" -->" name="<!-- TMPL_VAR NAME="name" -->" value="0" />
-				<!-- /TMPL_IF -->
-
-</li>
-			<!-- /TMPL_LOOP -->
-			</ol>
-			</fieldset>
-		<!-- /TMPL_UNLESS -->	
+                
+                <label for="yes<!-- TMPL_VAR NAME='name' -->">Yes </label>
+                <!-- TMPL_IF NAME="yes" -->
+                <input type="radio" id="yes<!-- TMPL_VAR NAME='name' -->" name="<!-- TMPL_VAR NAME='name' -->" value="1" checked="checked" onclick="show_date(this.name);"   />
+                <!-- TMPL_ELSE -->
+                <input type="radio" id="yes<!-- TMPL_VAR NAME='name' -->" name="<!-- TMPL_VAR NAME='name' -->" value="1" onclick="show_date(this.name);"  />
+                <!-- /TMPL_IF -->
+                
+                <label for="no<!-- TMPL_VAR NAME='name' -->">No </label>
+                <!-- TMPL_IF NAME="no" -->
+                <input type="radio" id="no<!-- TMPL_VAR NAME='name' -->" name="<!-- TMPL_VAR NAME='name' -->" value="0" checked="checked" onclick="hide_date(this.name);" />
+                <!-- TMPL_ELSE -->
+                <input type="radio" id="no<!-- TMPL_VAR NAME='name' -->" name="<!-- TMPL_VAR NAME='name' -->" value="0" onclick="hide_date(this.name);" />
+                <!-- /TMPL_IF -->
+            
+            </li>
+            <!-- /TMPL_LOOP -->
+            </ol>
+            </fieldset>
+	        <fieldset class="rows">
+	        <legend>SCA</legend><ol>
+		        <li>
+		            <label for="sca_enrolled_by">Card enrolled in access control by: </label>
+		            <select id="sca_enrolled_by" name="sca_enrolled_by">
+		            	<!-- TMPL_IF NAME="sca_enrolled_by_empty" -->
+	                    	<option value="" selected="selected" />
+	                    <!-- /TMPL_IF -->
+	                    <option value="<!-- TMPL_VAR NAME='enrolled_by_bulac' -->"<!-- TMPL_IF EXPR="sca_enrolled_by eq enrolled_by_bulac" --> selected="selected"<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="enrolled_by_bulac" --></option>
+                        <option value="<!-- TMPL_VAR NAME='enrolled_by_inalco' -->"<!-- TMPL_IF EXPR="sca_enrolled_by eq enrolled_by_inalco" --> selected="selected"<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="enrolled_by_inalco" --></option>
+	                </select>
+		        </li>
+		    </ol></fieldset>
+        <!-- /TMPL_UNLESS -->    
 
 <!-- /TMPL_IF -->
 
@@ -957,17 +1405,17 @@
             <td><!-- TMPL_VAR NAME="code" --> (<!-- TMPL_VAR NAME="description" -->)
             </td>
             <td>
-                <input type="hidden" id="<!-- TMPL_VAR NAME="form_id" -->_code" name="<!-- TMPL_VAR NAME="form_id" -->_code" value="<!-- TMPL_VAR NAME="code" ESCAPE="HTML" -->" />
+                <input type="hidden" id="<!-- TMPL_VAR NAME='form_id' -->_code" name="<!-- TMPL_VAR NAME='form_id' -->_code" value="<!-- TMPL_VAR NAME='code' ESCAPE='HTML' -->" />
                 <!-- TMPL_IF NAME="use_dropdown" -->
-                    <select id="<!-- TMPL_VAR NAME="form_id" -->" name="<!-- TMPL_VAR NAME="form_id" -->">
+                    <select id="<!-- TMPL_VAR NAME='form_id' -->" name="<!-- TMPL_VAR NAME='form_id' -->">
                         <option value="" />
                         <!-- TMPL_LOOP NAME="auth_val_loop" -->
                             <!-- TMPL_IF NAME="selected" -->
-                                <option value="<!-- TMPL_VAR NAME="authorised_value" -->" selected="selected">
+                                <option value="<!-- TMPL_VAR NAME='authorised_value' -->" selected="selected">
                                     <!-- TMPL_VAR NAME="lib" -->
                                 </option>
                             <!-- TMPL_ELSE -->
-                                <option value="<!-- TMPL_VAR NAME="authorised_value" -->" >
+                                <option value="<!-- TMPL_VAR NAME='authorised_value' -->" >
                                     <!-- TMPL_VAR NAME="lib" -->
                                 </option>
                             <!-- /TMPL_IF -->
@@ -992,7 +1440,7 @@
         <!-- /TMPL_LOOP -->
     </table>
   </fieldset>
-<!-- /TMPL_IF--><!-- /TMPL_IF --><!-- /TMPL_UNLESS -->
+<!-- /TMPL_IF --><!-- /TMPL_IF --><!-- /TMPL_UNLESS -->
 
 <!-- TMPL_IF NAME="step_5" --><!-- TMPL_IF NAME="EnhancedMessagingPreferences" -->
   <fieldset class="rows" id="memberentry_messaging_prefs">
@@ -1057,9 +1505,9 @@
         <input type="submit" name="save" onclick="return check_form_borrowers();" value="Save" />
       <!-- TMPL_IF NAME="opadd" -->
        <a class="cancel" href="/cgi-bin/koha/members/member.pl">Cancel</a>
-	   <!-- TMPL_ELSE -->
-	  <a class="cancel" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a>
-	   <!-- /TMPL_IF -->
+       <!-- TMPL_ELSE -->
+      <a class="cancel" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Cancel</a>
+       <!-- /TMPL_IF -->
     </fieldset>
 </form>
   
@@ -1069,7 +1517,5 @@
 <!-- TMPL_UNLESS NAME="opadd" --><div class="yui-b">
 <!-- TMPL_INCLUDE NAME="members-menu.inc" -->
 </div><!-- /TMPL_UNLESS -->
-<!-- /TMPL_UNLESS -->
 </div>
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->
-

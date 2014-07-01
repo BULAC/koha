@@ -9,7 +9,7 @@
             inputcharset="utf-8"/>
     </backend>
   </retrieval>
-  <retrieval syntax="xml" name="dc">
+<!--   <retrieval syntax="xml" name="dc">
     <backend syntax="usmarc" name="F">
       <marc inputformat="marc" outputformat="marcxml"
             inputcharset="utf-8"/>
@@ -36,5 +36,5 @@
             inputcharset="utf-8"/>
       <xslt stylesheet="__INTRANET_TMPL_DIR__/prog/en/xslt/MARC21slimUtils.xsl"/>
     </backend>
-  </retrieval>
+  </retrieval> -->
 </retrievalinfo>

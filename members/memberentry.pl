@@ -18,13 +18,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 # pragma
-use strict;
+#use strict;
 use warnings;
-
+use File::Temp;
+use File::Copy;
 # external modules
 use CGI;
 # use Digest::MD5 qw(md5_base64);
-
+use GD;
 # internal modules
 use C4::Auth;
 use C4::Context;
@@ -39,6 +40,9 @@ use C4::Log;
 use C4::Letters;
 use C4::Branch; # GetBranches
 use C4::Form::MessagingPreferences;
+use C4::Utils::Constants;
+use C4::Utils::String;
+use C4::Spaces::SCA;
 
 use vars qw($debug);
 
@@ -77,8 +81,13 @@ $nodouble = 1 if $op eq 'modify'; # FIXME hack to represent fact that if we're
 my $select_city    = $input->param('select_city');
 my $nok            = $input->param('nok');
 my $guarantorinfo  = $input->param('guarantorinfo');
+
+# B014
+my $uploadfilename      = $input->param('uploadfile');
+my $uploadfile          = $input->upload('uploadfile');
+my $filetype      = $input->param('filetype');
 my $step           = $input->param('step') || 0;
-my @errors;
+my ( $total, $handled, @counts );
 my $default_city;
 # $check_categorytype contains the value of duplicate borrowers category type to redirect in good template in step =2
 my $check_categorytype=$input->param('check_categorytype');
@@ -86,6 +95,10 @@ my $check_categorytype=$input->param('check_categorytype');
 my $borrower_data;
 my $NoUpdateLogin;
 my $userenv = C4::Context->userenv;
+my @errors;
+# END B014
+
+my $print_confirmation = $input->param( 'print_confirmation' );
 
 $template->param("uppercasesurnames" => C4::Context->preference('uppercasesurnames'));
 
@@ -112,12 +125,24 @@ unless ($category_type or !($categorycode)){
 }
 $category_type="A" unless $category_type; # FIXME we should display a error message instead of a 500 error !
 
+# Progilone B014
+if ( $op eq 'add' && $categorycode eq $PRE_REG_CATEGORY ) {
+	$template->param( "$categorycode" => $categorycode );
+    $template->param( "dateenrolled" => C4::Dates->today('iso') );
+}
+
 # if a add or modify is requested => check validity of data.
 %data = %$borrower_data if ($borrower_data);
+
+# B014
+my ($picture, $dberror) = GetPatronImage($data{'cardnumber'}) if ($borrower_data && $op ne 'insert');
+$template->param( picture => 1 ) if $picture;
+# END B014
 
 # initialize %newdata
 my %newdata;	# comes from $input->param()
 if ($op eq 'insert' || $op eq 'modify' || $op eq 'save') {
+    
     my @names= ($borrower_data && $op ne 'save') ? keys %$borrower_data : $input->param();
     foreach my $key (@names) {
         if (defined $input->param($key)) {
@@ -125,10 +150,27 @@ if ($op eq 'insert' || $op eq 'modify' || $op eq 'save') {
             $newdata{$key} =~ s/\"/&quot;/g unless $key eq 'borrowernotes' or $key eq 'opacnote';
         }
     }
+	
+	# B015
+    ## Manipulate debarred
+    if ( $newdata{debarred} ) {
+        $newdata{debarred} = $newdata{datedebarred} ? $newdata{datedebarred} : "9999-12-31";
+    } elsif ( exists( $newdata{debarred} ) && !( $newdata{debarred} ) ) {
+        undef( $newdata{debarred} );
+    }
+    
+    
+     if ( $newdata{debarred2} ) {
+        $newdata{debarred2} = $newdata{datedebarred2} ? $newdata{datedebarred2} : "9999-12-31";
+    } elsif ( exists( $newdata{debarred2} ) && !( $newdata{debarred2} ) ) {
+        undef( $newdata{debarred2} );
+    }
+    # END B015
+    
     my $dateobject = C4::Dates->new();
     my $syspref = $dateobject->regexp();		# same syspref format for all 3 dates
     my $iso     = $dateobject->regexp('iso');	#
-    foreach (qw(dateenrolled dateexpiry dateofbirth)) {
+    foreach (qw(dateenrolled dateexpiry dateofbirth debarred debarred2)) { # B015
         next unless exists $newdata{$_};
         my $userdate = $newdata{$_} or next;
         if ($userdate =~ /$syspref/) {
@@ -156,6 +198,8 @@ if ($op eq 'insert' || $op eq 'modify' || $op eq 'save') {
         qr/^destination$/,
         qr/^nodouble$/,
         qr/^op$/,
+		qr/^datedebarred$/, # B015
+		qr/^datedebarred2$/, # B015
         qr/^save$/,
         qr/^select_roadtype$/,
         qr/^updtype$/,
@@ -198,7 +242,10 @@ if (($op eq 'insert') and !$nodouble){
 }
 
   #recover all data from guarantor address phone ,fax... 
-if ( $guarantorid and ( $category_type eq 'C' || $category_type eq 'P' )) {
+if ( defined($guarantorid) and
+     ( $category_type eq 'C' || $category_type eq 'P' ) and
+     $guarantorid ne ''  and
+     $guarantorid ne '0' ) {
     if (my $guarantordata=GetMember(borrowernumber => $guarantorid)) {
         $guarantorinfo=$guarantordata->{'surname'}." , ".$guarantordata->{'firstname'};
         if ( !defined($data{'contactname'}) or $data{'contactname'} eq '' or
@@ -223,8 +270,17 @@ if (!defined($guarantorid) or $guarantorid eq '' or $guarantorid eq '0') {
 }
 
 #builds default userid
-if ( (defined $newdata{'userid'}) && ($newdata{'userid'} eq '')){
-    $newdata{'userid'} = Generate_Userid($borrowernumber, $newdata{'firstname'}, $newdata{'surname'});
+my $old_userid = $input->param('old_userid');
+if ( ($newdata{'userid'} eq '' && $old_userid eq '') && ( (defined $newdata{'userid'}) || ($newdata{ 'categorycode' } eq $PRE_REG_CATEGORY) ) ) {
+	my $userid_fromemail = lc( NormalizeStr( $newdata{'email'} ) );
+	
+    if ($newdata{'email'} && Check_Userid($userid_fromemail,'') ) {
+        $newdata{'userid'} = $userid_fromemail;
+    } else {
+        $newdata{'userid'} = Generate_Userid('', $newdata{'firstname'}, $newdata{'surname'} );
+    }
+} elsif ( $newdata{'userid'} eq '' && $op eq 'save' ) {
+	$NoUpdateLogin = 1;
 }
   
 $debug and warn join "\t", map {"$_: $newdata{$_}"} qw(dateofbirth dateenrolled dateexpiry);
@@ -245,7 +301,7 @@ if ($op eq 'save' || $op eq 'insert'){
   }
   
     if($newdata{surname} && C4::Context->preference('uppercasesurnames')) {
-        $newdata{'surname'} = uc($newdata{'surname'});
+        $newdata{'surname'} = ToUppercase( $newdata{'surname'} );
     }
 
   if (C4::Context->preference("IndependantBranches")) {
@@ -257,10 +313,38 @@ if ($op eq 'save' || $op eq 'insert'){
     }
   }
   # Check if the userid is unique
+  $newdata{'userid'} = lc( NormalizeStr ( $newdata{'userid'} ) );
   unless (Check_Userid($newdata{'userid'},$borrowernumber)) {
     push @errors, "ERROR_login_exist";
   }
   
+  # B014 - BUG 68
+  # Check if the email is unique
+  my $email = $input->param('email');
+  if ( $email ) {
+	  my $query = "
+	       			SELECT email
+	       			FROM borrowers 
+	       			WHERE email = ?
+	   			  ";
+	  my $sth;
+	  if ( $borrowernumber ) {
+	  	$query = $query." AND borrowernumber <> ?";
+		$sth = $dbh->prepare($query);
+	  	$sth->execute($email, $borrowernumber);
+	  } else {
+	  	$sth = $dbh->prepare($query);
+	  	$sth->execute($email);
+	  }
+	
+	  my $row = $sth->fetchall_arrayref({});
+	  warn $row->[0];
+	  if ( $row->[0] ) {
+	    push @errors, "ERROR_email_exist";
+	  }
+  }
+  # END B014 - BUG 68
+ 
   my $password = $input->param('password');
   push @errors, "ERROR_short_password" if( $password && $minpw && $password ne '****' && (length($password) < $minpw) );
 
@@ -289,11 +373,26 @@ if ( ( defined $input->param('SMSnumber') ) && ( $input->param('SMSnumber') ne $
 ###  Error checks should happen before this line.
 $nok = $nok || scalar(@errors);
 if ((!$nok) and $nodouble and ($op eq 'insert' or $op eq 'save')){
-	$debug and warn "$op dates: " . join "\t", map {"$_: $newdata{$_}"} qw(dateofbirth dateenrolled dateexpiry);
-	if ($op eq 'insert'){
-		# we know it's not a duplicate borrowernumber or there would already be an error
+    $debug and warn "$op dates: " . join "\t", map {"$_: $newdata{$_}"} qw(dateofbirth dateenrolled dateexpiry);
+    if ($op eq 'insert'){
+    	# we know it's not a duplicate borrowernumber or there would already be an error
         $borrowernumber = &AddMember(%newdata);
-
+        
+        #SCA : add user
+        if ( C4::Context->preference('UseSCA') ) {
+            my ($status, $message, $enrolled_by) = AddScaUser( $borrowernumber );
+            if ($status) {
+                ModMember(
+                    borrowernumber => $borrowernumber, 
+                    sca_enrolled_by => $enrolled_by
+                );
+            } else {
+                $nok = 1;
+            	push @errors, $message;
+            }
+        }
+        #End SCA
+    
         # If 'AutoEmailOpacUser' syspref is on, email user their account details from the 'notice' that matches the user's branchcode.
         if ( C4::Context->preference("AutoEmailOpacUser") == 1 && $newdata{'userid'}  && $newdata{'password'}) {
             #look for defined primary email address, if blank - attempt to use borr.email and borr.emailpro instead
@@ -320,24 +419,34 @@ if ((!$nok) and $nodouble and ($op eq 'insert' or $op eq 'save')){
                 SendAlerts ( 'members' , \%newdata , $letter ) if $letter
             }
         } 
-
-		if ($data{'organisations'}){            
-			# need to add the members organisations
-			my @orgs=split(/\|/,$data{'organisations'});
-			add_member_orgs($borrowernumber,\@orgs);
-		}
+    
+    	if ($data{'organisations'}){            
+    		# need to add the members organisations
+    		my @orgs=split(/\|/,$data{'organisations'});
+    		add_member_orgs($borrowernumber,\@orgs);
+    	}
         if (C4::Context->preference('ExtendedPatronAttributes') and $input->param('setting_extended_patron_attributes')) {
             C4::Members::Attributes::SetBorrowerAttributes($borrowernumber, $extended_patron_attributes);
         }
         if (C4::Context->preference('EnhancedMessagingPreferences') and $input->param('setting_messaging_prefs')) {
             C4::Form::MessagingPreferences::handle_form_action($input, { borrowernumber => $borrowernumber }, $template);
         }
-	} elsif ($op eq 'save'){ 
-		if ($NoUpdateLogin) {
-			delete $newdata{'password'};
-			delete $newdata{'userid'};
-		}
-		&ModMember(%newdata) unless scalar(keys %newdata) <= 1; # bug 4508 - avoid crash if we're not
+        
+        #B11: Print Confirmation
+        if ( $newdata{ 'categorycode' } ne $PRE_REG_CATEGORY ) {
+    		$print_confirmation=1;
+        }
+        
+        
+    } elsif ($op eq 'save'){ 
+    	if ($NoUpdateLogin) {
+    		delete $newdata{'password'};
+    		delete $newdata{'userid'};
+    	}
+    	# B014 : add enrolmentFee for pre-inscription
+    	$newdata{'old_category'} = $input->param('old_category');
+    	# END
+    	&ModMember(%newdata) unless scalar(keys %newdata) <= 1; # bug 4508 - avoid crash if we're not
                                                                 # updating any columns in the borrowers table,
                                                                 # which can happen if we're only editing the
                                                                 # patron attributes or messaging preferences sections
@@ -347,12 +456,133 @@ if ((!$nok) and $nodouble and ($op eq 'insert' or $op eq 'save')){
         if (C4::Context->preference('EnhancedMessagingPreferences') and $input->param('setting_messaging_prefs')) {
             C4::Form::MessagingPreferences::handle_form_action($input, { borrowernumber => $borrowernumber }, $template);
         }
+        
+        #SCA : modify user if necessary
+        my $old_category   = $input->param('old_category');
+        my $old_cardnumber = $input->param('old_cardnumber');
+        my $old_enrolled_by = $input->param('old_enrolled_by');
+        if ( C4::Context->preference('UseSCA') ) {
+            my ($status, $message, $enrolled_by) = ModScaUser( $borrowernumber, $old_cardnumber, $old_category, $old_enrolled_by );
+            if ($status) {
+                ModMember(
+                    borrowernumber => $borrowernumber, 
+                    sca_enrolled_by => $enrolled_by
+                );
+            } else {
+                ModMember(
+                    borrowernumber => $borrowernumber, 
+                    sca_enrolled_by => $old_enrolled_by,
+                    cardnumber => $old_cardnumber,
+                );
+                $nok = 1;
+            	push @errors, $message;
+            }
+        }
+        #End SCA
+        
+        #B11: Print Confirmation
+        if ( ( $newdata{'old_category'} eq $PRE_REG_CATEGORY ) && ( $newdata{'categorycode'} ne $newdata{'old_category'} ) ) {
+    		$print_confirmation=1;
+        }
+    }
+    
+# B014
+	if ($uploadfile){
+
+    my ($handled, $total) ; 
+	
+    my $dirname = File::Temp::tempdir( CLEANUP => 1);
+    $debug and warn "dirname = $dirname";
+    my $filesuffix = $1 if $uploadfilename =~ m/(\..+)$/i;
+    my ( $tfh, $tempfile ) = File::Temp::tempfile( SUFFIX => $filesuffix, UNLINK => 1 );
+    $debug and warn "tempfile = $tempfile";
+    my ( @directories );
+	if ( $uploadfilename !~ /\.zip$/i && $filetype =~ m/zip/i ){
+	push @errors, "NOTZIP";
+	push @errors, "IMGFILE";
 	}
-	print scalar ($destination eq "circ") ? 
-		$input->redirect("/cgi-bin/koha/circ/circulation.pl?borrowernumber=$borrowernumber") :
-		$input->redirect("/cgi-bin/koha/members/moremember.pl?borrowernumber=$borrowernumber") ;
-	exit;		# You can only send 1 redirect!  After that, content or other headers don't matter.
+	
+	 unless ( -w $dirname ){
+    push @errors, "NOWRITETEMP" ;
+	push @errors, "IMGFILE";}
+	
+	 unless ( length( $uploadfile ) > 0 ) {
+    push @errors, "EMPTYUPLOAD";
+	push @errors, "IMGFILE";}
+	
+	
+	 if (scalar @errors) {
+	     $nok =1;
+	 }
+	 else{
+        while ( <$uploadfile> ) {
+            print $tfh $_;
+        }
+	
+        close $tfh;
+		 my $results;
+        if ( $filetype eq 'zip' ) {
+            unless (system("unzip", $tempfile,  '-d', $dirname) == 0) {
+			  $nok = 1;
+                push @errors, "UZIPFAIL" ;
+				$results=0;
+                
+            }
+            push @directories, "$dirname";
+			my $dir;	
+            foreach  my $recursive_dir ( @directories ) {
+                opendir $dir, $recursive_dir;
+                while ( my $entry = readdir $dir ) {
+            push @directories, "$recursive_dir/$entry" if ( -d "$recursive_dir/$entry" and $entry !~ /^\./ );
+                $debug and warn "$recursive_dir/$entry";
+                }
+                closedir $dir;
+            }
+         
+            foreach my $dir ( @directories ) {
+                $results = handle_dirimage( $dir, $filesuffix, $tempfile );
+                 $handled++ if $results == 1;
+            }
+          $total = scalar @directories;
+        } 
+        else {       #if ($filetype eq 'zip' )
+           
+            $results = handle_dirimage( $dirname, $filesuffix, $tempfile );
+            $handled = 1;
+            $total = 1;
+        }
+
+        if ( !$results ) {
+          $nok=1;
+        } else {
+           my $filecount;
+            map {$filecount += $_->{count}} @counts;
+            $debug and warn "Total directories processed: $total";
+            $debug and warn "Total files processed: $filecount";
+            $template->param(
+            TOTAL => $total,
+            HANDLED => $handled,
+            COUNTS => \@counts,
+            TCOUNTS => ($filecount > 0 ? $filecount : undef),
+            );
+    #        $template->param( borrowernumber => $borrowernumber ) if $borrowernumber;
+        }
+    
+    }
 }
+	
+	if (!$nok){
+		print scalar ($destination eq "circ") ? 
+			$input->redirect("/cgi-bin/koha/circ/circulation.pl?borrowernumber=$borrowernumber") :
+			$input->redirect("/cgi-bin/koha/members/moremember.pl?borrowernumber=$borrowernumber".($print_confirmation?'&print=confirmation':'')) ;
+		exit;		# You can only send 1 redirect!  After that, content or other headers don't matter.
+	}
+	
+	$template->param(
+		print_confirmation => $print_confirmation,
+	);
+}
+# END B014
 
 if ($delete){
 	print $input->redirect("/cgi-bin/koha/deletemem.pl?member=$borrowernumber");
@@ -364,11 +594,19 @@ if ($nok or !$nodouble){
     $op="modify" if ($op eq "save");
     %data=%newdata; 
     $template->param( updtype => ($op eq 'add' ?'I':'M'));	# used to check for $op eq "insert"... but we just changed $op!
-    unless ($step){  
-        $template->param( step_1 => 1,step_2 => 1,step_3 => 1, step_4 => 1, step_5 => 1, step_6 => 1);
+    unless ($step){
+    	# Progilone B014
+    	if ( $categorycode eq $PRE_REG_CATEGORY ) {
+    		$template->param( "$categorycode" => $categorycode );
+	    	$template->param( updtype => 'I', step_1 => 1,step_2 => 0,step_3 => 1, step_4 => 0, step_5 => 0, step_6 => 0);
+	    } else {
+		    $template->param( step_1 => 1,step_2 => 0,step_3 => 1, step_4 => 1, step_5 => 1, step_6 => 1);
+	    }  
     }  
 } 
-if (C4::Context->preference("IndependantBranches")) {
+# B014 : borrower pre-registrated can be modified by anyone
+if ($data{categorycode} ne $PRE_REG_CATEGORY and C4::Context->preference("IndependantBranches")) {
+# END B014
     my $userenv = C4::Context->userenv;
     if ($userenv->{flags} % 2 != 1 && $data{branchcode}){
         unless ($userenv->{branch} eq $data{'branchcode'}){
@@ -378,11 +616,16 @@ if (C4::Context->preference("IndependantBranches")) {
     }
 }
 if ($op eq 'add'){
-    $template->param( updtype => 'I', step_1=>1, step_2=>1, step_3=>1, step_4=>1, step_5 => 1, step_6 => 1);
+	# Progilone B014
+	if ( $categorycode eq $PRE_REG_CATEGORY ) {
+    	$template->param( updtype => 'I', step_1 => 1,step_2 => 0,step_3 => 1, step_4 => 0, step_5 => 0, step_6 => 0);
+    } else {
+	    $template->param( updtype => 'I', step_1=>1, step_2=>0, step_3=>1, step_4=>1, step_5 => 1, step_6 => 1);
+    }
 }
 if ($op eq "modify")  {
     $template->param( updtype => 'M',modify => 1 );
-    $template->param( step_1=>1, step_2=>1, step_3=>1, step_4=>1, step_5 => 1, step_6 => 1) unless $step;
+    $template->param( step_1=>1, step_2=>0, step_3=>1, step_4=>1, step_5 => 1, step_6 => 1) unless $step; # B014
 }
 # my $cardnumber=$data{'cardnumber'};
 $data{'cardnumber'}=fixup_cardnumber($data{'cardnumber'}) if $op eq 'add';
@@ -412,12 +655,9 @@ if ($ethnicitycategoriescount>=0) {
 }
 
 my @typeloop;
-my $no_categories = 1;
-my $no_add;
 foreach (qw(C A S P I X)) {
     my $action="WHERE category_type=?";
 	($categories,$labels)=GetborCatFromCatType($_,$action);
-    if(scalar(@$categories) > 0){ $no_categories = 0; }
 	my @categoryloop;
 	foreach my $cat (@$categories){
 		push @categoryloop,{'categorycode' => $cat,
@@ -429,19 +669,14 @@ foreach (qw(C A S P I X)) {
 	}
 	my %typehash;
 	$typehash{'typename'}=$_;
-    my $typedescription = "typename_".$typehash{'typename'};
 	$typehash{'categoryloop'}=\@categoryloop;
 	push @typeloop,{'typename' => $_,
-        $typedescription => 1,
 	  'categoryloop' => \@categoryloop};
-}
-$template->param('typeloop' => \@typeloop,
-        no_categories => $no_categories);
-if($no_categories){ $no_add = 1; }
+}  
+$template->param('typeloop' => \@typeloop);
+
 # test in city
-if ( $guarantorid ) {
-    $select_city = getidcity($data{city});
-}
+$select_city=getidcity($data{'city'}) if defined $guarantorid and ($guarantorid ne '0');
 ($default_city=$select_city) if ($step eq 0);
 if (!defined($select_city) or $select_city eq '' ){
 	$default_city = &getidcity($data{'city'});
@@ -497,9 +732,13 @@ while (@relationships) {
   push(@relshipdata, \%row);
 }
 
+# B015
 my %flags = ( 'gonenoaddress' => ['gonenoaddress' ],
-        'lost'          => ['lost'],
-        'debarred'      => ['debarred']);
+              'lost'          => ['lost' ],
+	          'docs'          => ['docs' ],
+	          'debarred'      => ['debarred' ],
+              'debarred2'     => ['debarred2' ],);
+# END B015
 
  
 my @flagdata;
@@ -518,6 +757,15 @@ foreach (keys(%flags)) {
 	push @flagdata,\%row;
 }
 
+# B015
+if ($data{debarred}){
+    $data{datedebarred} = $data{debarred} if ( $data{debarred} ne "9999-12-31" );
+}
+if ($data{debarred2}){
+    $data{datedebarred2} = $data{debarred2} if ( $data{debarred2} ne "9999-12-31" );
+}
+# END B015
+
 #get Branches
 my @branches;
 my @select_branch;
@@ -530,18 +778,17 @@ my $onlymine=(C4::Context->preference('IndependantBranches') &&
               
 my $branches=GetBranches($onlymine);
 my $default;
-my $CGIbranch;
+
 for my $branch (sort { $branches->{$a}->{branchname} cmp $branches->{$b}->{branchname} } keys %$branches) {
     push @select_branch,$branch;
     $select_branches{$branch} = $branches->{$branch}->{'branchname'};
     $default = C4::Context->userenv->{'branch'} if (C4::Context->userenv && C4::Context->userenv->{'branch'});
 }
-if(scalar(@select_branch) > 0){
 # --------------------------------------------------------------------------------------------------------
   #in modify mod :default value from $CGIbranch comes from borrowers table
   #in add mod: default value come from branches table (ip correspendence)
 $default=$data{'branchcode'}  if ($op eq 'modify' || ($op eq 'add' && $category_type eq 'C'));
-$CGIbranch = CGI::scrolling_list(-id    => 'branchcode',
+my $CGIbranch = CGI::scrolling_list(-id    => 'branchcode',
             -name   => 'branchcode',
             -values => \@select_branch,
             -labels => \%select_branches,
@@ -550,17 +797,6 @@ $CGIbranch = CGI::scrolling_list(-id    => 'branchcode',
             -multiple =>0,
             -default => $default,
         );
-}
-
-if(!$CGIbranch){
-    $no_add = 1;
-    $template->param(no_branches => 1);
-}
-if($no_categories){
-    $no_add = 1;
-    $template->param(no_categories => 1);
-}
-$template->param(no_add => $no_add);
 my $CGIorganisations;
 my $member_of_institution;
 if (C4::Context->preference("memberofinstitution")){
@@ -598,6 +834,15 @@ if ($CGIsort) {
     $template->param( sort2 => $data{'sort2'});
 }
 
+# B014
+$CGIsort = buildCGIsort("Bsort3","sort3",$data{'sort3'});
+if ($CGIsort) {
+    $template->param(CGIsort3 => $CGIsort);
+} else {
+    $template->param( sort3 => $data{'sort3'});
+}
+# END B014
+
 if ($nok) {
     foreach my $error (@errors) {
         $template->param($error) || $template->param( $error => 1);
@@ -614,9 +859,16 @@ if (C4::Context->preference('uppercasesurnames')) {
 	$data{'surname'}    =uc($data{'surname'}    );
 	$data{'contactname'}=uc($data{'contactname'});
 }
-foreach (qw(dateenrolled dateexpiry dateofbirth)) {
-	$data{$_} = format_date($data{$_});	# back to syspref for display
-	$template->param( $_ => $data{$_});
+foreach (qw(dateenrolled dateexpiry dateofbirth datedebarred datedebarred2)) { # B015
+	# B014 - BUG 69
+    if ( $_ eq 'dateexpiry' && $categorycode eq $PRE_REG_CATEGORY ){
+    	$data{'dateexpiry'} = '';
+    }
+    else{
+	    $data{$_} = format_date($data{$_}); # back to syspref for display
+	    $template->param( $_ => $data{$_});
+    }
+    # END B014 - BUG 69
 }
 
 if (C4::Context->preference('ExtendedPatronAttributes')) {
@@ -650,15 +902,22 @@ $template->param(
   destination   => $destination,#to know wher u come from and wher u must go in redirect
   check_member    => $check_member,#to know if the borrower already exist(=>1) or not (=>0) 
   "op$op"   => 1);
+  
+my $sca_enrolled_by = '';
+my $sca_enrolled_by_empty = 1;
+if (defined $borrower_data->{'sca_enrolled_by'} && $borrower_data->{'sca_enrolled_by'} ne '') {
+    $sca_enrolled_by = $borrower_data->{'sca_enrolled_by'};
+    $sca_enrolled_by_empty = 0;
+}
 
-$template->param(CGIbranch=>$CGIbranch) if ($CGIbranch);
+
 $template->param(
   nodouble  => $nodouble,
   borrowernumber  => $borrowernumber, #register number
-  guarantorid => (($borrower_data->{'guarantorid'})) ? $borrower_data->{'guarantorid'} : $guarantorid,
+  guarantorid => (defined($borrower_data->{'guarantorid'})) ? $borrower_data->{'guarantorid'} : $guarantorid,
   ethcatpopup => $ethcatpopup,
   relshiploop => \@relshipdata,
-  city_loop => $city_arrayref,
+ # city_loop => $city_arrayref, B014
   roadpopup => $roadpopup,  
   borrotitlepopup => $borrotitlepopup,
   guarantorinfo   => $guarantorinfo,
@@ -666,13 +925,19 @@ $template->param(
   dateformat      => C4::Dates->new()->visual(),
   C4::Context->preference('dateformat') => 1,
   check_categorytype =>$check_categorytype,#to recover the category type with checkcategorytype function
-  category_type =>$category_type,
   modify          => $modify,
   nok     => $nok,#flag to konw if an error 
+  CGIbranch => $CGIbranch,
   memberofinstution => $member_of_institution,
   CGIorganisations => $CGIorganisations,
-  NoUpdateLogin =>  $NoUpdateLogin
-  );
+  NoUpdateLogin =>  $NoUpdateLogin,
+  print_confirmation => $print_confirmation,
+  old_category => $old_category,
+  sca_enrolled_by => $sca_enrolled_by,
+  sca_enrolled_by_empty => $sca_enrolled_by_empty,
+  enrolled_by_bulac => $ENROLLED_BY_BULAC,
+  enrolled_by_inalco => $ENROLLED_BY_INALCO,
+);
 
 if(defined($data{'flags'})){
   $template->param(flags=>$data{'flags'});
@@ -760,6 +1025,168 @@ sub patron_attributes_form {
     $template->param(patron_attributes => \@attribute_loop);
 
 }
+
+# B014
+sub handle_dirimage {
+    my ( $dir, $suffix ,$tempfile ) = @_;
+    my $source;
+	my %errorloc;
+	my %countloc;
+    $debug and warn "Entering sub handle_dir; passed \$dir=$dir, \$suffix=$suffix";
+    if ($suffix =~ m/zip/i) {     # If we were sent a zip file, process any included data/idlink.txt files
+        my ( $file, $filename, $cardnumber , $dirhandle);
+        $debug and warn "Passed a zip file.";
+        opendir $dirhandle, $dir;
+        while ( my $filename = readdir $dirhandle ) {
+            $file = "$dir/$filename" if ($filename =~ m/datalink\.txt/i || $filename =~ m/idlink\.txt/i);
+        }
+        unless (open (FILE, $file)) {
+        warn "Opening $dir/$file failed!";
+		push @errors, "IMGFILE";
+		push @errors, "OPNLINK";
+              
+        return 0; # This error is fatal to the import of this directory contents, so bail and return the error to the caller
+        };
+
+        while (my $line = <FILE>) {
+            $debug and warn "Reading contents of $file";
+        chomp $line;
+            $debug and warn "Examining line: $line";
+        my $delim = ($line =~ /\t/) ? "\t" : ($line =~ /,/) ? "," : "";
+            $debug and warn "Delimeter is \'$delim\'";
+            unless ( $delim eq "," || $delim eq "\t" ) {
+                warn "Unrecognized or missing field delimeter. Please verify that you are using either a ',' or a 'tab'";
+                    # This error is fatal to the import of this directory contents, so bail and return the error to the caller
+				push @errors, "IMGFILE";
+				push @errors, "DELERR";
+                return 0;
+            }
+        ($cardnumber, $filename) = split $delim, $line;
+        $cardnumber =~ s/[\"\r\n]//g;  # remove offensive characters
+        $filename   =~ s/[\"\r\n\s]//g;
+            $debug and warn "Cardnumber: $cardnumber Filename: $filename";
+            $source = "$dir/$filename";
+            %countloc = handle_image($cardnumber, $source, %countloc);
+        }
+        close FILE;
+        closedir ($dirhandle);
+    } else {
+        $source = $tempfile;
+        %countloc = handle_image($cardnumber, $source, %countloc);
+    }
+push @counts, \%countloc;
+return 1;
+}
+
+sub handle_image {
+    my ($cardnumber, $source, %count) = @_;
+    $debug and warn "Entering sub handle_file; passed \$cardnumber=$cardnumber, \$source=$source";
+    $count{filenames} = () if !$count{filenames};
+    $count{source} = $source if !$count{source};
+	  my %filerrors;
+        my $filename;
+    if ($cardnumber && $source) {     # Now process any imagefiles
+      
+        if ($filetype eq 'image') {
+            $filename = $uploadfilename;
+        } else {
+            $filename = $1 if ($source =~ /\/([^\/]+)$/);
+        }
+        $debug and warn "Source: $source";
+        my $size = (stat($source))[7];
+            if ($size > 550000) {    # This check is necessary even with image resizing to avoid possible security/performance issues...
+                $filerrors{'OVRSIZ'} = 1;
+                push my @filerrors, \%filerrors;
+                push @{ $count{filenames} }, { filerrors => \@filerrors, source => $filename, cardnumber => $cardnumber };
+                $template->param( ERRORS => 1 );
+                 $nok=1;
+                return %count;    # this one is fatal so bail here...
+            }
+        my ($srcimage, $image, $imgfile);
+        if (open (IMG, "$source")) {
+            $srcimage = GD::Image->new(*IMG);
+            close (IMG);
+            if (defined $srcimage) {
+                my $mimetype = 'image/png'; # GD autodetects three basic image formats: PNG, JPEG, XPM; we will convert all to PNG which is lossless...
+                # Check the pixel size of the image we are about to import...
+                my ($width, $height) = $srcimage->getBounds();
+                $debug and warn "$filename is $width pix X $height pix.";
+                if ($width > 200 || $height > 300) {    # MAX pixel dims are 200 X 300...
+                    $debug and warn "$filename exceeds the maximum pixel dimensions of 200 X 300. Resizing...";
+                    my $percent_reduce;    # Percent we will reduce the image dimensions by...
+                    if ($width > 200) {
+                        $percent_reduce = sprintf("%.5f",(140/$width));    # If the width is oversize, scale based on width overage...
+                    } else {
+                        $percent_reduce = sprintf("%.5f",(200/$height));    # otherwise scale based on height overage.
+                    }
+                    my $width_reduce = sprintf("%.0f", ($width * $percent_reduce));
+                    my $height_reduce = sprintf("%.0f", ($height * $percent_reduce));
+                    $debug and warn "Reducing $filename by " . ($percent_reduce * 100) . "\% or to $width_reduce pix X $height_reduce pix";
+                    $image = GD::Image->new($width_reduce, $height_reduce, 1); #'1' creates true color image...
+                    $image->copyResampled($srcimage,0,0,0,0,$width_reduce,$height_reduce,$width,$height);
+                    $imgfile = $image->png();
+                    $debug and warn "$filename is " . length($imgfile) . " bytes after resizing.";
+                    undef $image;
+                    undef $srcimage;    # This object can get big...
+                } else {
+                    $image = $srcimage;
+                    $imgfile = $image->png();
+                    $debug and warn "$filename is " . length($imgfile) . " bytes.";
+                    undef $image;
+                    undef $srcimage;    # This object can get big...
+                }
+                $debug and warn "Image is of mimetype $mimetype";
+                my $dberror = PutPatronImage($cardnumber,$mimetype, $imgfile) if $mimetype;
+                if ( !$dberror && $mimetype ) { # Errors from here on are fatal only to the import of a particular image, so don't bail, just note the error and keep going
+                    $count{count}++;
+                    push @{ $count{filenames} }, { source => $filename, cardnumber => $cardnumber };
+                } elsif ( $dberror ) {
+                        warn "Database returned error: $dberror";
+                        ($dberror =~ /patronimage_fk1/) ? $filerrors{'IMGEXISTS'} = 1 : $filerrors{'DBERR'} = 1;
+                        push my @filerrors, \%filerrors;
+                        push @{ $count{filenames} }, { filerrors => \@filerrors, source => $filename, cardnumber => $cardnumber };
+                        $nok=1;
+                        $template->param( ERRORS => 1 );
+                } elsif ( !$mimetype ) {
+                    warn "Unable to determine mime type of $filename. Please verify mimetype.";
+                    $filerrors{'MIMERR'} = 1;
+                    push my @filerrors, \%filerrors;
+                    push @{ $count{filenames} }, { filerrors => \@filerrors, source => $filename, cardnumber => $cardnumber };
+                   $template->param( ERRORS => 1 );
+                    $nok=1;
+                   
+                }
+            } else {
+                warn "Contents of $filename corrupted!";
+            #   $count{count}--;
+                $filerrors{'CORERR'} = 1;
+                push my @filerrors, \%filerrors;
+                push @{ $count{filenames} }, { filerrors => \@filerrors, source => $filename, cardnumber => $cardnumber };
+               $template->param( ERRORS => 1 );
+               $nok=1;
+            
+            }
+        } else {
+          #  warn "Opening $dir/$filename failed!";
+            $filerrors{'OPNERR'} = 1;
+            push my @filerrors, \%filerrors;
+            push @{ $count{filenames} }, { filerrors => \@filerrors, source => $filename, cardnumber => $cardnumber };
+           $template->param( ERRORS => 1 );
+            $nok=1;
+        
+        }
+    } else {    # The need for this seems a bit unlikely, however, to maximize error trapping it is included
+        warn "Missing " . ($cardnumber ? "filename" : ($filename ? "cardnumber" : "cardnumber and filename"));
+        $filerrors{'CRDFIL'} = ($cardnumber ? "filename" : ($filename ? "cardnumber" : "cardnumber and filename"));
+        push my @filerrors, \%filerrors;
+        push @{ $count{filenames} }, { filerrors => \@filerrors, source => $filename, cardnumber => $cardnumber };
+       $template->param( ERRORS => 1 );
+        $nok=1;
+    
+    }
+    return (%count);
+}
+# END B014
 
 # Local Variables:
 # tab-width: 8

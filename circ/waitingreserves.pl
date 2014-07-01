@@ -29,6 +29,8 @@ use C4::Circulation;
 use C4::Members;
 use C4::Biblio;
 use C4::Items;
+use C4::Callnumber::Utils;
+use C4::Stack::Search;
 
 use Date::Calc qw(
   Today
@@ -64,6 +66,8 @@ my $default = C4::Context->userenv->{'branch'};
 # if we have a return from the form we launch the subroutine CancelReserve
 if ($item) {
     my ( $messages, $nextreservinfo ) = ModReserveCancelAll( $item, $borrowernumber );
+    CheckItemAvailability( $item, undef);
+    
     # if we have a result
     if ($nextreservinfo) {
         my $borrowerinfo = GetMemberDetails( $nextreservinfo );
@@ -137,6 +141,10 @@ foreach my $num (@getreserves) {
     $getreserv{'borrowerphone'}     = $getborrower->{'phone'};
     if ( $getborrower->{'emailaddress'} ) {
         $getreserv{'borrowermail'}  = $getborrower->{'emailaddress'};
+    }
+    
+    if ( IsItemInStore( $num->{'itemnumber'} ) && ! ( defined GetCurrentStackByItemnumber( $num->{'itemnumber'} ) ) ) {
+    	$getreserv{'createStack'} = 1;
     }
  
     if ($today > $calcDate) {

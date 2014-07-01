@@ -28,7 +28,10 @@ use C4::Output;
 use C4::Dates qw/format_date/;
 use C4::Context;
 use C4::Members;
+use C4::Overdues; # PROGILONE - A2
 use C4::Branch; # GetBranches
+use C4::Overdues qw/CheckBorrowerDebarred/; # PROGILONE - A2
+use C4::Stack::Search;
 use C4::Debug;
 # use Data::Dumper;
 
@@ -95,6 +98,8 @@ $template->param( branch => $branch );
 # make branch selection options...
 my $CGIbranchloop = GetBranchesLoop($branch);
 $template->param( CGIbranch => $CGIbranchloop );
+
+$template->param( onitemnumber => $query->param('onitemnumber') ); # MAN 211
 
 #
 #
@@ -247,13 +252,27 @@ if ( $borr->{lost} && ($borr->{lost} eq 1) ) {
                      lost    => 1
                     );
 }
-if ( $borr->{debarred} && ($borr->{debarred} eq 1) ) {
+
+# PROGILONE - A2
+my $debar = CheckBorrowerDebarred($borrowernumber);
+if ($debar) {
     $noreserves = 1;
-    $template->param(
-                     message  => 1,
-                     debarred => 1
+    $template->param( 
+                     message      => 1,
+                     userdebarred => 1,
                     );
+    if ( $debar ne "9999-12-31" ) {
+        $template->param( userdebarreddate => format_date($debar) );
+    }
 }
+my ($debar2, $nb_overdue) = CheckBorrowerDebarred2($borrowernumber);
+if ($debar2) {
+    $template->param( userdebarred2 => 1, message => 1, nb_overdue => $nb_overdue );
+    if ( $debar2 ne "9999-12-31" ) {
+        $template->param( userdebarred2date => C4::Dates::format_date($debar2) );
+    }
+}
+# END PROGILONE
 
 my @reserves = GetReservesFromBorrowernumber( $borrowernumber );
 $template->param( RESERVES => \@reserves );
@@ -273,6 +292,28 @@ foreach my $res (@reserves) {
     }
 }
 
+#Progilone Mantis 159
+
+my $issues = GetPendingIssues( $borrowernumber );
+foreach my $issue (@$issues) {
+    foreach my $biblionumber (@biblionumbers) {
+        if ( $issue->{'biblionumber'} == $biblionumber && $issue->{'borrowernumber'} == $borrowernumber) {
+            $biblioDataHash{$biblionumber}->{already_issued} = 1;
+        }
+    }
+}
+
+my $stack_requests = GetStacksOfBorrower( $borrowernumber );
+foreach my $stack_request (@$stack_requests) {
+    foreach my $biblionumber (@biblionumbers) {
+        if ( $stack_request->{'biblionumber'} == $biblionumber && $stack_request->{'borrowernumber'} == $borrowernumber) {
+            $biblioDataHash{$biblionumber}->{already_stack_requested} = 1;
+        }
+    }
+}
+
+#End Progilone
+
 unless ($noreserves) {
     $template->param( select_item_types => 1 );
 }
@@ -289,7 +330,6 @@ my $notforloan_label_of = get_notforloan_label_of();
 my $biblioLoop = [];
 my $numBibsAvailable = 0;
 my $itemdata_enumchron = 0;
-my $anyholdable;
 my $itemLevelTypes = C4::Context->preference('item-level_itypes');
 $template->param('item-level_itypes' => $itemLevelTypes);
 
@@ -313,6 +353,8 @@ foreach my $biblioNum (@biblionumbers) {
     $biblioLoopIter{rank} = $biblioData->{rank};
     $biblioLoopIter{reservecount} = $biblioData->{reservecount};
     $biblioLoopIter{already_reserved} = $biblioData->{already_reserved};
+    $biblioLoopIter{already_issued} = $biblioData->{already_issued};
+    $biblioLoopIter{already_stack_requested} = $biblioData->{already_stack_requested};
 
     if (!$itemLevelTypes && $biblioData->{itemtype}) {
         $biblioLoopIter{description} = $itemTypes->{$biblioData->{itemtype}}{description};
@@ -336,6 +378,8 @@ foreach my $biblioNum (@biblionumbers) {
             $biblioLoopIter{forloan} = 1;
         }
     }
+
+    $biblioLoopIter{itemTypeDescription} = $itemTypes->{$biblioData->{itemtype}}{description};
 
     $biblioLoopIter{itemLoop} = [];
     my $numCopiesAvailable = 0;
@@ -417,7 +461,9 @@ foreach my $biblioNum (@biblionumbers) {
         # If there is no loan, return and transfer, we show a checkbox.
         $itemLoopIter->{notforloan} = $itemLoopIter->{notforloan} || 0;
 
-        my $branch = C4::Circulation::_GetCircControlBranch($itemLoopIter, $borr);
+        # B01 : correction bug _GetCircControlBranch($itemLoopIter, $borr) --> _GetCircControlBranch($itemInfo, $borr)
+        my $branch = C4::Circulation::_GetCircControlBranch($itemInfo, $borr);
+        # END
 
         my $branchitemrule = GetBranchItemRule( $branch, $itemInfo->{'itype'} );
         my $policy_holdallowed = 1;
@@ -426,11 +472,15 @@ foreach my $biblioNum (@biblionumbers) {
                 ( $branchitemrule->{'holdallowed'} == 1 && $borr->{'branchcode'} ne $itemInfo->{'homebranch'} ) ) {
             $policy_holdallowed = 0;
         }
-
-        if (IsAvailableForItemLevelRequest($itemNum) and $policy_holdallowed and CanItemBeReserved($borrowernumber,$itemNum)) {
-            $itemLoopIter->{available} = 1;
+        
+        # MAN211
+        my $quota_ok = CanItemBeReserved($borrowernumber,$itemNum);
+        $itemLoopIter->{'quota_ok'} = $quota_ok;
+        if (IsAvailableForItemLevelRequest($itemNum) and $policy_holdallowed and $quota_ok) {
+            $itemLoopIter->{'available'} = 1;
             $numCopiesAvailable++;
         }
+        # END MAN211
 
 	# FIXME: move this to a pm
         my $dbh = C4::Context->dbh;
@@ -454,22 +504,19 @@ foreach my $biblioNum (@biblionumbers) {
         $numBibsAvailable++;
         $biblioLoopIter{bib_available} = 1;
         $biblioLoopIter{holdable} = 1;
-        $anyholdable = 1;
     }
-    if ($biblioLoopIter{already_reserved}) {
+    if ( $biblioLoopIter{already_reserved} || $biblioLoopIter{already_issued} || $biblioLoopIter{already_stack_requested} ) {
         $biblioLoopIter{holdable} = undef;
-        $anyholdable = undef;
     }
     if(not CanBookBeReserved($borrowernumber,$biblioNum)){
         $biblioLoopIter{holdable} = undef;
-        $anyholdable = undef;
     }
 
     push @$biblioLoop, \%biblioLoopIter;
 }
 
-if ( $numBibsAvailable == 0 || !$anyholdable) {
-    $template->param( none_available => 1 );
+if ( $numBibsAvailable == 0 ) {
+    $template->param( none_available => 1, message => 1 );
 }
 
 my $itemTableColspan = 5;

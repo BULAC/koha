@@ -99,9 +99,45 @@ elsif ($op eq 'delete-branch-item') {
 }
 # save the values entered
 elsif ($op eq 'add') {
+    # B013
     my $sth_search = $dbh->prepare("SELECT COUNT(*) AS total FROM issuingrules WHERE branchcode=? AND categorycode=? AND itemtype=?");
-    my $sth_insert = $dbh->prepare("INSERT INTO issuingrules (branchcode, categorycode, itemtype, maxissueqty, renewalsallowed, reservesallowed, issuelength, fine, finedays, firstremind, chargeperiod,rentaldiscount) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)");
-    my $sth_update=$dbh->prepare("UPDATE issuingrules SET fine=?, finedays=?, firstremind=?, chargeperiod=?, maxissueqty=?, renewalsallowed=?, reservesallowed=?, issuelength=?, rentaldiscount=?  WHERE branchcode=? AND categorycode=? AND itemtype=?");
+    my $sth_insert = $dbh->prepare("INSERT INTO issuingrules (branchcode, categorycode, itemtype, maxissueqty, renewalsallowed, reservesallowed, issuelength, fine, finedays, firstremind, chargeperiod,rentaldiscount
+        , reserveasideperiod
+        , maxinstantstackqty
+        , maxdelayedstackqty
+        , stackguardperiod
+        , maxstackqty
+        , stacklength
+        , stackrenewalsallowed
+        , maxstackrenewalqty
+        , stackrenewalperiod
+        , maxrenewalqty
+        , renewalperiod
+        , spacemaxinstantstackqty
+        , spacemaxdelayedstackqty
+        , spacemaxstackqty
+        ) VALUES (
+        ?,?,?,?,?,?,?,?,?,?,?,?
+        ,?,?,?,?,?,?,?,?,?,?,?
+        ,?,?,?
+    )");
+    my $sth_update=$dbh->prepare("UPDATE issuingrules SET fine=?, finedays=?, firstremind=?, chargeperiod=?, maxissueqty=?, renewalsallowed=?, reservesallowed=?, issuelength=?, rentaldiscount=?  
+        , reserveasideperiod=?
+        , maxinstantstackqty=?
+        , maxdelayedstackqty=?
+        , stackguardperiod=?
+        , maxstackqty=?
+        , stacklength=?
+        , stackrenewalsallowed=?
+        , maxstackrenewalqty=?
+        , stackrenewalperiod=?
+        , maxrenewalqty=?
+        , renewalperiod=?
+        , spacemaxinstantstackqty=?
+        , spacemaxdelayedstackqty=?
+        , spacemaxstackqty=?
+        WHERE branchcode=? AND categorycode=? AND itemtype=?
+    ");
     
     my $br = $branch; # branch
     my $bor  = $input->param('categorycode'); # borrower category
@@ -117,15 +153,61 @@ elsif ($op eq 'add') {
     $maxissueqty = undef if $maxissueqty !~ /^\d+/;
     my $issuelength  = $input->param('issuelength');
     my $rentaldiscount = $input->param('rentaldiscount');
+    my $reserveasideperiod   = $input->param('reserveasideperiod');
+    my $maxinstantstackqty   = $input->param('maxinstantstackqty');
+    my $maxdelayedstackqty   = $input->param('maxdelayedstackqty');
+    my $stackguardperiod     = $input->param('stackguardperiod');
+    my $maxstackqty          = $input->param('maxstackqty');
+    my $stacklength          = $input->param('stacklength');
+    my $stackrenewalsallowed = $input->param('stackrenewalsallowed');
+    my $maxstackrenewalqty   = $input->param('maxstackrenewalqty');
+    my $stackrenewalperiod   = $input->param('stackrenewalperiod');
+    my $maxrenewalqty        = $input->param('maxrenewalqty');
+    my $renewalperiod        = $input->param('renewalperiod');
+    my $spacemaxinstantstackqty = $input->param('spacemaxinstantstackqty');
+    my $spacemaxdelayedstackqty = $input->param('spacemaxdelayedstackqty');
+    my $spacemaxstackqty        = $input->param('spacemaxstackqty');
+    
     $debug and warn "Adding $br, $bor, $cat, $fine, $maxissueqty";
 
     $sth_search->execute($br,$bor,$cat);
     my $res = $sth_search->fetchrow_hashref();
     if ($res->{total}) {
-        $sth_update->execute($fine, $finedays,$firstremind, $chargeperiod, $maxissueqty, $renewalsallowed,$reservesallowed, $issuelength,$rentaldiscount, $br,$bor,$cat);
+        $sth_update->execute($fine, $finedays, $firstremind, $chargeperiod, $maxissueqty, $renewalsallowed, $reservesallowed, $issuelength, $rentaldiscount
+            , $reserveasideperiod
+            , $maxinstantstackqty
+            , $maxdelayedstackqty
+            , $stackguardperiod
+            , $maxstackqty
+            , $stacklength
+            , $stackrenewalsallowed
+            , $maxstackrenewalqty
+            , $stackrenewalperiod
+            , $maxrenewalqty
+            , $renewalperiod
+            , $spacemaxinstantstackqty
+            , $spacemaxdelayedstackqty
+            , $spacemaxstackqty
+            , $br, $bor, $cat);
     } else {
-        $sth_insert->execute($br,$bor,$cat,$maxissueqty,$renewalsallowed,$reservesallowed,$issuelength,$fine,$finedays,$firstremind,$chargeperiod,$rentaldiscount);
+        $sth_insert->execute($br, $bor, $cat, $maxissueqty, $renewalsallowed, $reservesallowed, $issuelength, $fine, $finedays, $firstremind, $chargeperiod, $rentaldiscount
+            , $reserveasideperiod
+            , $maxinstantstackqty
+            , $maxdelayedstackqty
+            , $stackguardperiod
+            , $maxstackqty
+            , $stacklength
+            , $stackrenewalsallowed
+            , $maxstackrenewalqty
+            , $stackrenewalperiod
+            , $maxrenewalqty
+            , $renewalperiod
+            , $spacemaxinstantstackqty
+            , $spacemaxdelayedstackqty
+            , $spacemaxstackqty
+        );
     }
+    # END
 } 
 elsif ($op eq "set-branch-defaults") {
     my $categorycode  = $input->param('categorycode');

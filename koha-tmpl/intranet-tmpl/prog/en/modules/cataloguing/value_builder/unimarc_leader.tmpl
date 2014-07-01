@@ -1,9 +1,8 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
-<title>UNIMARC Leader builder</title>
+<title>Leader building</title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 </head>
-<body style="padding:1em;">
-<h3>UNIMARC Leader builder</h3>
+<body>
 <form name="f_pop" action="">
 <table>
 	<tr>
@@ -11,9 +10,9 @@
 		<td>(auto-calculated)</td>
 	</tr>
 	<tr>
-		<td><label for="f5">5- Record status</label></td>
+		<td>5- Record status</td>
 		<td>
-			<select name="f5" id="f5" size="1">
+			<select name="f5" size="1">
 			<!-- TMPL_IF name="f5|" -->
             	<option value="|" selected="selected">|- Filling character</option>
             <!-- TMPL_ELSE -->
@@ -49,9 +48,9 @@
 		</td>
 	</tr>
 	<tr>
-		<td><label for="f6">6- Type of record</label></td>
+		<td>6- Type of record</td>
 		<td>
-			<select name="f6" id="f6" size="1">
+			<select name="f6" size="1">
 			<!-- TMPL_IF name="f6|" -->
             	<option value="|" selected="selected">|- Filling character</option>
             <!-- TMPL_ELSE -->
@@ -140,9 +139,9 @@
 		</td>
 	</tr>
 	<tr>
-		<td><label for="f7">7- Bibliographic level</label></td>
+		<td>7- Bibliographic level</td>
 		<td>
-			<select name="f7" id="f7" size="1">
+			<select name="f7" size="1">
 			<!-- TMPL_IF name="f7|" -->
             	<option value="|" selected="selected">|- Filling character</option>
             <!-- TMPL_ELSE -->
@@ -179,9 +178,9 @@
 	</tr>
 	
 	<tr>
-		<td><label for="f8">8- Hierarchical level code</label></td>
+		<td>8- Hierarchical level code</td>
 		<td>
-			<select name="f8" id="f8" size="1">
+			<select name="f8" size="1">
 			<!-- TMPL_IF name="f8|" -->
             	<option value="|" selected="selected">|- Filling character</option>
             <!-- TMPL_ELSE -->
@@ -221,9 +220,9 @@
 		<td>(auto-filled)</td>
 	</tr>
 	<tr>
-		<td><label for="f17">17- Encoding level</label></td>
+		<td>17- Encoding level</td>
 		<td>
-			<select name="f17" id="f17" size="1">
+			<select name="f17" size="1">
 			<!-- TMPL_IF name="f17|" -->
             	<option value="|" selected="selected">|- Filling character</option>
             <!-- TMPL_ELSE -->
@@ -255,9 +254,9 @@
 	</tr>
 
 	<tr>
-		<td><label for="f18">18- Descriptive cataloging form</label></td>
+		<td>18- Descriptive cataloging form</td>
 		<td>
-			<select name="f18" id="f18" size="1">
+			<select name="f18" size="1">
 			<!-- TMPL_IF name="f18|" -->
             	<option value="|" selected="selected">|- Filling character</option>
             <!-- TMPL_ELSE -->
@@ -287,11 +286,11 @@
 		<td>19-24 Entry map &amp; lengths</td>
 		<td>(auto-filled)</td>
 	</tr>
+
+	<tr><td colspan="2"><input type="button" value="OK"  onclick="javascript:report()" /></td></tr>
 </table>
-<fieldset class="action"><input type="button" value="OK" onclick="report();" /> <a href="#" class="cancel close">Cancel</a></fieldset>
 </form>
 <script type="text/javascript">
-//<![CDATA[
 function report() {
 	    var doc   = opener.document; 
             var field = doc.getElementById("<!-- TMPL_VAR NAME='index'-->");
@@ -303,8 +302,7 @@ function report() {
 		window.close();
 		return false;
 	}
-//]]>
 </script>
-
-<!-- TMPL_INCLUDE NAME="popup-bottom.inc" -->
+</body>
+</html>
 

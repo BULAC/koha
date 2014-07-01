@@ -1,11 +1,26 @@
 <form name="f" method="get" action="auth_finder.pl">
             <input type="hidden" name="op" value="do_search" />
             <input type="hidden" name="type" value="intranet" />
+            <input type="hidden" name="nbstatements" value="<!-- TMPL_VAR NAME="nbstatements" -->" />
             <input type="hidden" name="index" value="<!-- TMPL_VAR NAME="index" -->" />
+            <!-- PROGILONE - july 2010 - C2 -->
+            <!-- TMPL_IF NAME="onchoose" --><input type="hidden" name="onchoose" value="<!-- TMPL_VAR NAME="onchoose" -->" /><!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="editauthtypecode" --><input type="hidden" name="editauthtypecode" value="<!-- TMPL_VAR NAME="editauthtypecode" -->" /><!-- /TMPL_IF -->
+            <!-- End PROGILONE -->
                 <fieldset class="rows"><ol><li>
                     <span class="label">Authority type</span>
-                    <!-- TMPL_VAR NAME="authtypecode" -->
-                    <input type="hidden" name="authtypecode" value="<!-- TMPL_VAR NAME="authtypecode" -->" />
+                    <!-- PROGILONE - july 2010 - C2 -->
+                    <!-- TMPL_IF NAME="editauthtypecode" -->
+	                    <select name="authtypecode" id="authtypecode" >
+					        <!-- TMPL_LOOP NAME="authtypesloop" -->
+					            <option value="<!-- TMPL_VAR NAME="value" -->" title="<!-- TMPL_VAR NAME="value" -->" <!-- TMPL_IF NAME="selected" -->selected="selected" <!-- /TMPL_IF -->><!-- TMPL_VAR NAME="authtypetext" --></option>
+					        <!-- /TMPL_LOOP -->
+	                    </select>
+                    <!-- TMPL_ELSE -->
+                        <!-- TMPL_VAR NAME="authtypecode" -->
+                        <input type="hidden" name="authtypecode" value="<!-- TMPL_VAR NAME="authtypecode" -->" />
+                    <!-- /TMPL_IF -->
+                    <!-- End PROGILONE -->
                 </li>
                 <li>
                     <label for="mainmainentry">Main entry ($a only)</label>

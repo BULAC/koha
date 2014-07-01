@@ -1,5 +1,5 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
-<title>Koha &rsaquo; Administration &rsaquo; Circulation and Fine Rules</title>
+<title>Koha &rsaquo; Administration &rsaquo; Issuing Rules</title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 
 <script type="text/javascript">
@@ -9,6 +9,18 @@ $(document).ready(function() {
         $('#branch').change(function() {
                 $('#selectlibrary').submit();
         });
+        
+        // B013 : based on Bug4354
+        $(".editrule").click(function(){
+            $(this).parent().parent().find("td").each(function (i) {
+                itm = $(this).text();
+                itm = itm.replace(/^\s*|\s*$/g,'');
+                $("#default-circulation-rules tr:last td:eq("+i+") input[type=text]").val(itm);
+                $("#default-circulation-rules tr:last td:eq("+i+") select").val(itm);
+            });
+            return false;
+        });
+        // END
 });
 //]]>
 </script>
@@ -18,7 +30,7 @@ $(document).ready(function() {
 <!-- TMPL_INCLUDE NAME="header.inc" -->
 <!-- TMPL_INCLUDE NAME="cat-search.inc" -->
 
-<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/admin/admin-home.pl">Administration</a> &rsaquo; Circulation and Fine Rules</div>
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/admin/admin-home.pl">Administration</a> &rsaquo; Issuing Rules</div>
 
 <div id="doc3" class="yui-t1">
 
@@ -27,9 +39,9 @@ $(document).ready(function() {
     <div class="yui-b">
     <h1 class="parameters">
         <!-- TMPL_IF NAME="humanbranch" -->
-            Defining circulation and fine rules for "<!-- TMPL_VAR NAME="humanbranch" -->"
+            Defining issuing rules for "<!-- TMPL_VAR NAME="humanbranch" -->"
         <!-- TMPL_ELSE -->
-            Defining default circulation and fine rules
+            Defining default issuing rules
         <!-- /TMPL_IF -->
     </h1>
     <div class="help">
@@ -57,24 +69,41 @@ $(document).ready(function() {
             </select>
         </form>
 <!-- TMPL_IF Name="definedbranch" --><form action="/cgi-bin/koha/admin/clone-rules.pl" method="post"><label for="tobranch"><strong>Clone these rules to:</strong></label> <input type="hidden" name="frombranch" value="<!-- TMPL_VAR NAME="branch" -->" />
-            <select name="tobranch" id="tobranch"><!-- TMPL_LOOP NAME="branchloop" --><option value="<!-- TMPL_VAR NAME="value" -->"><!-- TMPL_VAR NAME="branchname" --></option><!-- /TMPL_LOOP --></select> <input type="submit" value="Clone" /></form><!-- /TMPL_IF --></fieldset>
+            <select name="tobranch" id="tobranch"><!-- TMPL_LOOP NAME="branchloop" --><option value="<!-- TMPL_VAR NAME="value" -->"><!-- TMPL_VAR NAME="branchname" --></option><!-- /TMPL_LOOP --></select> <input type="submit" value="Clone" /></form><!-- /TMPL_IF -->
 
         <form method="post" action="/cgi-bin/koha/admin/smart-rules.pl">
             <input type="hidden" name="op" value="add" />
-            <table>
+            <input type="hidden" name="branch" value="<!-- TMPL_VAR NAME="branch" -->"/><!-- B013 -->
+            <table id="default-circulation-rules"><!-- B013 -->
             <tr>
+                <!-- B013 -->
                 <th>Patron Category</th>
                 <th>Item Type</th>
-                <th>Current Checkouts Allowed</th>
-                <th>Loan Period (day)</th>
-                <th>Fine Amount</th>
-                <th>Fine Charging Interval</th>
-                <th>Fine Grace period (day)</th>
-                <th>Suspension in Days (day)</th>
-                <th>Renewals Allowed (count)</th>
-                <th>Holds Allowed (count)</th>
-		        <th>Rental Discount (%)</th>
-				<th>&nbsp;</th>
+                <th title="maxissueqty">Current Checkouts Allowed (count)</th>
+                <th title="issuelength">Loan Period (day)</th>
+                <th title="fine">Fine Amount</th>
+                <th title="chargeperiod">Fine Charging Interval</th>
+                <th title="firstremind">Fine Grace period (day)</th>
+                <th title="finedays">Suspension in Days (day)</th>
+                <th title="renewalsallowed">Renewals per Loan Allowed (count)</th>
+                <th title="maxrenewalqty">Current Loan Renewals Allowed (count)</th>
+                <th title="renewalperiod">Loan Renewal Period (day)</th>
+                <th title="reservesallowed">Holds Allowed (count)</th>
+		        <th title="rentaldiscount">Rental Discount (%)</th>
+                <th title="reserveasideperiod">Reserve Aside Period (day)</th>
+                <th title="maxinstantstackqty">Instant Stack Requests Allowed (count)</th>
+                <th title="maxdelayedstackqty">Delayed Stack Requests Allowed (count)</th>
+                <th title="stackguardperiod">Stack Requests Guard Period (day)</th>
+                <th title="maxstackqty">Current Stacks Allowed (count)</th>
+                <th title="stacklength">Stack Period (day)</th>
+                <th title="stackrenewalsallowed">Renewals per Stack Allowed (count)</th>
+                <th title="maxstackrenewalqty">Current Stack Renewals Allowed (count)</th>
+                <th title="stackrenewalperiod">Stack Renewal Period (day)</th>
+                <th title="spacemaxinstantstackqty">Space<br/>Instant Stack Requests Allowed (count)</th>
+                <th title="spacemaxdelayedstackqty">Space<br/>Delayed Stack Requests Allowed (count)</th>
+                <th title="spacemaxstackqty">Space<br/>Current Stacks Allowed (count)</th>
+                <!-- END -->
+				<th colspan="2">Actions</th><!-- B013 -->
             </tr>
 				<!-- TMPL_LOOP NAME="rules" -->
 					<!-- TMPL_UNLESS NAME="__odd__" -->
@@ -100,20 +129,37 @@ $(document).ready(function() {
 									<!-- TMPL_VAR NAME="maxissueqty" -->
 								<!-- /TMPL_IF -->
 							</td>
+                            <!-- B013 -->
 							<td><!-- TMPL_VAR NAME="issuelength" --></td>
 							<td><!-- TMPL_VAR NAME="fine" --></td>
 							<td><!-- TMPL_VAR NAME="chargeperiod" --></td>
 							<td><!-- TMPL_VAR NAME="firstremind" --></td>
 							<td><!-- TMPL_VAR NAME="finedays" --></td>
 							<td><!-- TMPL_VAR NAME="renewalsallowed" --></td>
+                            <td><!-- TMPL_VAR NAME="maxrenewalqty" --></td>
+                            <td><!-- TMPL_VAR NAME="renewalperiod" --></td>
 							<td><!-- TMPL_VAR NAME="reservesallowed" --></td>
 							<td><!-- TMPL_VAR NAME="rentaldiscount" --></td>
+                            <td><!-- TMPL_VAR NAME="reserveasideperiod" --></td>
+                            <td><!-- TMPL_VAR NAME="maxinstantstackqty" --></td>
+                            <td><!-- TMPL_VAR NAME="maxdelayedstackqty" --></td>
+                            <td><!-- TMPL_VAR NAME="stackguardperiod" --></td>
+                            <td><!-- TMPL_VAR NAME="maxstackqty" --></td>
+                            <td><!-- TMPL_VAR NAME="stacklength" --></td>
+                            <td><!-- TMPL_VAR NAME="stackrenewalsallowed" --></td>
+                            <td><!-- TMPL_VAR NAME="maxstackrenewalqty" --></td>
+                            <td><!-- TMPL_VAR NAME="stackrenewalperiod" --></td>
+                            <td><!-- TMPL_VAR NAME="spacemaxinstantstackqty" --></td>
+                            <td><!-- TMPL_VAR NAME="spacemaxdelayedstackqty" --></td>
+                            <td><!-- TMPL_VAR NAME="spacemaxstackqty" --></td>
+                            <!-- END -->
+                            <td><a href="#" class="editrule">Edit</a></td><!-- B013 -->
 							<td>
 								<a class="button" href="/cgi-bin/koha/admin/smart-rules.pl?op=delete&amp;itemtype=<!-- TMPL_VAR NAME="itemtype" -->&amp;categorycode=<!-- TMPL_VAR NAME="categorycode" -->&amp;branch=<!-- TMPL_VAR NAME="branch" -->">Delete</a>
 							</td>
                 	</tr>
             	<!-- /TMPL_LOOP -->
-                <tr>
+                <tr id="editline">
                     <td>
                         <select name="categorycode">
                             <option value="*">Default</option>
@@ -130,16 +176,34 @@ $(document).ready(function() {
                         <!-- /TMPL_LOOP -->
                         </select>
                     </td>
-                    <td><input name="maxissueqty" size="3" /></td>
-                    <td><input name="issuelength" size="3" /> </td>
-                    <td><input name="fine" size="4" /></td>
-                    <td><input name="chargeperiod" size="2" /></td>
-                    <td><input name="firstremind" size="2" /> </td>
-                    <td><input name="finedays" size="3" /> </td>
-                    <td><input name="renewalsallowed" size="2" /></td>
-                    <td><input name="reservesallowed" size="2" /></td>
-		    <td><input name="rentaldiscount" size="2" /></td>
-                    <td><input type="hidden" name="branch" value="<!-- TMPL_VAR NAME="branch" -->"/><input type="submit" value="Add" class="submit" /></td>
+                    <!-- B013 -->
+                    <td><input type="text" name="maxissueqty" size="3" /></td>
+                    <td><input type="text" name="issuelength" size="3" /></td>
+                    <td><input type="text" name="fine" size="3" /></td>
+                    <td><input type="text" name="chargeperiod" size="3" /></td>
+                    <td><input type="text" name="firstremind" size="3" /></td>
+                    <td><input type="text" name="finedays" size="3" /></td>
+                    <td><input type="text" name="renewalsallowed" size="3" /></td>
+                    <td><input type="text" name="maxrenewalqty" size="3" /></td>
+                    <td><input type="text" name="renewalperiod" size="3" /></td>
+                    <td><input type="text" name="reservesallowed" size="3" /></td>
+                    <td><input type="text" name="rentaldiscount" size="3" /></td>
+                    <td><input type="text" name="reserveasideperiod" size="3" /></td>
+                    <td><input type="text" name="maxinstantstackqty" size="3" /></td>
+                    <td><input type="text" name="maxdelayedstackqty" size="3" /></td>
+                    <td><input type="text" name="stackguardperiod" size="3" /></td>
+                    <td><input type="text" name="maxstackqty" size="3" /></td>
+                    <td><input type="text" name="stacklength" size="3" /></td>
+                    <td><input type="text" name="stackrenewalsallowed" size="3" /></td>
+                    <td><input type="text" name="maxstackrenewalqty" size="3" /></td>
+                    <td><input type="text" name="stackrenewalperiod" size="3" /></td>
+                    <td><input type="text" name="spacemaxinstantstackqty" size="3" /></td>
+                    <td><input type="text" name="spacemaxdelayedstackqty" size="3" /></td>
+                    <td><input type="text" name="spacemaxstackqty" size="3" /></td>
+                    <!-- END -->
+                                        
+                    <td><input type="submit" value="Save" class="submit" /></td><!-- B013 -->
+                    <td><input type="reset" value="Clear" class="reset" /></td><!-- B013 -->
                 </tr>
             </table>
         </form>

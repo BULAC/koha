@@ -1,0 +1,181 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<!-- Progilone B10 -->
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>UNIMARC_Field 995B builder</title>
+    <script type="text/javascript" src="<!-- TMPL_VAR name='themelang' -->/js/pgl-callnumber.js"></script>
+</head>
+<body>
+	<form name="f_pop" action="plugin_launcher.pl">
+		<input type="hidden" name="plugin_name" value="unimarc_field_995B.pl" />
+		<input type="hidden" name="index" value="<!-- TMPL_VAR name="index" -->" />
+		<input type="hidden" name="result" value="<!-- TMPL_VAR name="result" -->" />
+		<input type="hidden" name="subscription" value="<!-- TMPL_VAR name="subscription" -->" />
+		<input type="hidden" name="number" value="<!-- TMPL_VAR name="number" -->" />
+		
+		<!-- TMPL_IF NAME="op" -->
+			<input type="hidden" name="op" value="cancel" />
+			<input type="hidden" name="geo_index" value="<!-- TMPL_VAR name="geo_index" -->" />
+			<input type="hidden" name="classification" value="<!-- TMPL_VAR name="classification" -->" />
+			<input type="hidden" name="complement" value="<!-- TMPL_VAR name="complement" -->" />
+			<input type="hidden" name="volume" value="<!-- TMPL_VAR name="volume" -->" />
+			<input type="hidden" name="serial" value="<!-- TMPL_VAR name="serial" -->" />
+			
+			<table>
+				<tr>
+					<td>Free access callnumber</td>
+					<td><input type="text" name="callnumber" value="<!-- TMPL_VAR name="callnumber" -->" readonly="readonly" size="40" /></td>
+			</table>
+			
+			<div>
+				<input type="button" value="OK" onclick="report();"/>
+				<input type="submit" value="Cancel"/>
+			</div>
+		<!-- TMPL_ELSE -->
+			<input type="hidden" name="op" value="compute" />
+			
+			<div id="pluginCallnumber" name="pluginCallnumber" <!-- TMPL_IF NAME="freeInput" -->style="display: none;"<!-- /TMPL_IF --> >
+				<table id="regularCallnumber" name="regularCallnumber" <!-- TMPL_IF NAME="serial" -->style="display: none;"<!-- /TMPL_IF -->>
+					<tr>
+						<td>Geographical index *</td>
+						<td>
+							<select name="geo_index" size="1">
+								<!-- TMPL_LOOP NAME="geo_index_auth_values_hash" -->
+									<option value="<!-- TMPL_VAR name="value" -->" <!-- TMPL_VAR name="selected" --> ><!-- TMPL_VAR name="label" --></option>
+								<!-- /TMPL_LOOP -->
+							</select>
+							<input type="hidden" name="mandatory" value="1" />
+						</td>
+					</tr>
+					<tr>
+                        <td>Classification index *</td>
+                        <td>
+                            <input type="text" maxlength="10" name="classification" value="<!-- TMPL_VAR name="classification" -->"/>
+                            <input type="hidden" name="mandatory" value="1" />
+                        </td>
+					</tr>
+					<tr>
+						<td>Alphanumeric complement *</td>
+						<td>
+							<input type="text" maxlength="9" name="complement" value="<!-- TMPL_VAR name="complement" -->"/>
+							<input type="hidden" name="mandatory" value="1" />
+						</td>
+					</tr>
+					<tr>
+						<td>Volume number</td>
+						<td><input type="text" maxlength="5" name="volume" value="<!-- TMPL_VAR name="volume" -->"/></td>
+					</tr>
+				</table>
+				
+				<table id="serialCallnumber" name="serialCallnumber" <!-- TMPL_UNLESS NAME="serial" -->style="display: none;"<!-- /TMPL_IF -->>
+					<tr>
+						<td>Geographical index *</td>
+						<td>
+							<select name="serial_geo_index" size="1">
+								<!-- TMPL_LOOP NAME="geo_index_auth_values_hash" -->
+									<option value="<!-- TMPL_VAR name="value" -->" <!-- TMPL_VAR name="selected" --> ><!-- TMPL_VAR name="label" --></option>
+								<!-- /TMPL_LOOP -->
+							</select>
+							<input type="hidden" name="mandatory" value="1" />
+						</td>
+					</tr>
+					<tr>
+						<td>Alphanumeric complement *</td>
+						<td>
+							<input type="text" maxlength="5" name="serial_complement" value="<!-- TMPL_VAR name="complement" -->"/>
+							<input type="hidden" name="mandatory" value="1" />
+						</td>
+					</tr>
+				</table>
+				
+				<!-- TMPL_IF NAME="subscription" -->
+	                <input type="hidden" name="serial" value="1" />
+	            <!-- TMPL_ELSE -->
+					<br/>
+					<div>
+						<input type="checkbox" name="serial" id="serial" <!-- TMPL_IF NAME="serial" -->checked="checked"<!-- /TMPL_IF --> onclick="toggleDisplay(this, 'regularCallnumber', true);toggleDisplay(this, 'serialCallnumber', false)"/>
+                        <label for="serial">Serial callnumber</label>
+					</div>
+				<!-- /TMPL_IF -->
+			</div>
+			
+			<br/>
+
+			<div>
+				<input type="checkbox" name="freeInput" id="freeInput" <!-- TMPL_IF NAME="freeInput" -->checked="checked"<!-- /TMPL_IF --> onclick="toggleVisibility(this, 'freeCallnumber', false);toggleDisplay(this, 'pluginCallnumber', true);toggleDisplay(this, 'disabledFreeCallnumber', true);" />
+                <label for="freeCallnumber">Free input</label>
+				<input type="text" name="disabledFreeCallnumber" size="67" maxlength="255" id="disabledFreeCallnumber" disabled="disabled" <!-- TMPL_IF NAME="freeInput" -->style="display: none;"<!-- /TMPL_IF --> value="<!-- TMPL_VAR name="freeCallnumber" -->" />
+                <input type="text" name="freeCallnumber" size="67" maxlength="255" id="freeCallnumber" <!-- TMPL_UNLESS NAME="freeInput" -->style="visibility: hidden;"<!-- /TMPL_UNLESS --> value="<!-- TMPL_VAR name="freeCallnumber" -->" />
+			</div>
+			
+			<br/>
+			
+			<div>
+				<input type="submit" value="OK" onclick="return check();"/>
+			</div>
+		<!-- /TMPL_IF -->
+	</form>
+	
+	<script type="text/javascript">
+		function check() {
+			var errors = 0;
+			var fields = findSubfieldsWithProperty("mandatory");
+			var isChecked = document.getElementById("serial").checked;
+
+			var isFreeInput = document.getElementById("freeInput").checked;
+			if (isFreeInput) {
+				return true;
+			}
+		
+			for (var i = 0; i < fields.length; i++) {
+				var el = getInputSubfield(fields[i]);
+
+			    if (isChecked) {
+			        if (isParent('regularCallnumber', el)) {
+                        continue;
+			        }
+			    } else {
+			        if (isParent('serialCallnumber', el)) {
+                        continue;
+                    }
+                }
+                
+				if (!el.value) {
+					errors++;
+					var label = fields[i].previousSibling.previousSibling;
+					label.style.backgroundColor="#FF0000";
+					label.style.fontWeight = "bold";
+				} else {
+					var label = fields[i].previousSibling.previousSibling;
+					label.style.backgroundColor="#FFFFFF";
+					label.style.fontWeight = "normal";
+				}
+			}
+		
+			if (errors) {
+				return false;
+			}
+			return true;
+		}
+		
+		function report() {
+			var doc = opener.document;
+			
+			<!-- TMPL_IF NAME="subscription" -->
+				var field = doc.getElementsByName("<!-- TMPL_VAR NAME='index'-->")[0]
+				field.value = document.f_pop.callnumber.value;
+			<!-- TMPL_ELSE -->
+			    var field = doc.getElementById("<!-- TMPL_VAR NAME='index'-->");
+			    field.value = document.f_pop.callnumber.value;
+			    reportToSubfield(doc, 'B', 'k', document.f_pop.callnumber.value);
+			<!-- /TMPL_IF -->
+
+			window.close();
+			return false;
+		}
+	</script>
+</body>
+</html>
+

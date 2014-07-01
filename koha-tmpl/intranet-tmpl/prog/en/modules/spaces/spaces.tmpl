@@ -1,0 +1,23 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<!-- TMPL_IF NAME="booking" -->
+	<title>Koha &rsaquo; Spaces booking</title>
+<!-- TMPL_ELSE -->
+	<!-- TMPL_IF NAME="management" -->
+		<title>Koha &rsaquo; Spaces management</title>
+	<!-- /TMPL_IF -->
+<!-- /TMPL_IF -->
+<base target="_parent">
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/js/spaces/frame-manager.js"></script>
+</head>
+<frameset rows="137, *" frameborder="0">
+	<frame src="/cgi-bin/koha/spaces/spaces-header.pl?op=<!-- TMPL_VAR NAME="op" -->" name="header" scrolling="no" />
+	<!-- TMPL_IF NAME="booking" -->
+		<frame src="<!-- TMPL_VAR NAME="SpacesUrl" -->/espaces/booking/bookingList.seam?kohaSessionType=INTRANET&kohaSessionId=<!-- TMPL_VAR NAME="kohaSessionId" -->" name="content" />
+	<!-- TMPL_ELSE -->
+		<!-- TMPL_IF NAME="management" -->
+			<frame src="<!-- TMPL_VAR NAME="SpacesUrl" -->/espaces/administration/spaceList.seam?kohaSessionType=INTRANET&kohaSessionId=<!-- TMPL_VAR NAME="kohaSessionId" -->" name="content" />
+		<!-- /TMPL_IF -->
+	<!-- /TMPL_IF -->
+</frameset>
+</html>

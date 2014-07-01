@@ -30,7 +30,7 @@ use XML::Simple;
 use CGI;
 
 =head1 DLF ILS-DI for Koha
-
+1
 This script is a basic implementation of ILS-DI protocol for Koha.
 It acts like a dispatcher, that get the CGI request, check required and 
 optionals arguments, call a function from C4::ILS-DI, and finaly
@@ -78,6 +78,14 @@ my @services = (
     #	Level 4: Robust/domain specific discovery platforms
     #	'SearchCourseReserves',              # TODO
     #	'Explain'                            # TODO
+    
+    # B03 : Cancel and renew stack requests
+    #   Level 5: Circulation
+     'CancelStack',
+     'RenewStack',
+     'EndStack',
+     'NbRetrievedStack',
+    # END
 );
 
 # List of required arguments
@@ -94,7 +102,14 @@ my %required = (
     'RenewLoan'           => [ 'patron_id', 'item_id' ],
     'HoldTitle'           => [ 'patron_id', 'bib_id', 'request_location' ],
     'HoldItem'            => [ 'patron_id', 'bib_id', 'item_id' ],
-    'CancelHold' => [ 'patron_id', 'item_id' ],
+    'CancelHold'          => [ 'patron_id', 'item_id' ],
+    
+    # B03 : Cancel and renew stack requests
+    'CancelStack'         => [ 'space_id' ],
+    'RenewStack'          => [ 'space_id', 'end_date' ],
+    'EndStack'          => [ 'space_id' ],
+    'NbRetrievedStack'    => ['borrowernumber'],
+    # END
 );
 
 # List of optional arguments
@@ -112,6 +127,10 @@ my %optional = (
     'HoldTitle'  => [ 'pickup_location', 'needed_before_date', 'pickup_expiry_date' ],
     'HoldItem'   => [ 'pickup_location', 'needed_before_date', 'pickup_expiry_date' ],
     'CancelHold' => [],
+    'CancelStack' => [],
+    'RenewStack' => [],
+    'EndStack' => [],
+    'NbRetrievedStack' => [],
 );
 
 # If no service is requested, display the online documentation

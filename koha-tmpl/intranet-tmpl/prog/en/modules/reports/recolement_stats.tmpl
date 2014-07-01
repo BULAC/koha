@@ -1,0 +1,69 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Reports <!-- TMPL_IF NAME="do_it" -->&rsaquo; Acquisitions Statistics &rsaquo; Results<!-- TMPL_ELSE -->&rsaquo; Acquisitions Statistics<!-- /TMPL_IF --></title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<!-- TMPL_INCLUDE NAME="calendar.inc" -->
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="cat-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/reports/reports-home.pl">Reports</a> &rsaquo; Stocktaking Statistics </div>
+
+<div id="doc3" class="yui-t2">
+
+<div id="bd">
+<div id="yui-main">
+<div class="yui-b">
+
+	<!-- TMPL_INCLUDE NAME="jasper.inc" -->
+
+	<form method="post" action="/cgi-bin/koha/edition/recolement.pl">
+	
+		<fieldset class="rows">
+			<legend>Circulation type</legend>
+            <ol>
+                <li>
+                    <label for="report_name">Report to edit</label>
+					<select name="select_report" id="select_report">
+						<option value="">None</option>
+						<option value="not_seen" <!-- TMPL_IF NAME="not_seen" -->selected="selected"<!-- /TMPL_IF -->>Not seen items</option>
+						<option value="unknown_barcode" <!-- TMPL_IF NAME="not_seen" -->selected="selected"<!-- /TMPL_IF -->>Items with unknown barcode</option>
+						<option value="two_barcodes" <!-- TMPL_IF NAME="two_barcodes" -->selected="selected"<!-- /TMPL_IF -->>Items with two barcodes</option>
+						<option value="weeding" <!-- TMPL_IF NAME="weeding" -->selected="selected"<!-- /TMPL_IF -->>Weeding</option>
+						<option value="preservation_data" <!-- TMPL_IF NAME="preservation_data" -->selected="selected"<!-- /TMPL_IF -->>Items with preservation data</option>
+						<option value=inadequacy <!-- TMPL_IF NAME="inadequacy" -->selected="selected"<!-- /TMPL_IF -->>Items in inadequacy</option>
+						<option value="scanning" <!-- TMPL_IF NAME="scanning" -->selected="selected"<!-- /TMPL_IF -->>Scanning</option>
+						<option value="seen" <!-- TMPL_IF NAME="scanning" -->selected="selected"<!-- /TMPL_IF -->>Seen items</option>
+					</select>
+                </li>
+            </ol>
+		</fieldset>
+		
+		<fieldset class="rows">
+			<legend>Output</legend>
+			<ol>
+				<li>
+					<label for="exporttype">To a file of type:</label>
+					<select name="exporttype" id="exporttype" size="1">
+						<!-- TMPL_LOOP NAME="exporttypeloop" -->
+							<option value="<!-- TMPL_VAR NAME="value" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="label" --></option>
+						<!-- /TMPL_LOOP  -->
+					</select>
+				</li>
+			</ol>
+		</fieldset>
+
+		<fieldset class="action">
+			<input type="submit" value="Submit" />
+			<input type="hidden" name="op" value="export" />
+		</fieldset>
+
+	</form>
+	
+</div>
+</div>
+<div class="yui-b">
+<!-- TMPL_INCLUDE NAME="reports-menu.inc" -->
+</div>
+</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

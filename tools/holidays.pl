@@ -64,7 +64,6 @@ my $onlymine=(C4::Context->preference('IndependantBranches') &&
 if ( $onlymine ) { 
     $branch = C4::Context->userenv->{'branch'};
 }
-my $branchname = GetBranchName($branch);
 my $branches = GetBranches($onlymine);
 my @branchloop;
 for my $thisbranch (sort { $branches->{$a}->{branchname} cmp $branches->{$b}->{branchname} } keys %$branches) {
@@ -108,7 +107,9 @@ foreach my $monthDay (keys %$day_month_holidays) {
     %day_month = (KEY => $monthDay,
                   DATE => $day_monthdate,
                   TITLE => $day_month_holidays->{$monthDay}{title},
-                  DESCRIPTION => $day_month_holidays->{$monthDay}{description});
+                  DESCRIPTION => $day_month_holidays->{$monthDay}{description},
+                  MONTH => $day_month_holidays->{$monthDay}{month},
+                  DAY => $day_month_holidays->{$monthDay}{day});
     push @day_month_holidays, \%day_month;
 }
 
@@ -120,7 +121,10 @@ foreach my $yearMonthDay (keys %$exception_holidays) {
     %exception_holiday = (KEY => $yearMonthDay,
                           DATE => $exceptiondate->output("syspref"),
                           TITLE => $exception_holidays->{$yearMonthDay}{title},
-                          DESCRIPTION => $exception_holidays->{$yearMonthDay}{description});
+                          DESCRIPTION => $exception_holidays->{$yearMonthDay}{description},
+                          YEAR => $exception_holidays->{$yearMonthDay}{year},
+                          MONTH => $exception_holidays->{$yearMonthDay}{month},
+                          DAY => $exception_holidays->{$yearMonthDay}{day});
     push @exception_holidays, \%exception_holiday;
 }
 
@@ -132,21 +136,23 @@ foreach my $yearMonthDay (keys %$single_holidays) {
     %holiday = (KEY => $yearMonthDay,
                 DATE => $holidaydate->output("syspref"),
                 TITLE => $single_holidays->{$yearMonthDay}{title},
-                DESCRIPTION => $single_holidays->{$yearMonthDay}{description});
+                DESCRIPTION => $single_holidays->{$yearMonthDay}{description},
+                YEAR => $single_holidays->{$yearMonthDay}{year},
+                MONTH => $single_holidays->{$yearMonthDay}{month},
+                DAY => $single_holidays->{$yearMonthDay}{day});
     push @holidays, \%holiday;
 }
 
 $template->param(WEEK_DAYS_LOOP => \@week_days,
-        branchloop => \@branchloop, 
-        HOLIDAYS_LOOP => \@holidays,
-        EXCEPTION_HOLIDAYS_LOOP => \@exception_holidays,
-        DAY_MONTH_HOLIDAYS_LOOP => \@day_month_holidays,
-        calendardate => $calendardate,
-        keydate => $keydate,
-        branchcodes => $branchcodes,
-        branch => $branch,
-        branchname => $branchname
-  );
+				branchloop => \@branchloop, 
+				HOLIDAYS_LOOP => \@holidays,
+				EXCEPTION_HOLIDAYS_LOOP => \@exception_holidays,
+				DAY_MONTH_HOLIDAYS_LOOP => \@day_month_holidays,
+				calendardate => $calendardate,
+				keydate => $keydate,
+				branchcodes => $branchcodes,
+				branch => $branch
+	);
 
 # Shows the template with the real values replaced
 output_html_with_http_headers $input, $cookie, $template->output;

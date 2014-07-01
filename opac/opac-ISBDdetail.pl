@@ -20,7 +20,8 @@
 
 =head1 NAME
 
-opac-ISBDdetail.pl - script to show a biblio in ISBD format
+opac-ISBDdetail.pl : script to show a biblio in ISBD format
+
 
 =head1 DESCRIPTION
 
@@ -36,12 +37,14 @@ the items attached to the biblio
 
 =head1 FUNCTIONS
 
+=over 2
+
 =cut
 
 use strict;
 use warnings;
 
-use C4::Auth;
+use C4::Auth qw(:DEFAULT get_session); # PROGILONE - may 2010 - F10
 use C4::Context;
 use C4::Output;
 use CGI;
@@ -54,6 +57,7 @@ use C4::Serials;    # uses getsubscriptionfrom biblionumber
 use C4::Koha;
 use C4::Members;    # GetMember
 use C4::External::Amazon;
+use C4::Stack::Rules; # B031
 
 my $query = CGI->new();
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
@@ -155,16 +159,6 @@ $template->param(
     reviews             => $reviews,
 );
 
-#Search for title in links
-if (my $search_for_title = C4::Context->preference('OPACSearchForTitleIn')){
-    $dat->{author} ? $search_for_title =~ s/{AUTHOR}/$dat->{author}/g : $search_for_title =~ s/{AUTHOR}//g;
-    $dat->{title} =~ s/\/+$//; # remove trailing slash
-    $dat->{title} =~ s/\s+$//; # remove trailing space
-    $dat->{title} ? $search_for_title =~ s/{TITLE}/$dat->{title}/g : $search_for_title =~ s/{TITLE}//g;
-    $isbn ? $search_for_title =~ s/{ISBN}/$isbn/g : $search_for_title =~ s/{ISBN}//g;
- $template->param('OPACSearchForTitleIn' => $search_for_title);
-}
-
 ## Amazon.com stuff
 #not used unless preference set
 if ( C4::Context->preference("OPACAmazonEnabled") == 1 ) {
@@ -200,5 +194,20 @@ if ( C4::Context->preference("OPACAmazonEnabled") == 1 ) {
     $template->param( SIMILAR_PRODUCTS => \@products );
     $template->param( AMAZONREVIEWS    => \@reviews );
 }
+
+# PROGILONE - may 2010 - F10
+my $session = get_session($query->cookie("CGISESSID"));
+if ($session) {
+    # read session variables
+    foreach (qw(currentsearchquery currentsearchurl currentsearchisadvanced currentsearchisoneresult)) {        
+        $template->param( $_ => $session->param( $_ ) );
+    }
+}
+# End PROGILONE
+
+# B032
+# Stack request link for serial
+$template->param( stackrequestonbiblio => 1 ) if CanRequestStackOnBiblio($biblionumber);
+# END B032
 
 output_html_with_http_headers $query, $cookie, $template->output;

@@ -22,15 +22,29 @@
                             <!-- TMPL_IF NAME="CAN_user_acquisition" -->
                             <li><a href="/cgi-bin/koha/acqui/acqui-home.pl">Acquisitions</a></li>
                             <!-- /TMPL_IF -->
-                            <!-- TMPL_IF NAME="CAN_user_editauthorities" -->
                             <li><a href="/cgi-bin/koha/authorities/authorities-home.pl">Authorities</a></li>
-                            <!-- /TMPL_IF -->
+                            
+                            <!-- Progilone B10: Callnumber management -->
+						   <!-- TMPL_IF NAME="UseAdvancedCallNumberManagement" -->
+						   	<!-- TMPL_IF NAME="CAN_user_advanced_callnumber_management" -->
+						           <li><a href="/cgi-bin/koha/admin/callnumbers.pl">Item Callnumber management</a></li>
+						       <!-- /TMPL_IF -->
+						   <!-- /TMPL_IF -->
+                            
                             <!-- TMPL_IF NAME="CAN_user_serials" -->
                             <li><a href="/cgi-bin/koha/serials/serials-home.pl">Serials</a></li>
                             <!-- /TMPL_IF -->
                             <!-- TMPL_IF NAME="CAN_user_reports" -->
                             <li><a href="/cgi-bin/koha/reports/reports-home.pl">Reports</a></li>
                             <!-- /TMPL_IF -->
+                            <!-- B05 -->
+							<!-- TMPL_IF NAME="CAN_user_spacesAdministrationManagement" -->
+								<li><a href="/cgi-bin/koha/spaces/spaces.pl?op=booking">Spaces booking</a></li>
+							<!-- TMPL_ELSE -->
+								<!-- TMPL_IF NAME="CAN_user_spacesBookingManagement" -->
+									<li><a href="/cgi-bin/koha/spaces/spaces.pl?op=booking">Spaces booking</a></li>
+								<!-- /TMPL_IF -->
+							<!-- /TMPL_IF -->
                             <!-- TMPL_IF NAME="CAN_user_tools" -->
                             <li><a href="/cgi-bin/koha/tools/tools-home.pl">Tools</a></li>
                             <!-- /TMPL_IF -->
@@ -46,10 +60,17 @@
         </div>
     <div id="login">
         <!-- TMPL_IF NAME="AutoLocation" -->
+            <!-- B032 -->
+        	<strong><!-- TMPL_VAR NAME="LoginDeskname" --></strong>
+        	<!-- END B032 -->
             <strong>
             <!-- TMPL_VAR NAME="LoginBranchname" -->
             </strong>
         <!-- TMPL_ELSE -->
+        	<!-- B032 -->
+        	<strong><!-- TMPL_VAR NAME="LoginDeskname" --></strong>
+        	(<a href="/cgi-bin/koha/desk/selectdesk.pl">Set</a>) 
+        	<!-- END B032 -->
             <strong><!-- TMPL_VAR NAME="LoginBranchname" --></strong>
             <!-- TMPL_IF NAME="IndependantBranches" -->
                 <!-- TMPL_IF NAME="CAN_user_management" -->
@@ -64,10 +85,10 @@
             <span class="loggedinusername">
                 <!-- TMPL_VAR NAME="loggedinusername" -->
             </span>
-            (<a href="/cgi-bin/koha/mainpage.pl?logout.x=1"<!-- TMPL_IF NAME="intranetbookbag" --> onclick="javascript:delBasket(true);"<!-- /TMPL_IF -->>Log Out</a>) |
+            (<a href="/cgi-bin/koha/mainpage.pl?logout.x=1">Log Out</a>) |
         <!-- TMPL_ELSE -->
             You are not logged in |
         <!-- /TMPL_IF -->
-        <a href="/cgi-bin/koha/help.pl" id="helper" onclick="window.open('/cgi-bin/koha/help.pl?url='+escape(document.URL),'Koha_Help','width=600,height=600,toolbar=false,scrollbars=yes'); return false;">[ ? ]</a>
+        <a href="/cgi-bin/koha/help.pl" id="helper" onclick="window.open('/cgi-bin/koha/help.pl','Koha_Help','width=600,height=600,toolbar=false,scrollbars=yes'); return false;">[ ? ]</a>
     </div>
 </div>	

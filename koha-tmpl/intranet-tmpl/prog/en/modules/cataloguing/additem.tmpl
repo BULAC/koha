@@ -165,11 +165,40 @@ function set_to_today(id, force) {
         $("#" + id).val("<!-- TMPL_VAR NAME="today_iso" -->");
     }
 }
+
+//Progilone B10: Manage active callnumber
+function updateActiveCote(subfield) {
+	getInputSubfield(getDivSubfields(document, 'k')[0]).value = getInputSubfield(getDivSubfields(document, subfield)[0]).value;
+}
+
+//Progilone B10: Manage old callnumbers
+function splitRepeatableFields() {
+	var repeatableFields = findSubfieldsWithProperty('repeatable');
+	for (var i = 0; i < repeatableFields.length; i++) {
+		splitField(repeatableFields[i]);
+	}
+}
+
+//Progilone B10: Read only fields
+function updateReadonlyFields() {
+	var readonlyFields = findSubfieldsWithProperty('readonly');
+	for (var i = 0; i < readonlyFields.length; i++) {
+		makeFieldReadonly(readonlyFields[i]);
+	}
+}
+
+//Progilone B10: Manage location and physical address
+function clearAddressAndLocation() {
+	getInputSubfield(getDivSubfields(document, 'd')[0]).value = '';
+	getInputSubfield(getDivSubfields(document, 'e')[0]).value = '';
+}
+
 //]]>
 </script>
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/js/pgl-callnumber.js"></script> <!-- Progilone B10: Manage callnumber -->
 <link type="text/css" rel="stylesheet" href="<!-- TMPL_VAR NAME="themelang" -->/css/addbiblio.css" />
 </head>
-<body>
+<body onload="updateReadonlyFields();">
 <!-- TMPL_INCLUDE NAME="header.inc" -->
 <div id="breadcrumbs">
           <a href="/cgi-bin/koha/mainpage.pl">Home</a>
@@ -191,14 +220,13 @@ function set_to_today(id, force) {
 <!-- TMPL_IF NAME="no_next_barcode" --><div class="dialog alert"><strong>Error saving items</strong>: Unable to automatically determine values for barcodes. No item has been inserted.</div><!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="book_on_loan" --><div class="dialog alert"><strong>Cannot Delete</strong>: item is checked out.</div><!-- /TMPL_IF -->
 <!-- TMPL_IF NAME="book_reserved" --><div class="dialogalert"><strong>Cannot Delete</strong>: item has a waiting hold.</div><!-- /TMPL_IF -->
-<!-- TMPL_IF Name="not_same_branch" --><div class="dialog alert"><strong>Cannot Delete</strong>: The items do not belong to your branch.</div><!-- /TMPL_IF -->
 
 <div id="cataloguing_additem_itemlist">
     <!-- TMPL_IF name="item_loop" -->
         <div>
         <table>
             <tr>
-                <th colspan="2">&nbsp;</th>
+                <th colspan="3">&nbsp;</th> <!-- B11 -->
                 <!-- TMPL_LOOP NAME="item_header_loop" -->
                     <th>
                         <!-- TMPL_VAR NAME="header_value" -->
@@ -207,8 +235,10 @@ function set_to_today(id, force) {
             </tr>
                 <!-- TMPL_LOOP NAME="item_loop" -->
                 <tr id="row<!-- TMPL_VAR NAME="itemnumber" -->">
-                    <!-- TMPL_IF Name="nomod"--> <td colspan="2">&nbsp;</td><!--TMPL_ELSE--><td><a href="additem.pl?op=edititem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->#edititem">Edit</a></td>
-                    <td><a class="delete" href="/cgi-bin/koha/cataloguing/additem.pl?op=delitem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->" onclick="confirm_deletion(<!-- TMPL_VAR NAME="biblionumber" -->,<!-- TMPL_VAR NAME="itemnumber" -->); return false;">Delete</a></td><!--/TMPL_IF-->
+                    <!-- TMPL_IF Name="nomod"--> <td colspan="3">&nbsp;</td><!--TMPL_ELSE--><td><a href="additem.pl?op=edititem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->#edititem">Edit</a></td>
+                    <td><a href="additem.pl?op=duplicateitem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->">Duplicate</a></td><!-- Progilone B10: Duplicate item -->
+                    <td><a class="delete" href="/cgi-bin/koha/cataloguing/additem.pl?op=delitem&amp;biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->" onclick="confirm_deletion(<!-- TMPL_VAR NAME="biblionumber" -->,<!-- TMPL_VAR NAME="itemnumber" -->); return false;">Delete</a></td>
+                    <!--/TMPL_IF-->
                 <!-- TMPL_LOOP NAME="item_value" -->
                     <td><!-- TMPL_VAR ESCAPE=HTML NAME="field" --></td>
                 <!-- /TMPL_LOOP -->
@@ -220,13 +250,30 @@ function set_to_today(id, force) {
 </div>
 
 <div id="cataloguing_additem_newitem">
-    <form method="post" action="/cgi-bin/koha/cataloguing/additem.pl" name="f">
+    
+    <!-- Progilone B10 : Serial callnumber -->
+	<!--TMPL_IF Name="done"-->
+		<script type="text/javascript">
+			window.opener.reportSerialItemId('<!-- TMPL_VAR name="serialItemFieldset" -->', '<!-- TMPL_VAR name="itemid" -->');
+			window.close();
+		</script>
+	<!--TMPL_ELSE-->
+		<form method="post" action="/cgi-bin/koha/cataloguing/additem.pl" name="f">
+	<!-- /TMPL_IF -->
+    
+    <!--TMPL_IF name="popup"-->
+		<input type="hidden" name="mode" value="popup" />
+		<input type="hidden" name="type" value="<!-- TMPL_VAR name="type" -->" />
+		<input type="hidden" name="serialItemFieldset" value="<!-- TMPL_VAR name="serialItemFieldset" -->" />
+	<!--/TMPL_IF-->
+	<!-- End Progilone -->
+    
     <input type="hidden" name="op" value="<!-- TMPL_VAR NAME="op" -->" />
     <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
     <!-- TMPL_IF name="opisadd" -->
         <h2 id="additema">Add Item</h2>
     <!-- TMPL_ELSE -->
-        <h2 id="edititem">Edit Item #<!-- TMPL_VAR NAME="itemnumber" --></h2>
+		<!-- TMPL_IF name="itemnumber" --><h2 id="edititem">Edit Item #<!-- TMPL_VAR NAME="itemnumber" --></h2><!-- TMPL_ELSE --><h2 id="edititem">Duplicate Item</h2><!-- /TMPL_IF --><!-- Progilone B10 : Duplicate item -->
     <!-- /TMPL_IF -->
 	<fieldset class="rows">
 	<ol>
@@ -238,10 +285,12 @@ function set_to_today(id, force) {
                 <input type="hidden" name="tag"       value="<!-- TMPL_VAR NAME="tag" -->" />
                 <input type="hidden" name="subfield"  value="<!-- TMPL_VAR NAME="subfield" -->" />
                 <input type="hidden" name="mandatory" value="<!-- TMPL_VAR NAME="mandatory" -->" />
+                <!-- TMPL_IF NAME="readonly" --><input type="hidden" name="readonly"  value ="<!-- TMPL_VAR NAME="readonly" -->" /><!-- /TMPL_IF --><!-- Progilone B10 : Read only fields -->
                 <!-- TMPL_IF NAME="repeatable" -->
-                    <span class="buttonPlus" onclick="CloneSubfield('subfield<!-- TMPL_VAR NAME='tag' --><!-- TMPL_VAR NAME='subfield' --><!-- TMPL_VAR name="random" -->')">+</span>
+                    <span class="buttonPlus" name="repeatable" onclick="CloneSubfield('subfield<!-- TMPL_VAR NAME='tag' --><!-- TMPL_VAR NAME='subfield' --><!-- TMPL_VAR name="random" -->')">+</span><!-- Progilone B10: Manage old callnumbers -->
                 <!-- /TMPL_IF -->
-
+				<!-- TMPL_IF NAME="UseCallNumberActivationButton" --><!-- TMPL_IF NAME="updateActiveCote" --><input type="button" value="Activate" onclick="updateActiveCote('<!-- TMPL_VAR NAME="subfield" -->')"/><!-- /TMPL_IF --><!-- /TMPL_IF --><!-- Progilone B10 : Manage active callnumber -->
+				<!-- TMPL_IF NAME="clearAddressAndLocation" --><input type="button" value="Clear" onclick="clearAddressAndLocation()"/><!-- /TMPL_IF --><!-- Progilone B10 : Manage location and physical address -->
             </div></li>
         <!-- /TMPL_LOOP -->
     </ol>
@@ -257,6 +306,7 @@ function set_to_today(id, force) {
 		It is a bit tricky, but necessary in the sake of UI correctness.
     -->
 
+	<!-- TMPL_IF name="popup" --><input type="submit" name="add_submit" value="Add item" onclick="return Check(this.form)" /><!-- TMPL_ELSE --><!-- Progilone B10 : Serial callnumber -->
     <input type="submit" name="add_submit" value="Add item" onclick="return Check(this.form)" />
     <input type="submit" name="add_duplicate_submit" value="Add &amp; Duplicate" onclick="return Check(this.form)" />
     <input type="submit" name="add_multiple_copies" value="Add Multiple Copies" onclick="javascript:this.nextSibling.style.visibility='visible';document.f.number_of_copies.focus(); return false;" /><span id="add_multiple_copies_span" style="visibility:hidden">
@@ -264,12 +314,16 @@ function set_to_today(id, force) {
 	<input type="text" id="number_of_copies" name="number_of_copies" value="" size="2" />
 	<input type="submit" id="add_multiple_copies_submit" name="add_multiple_copies_submit" value="Add" onclick="javascript:return Check(this.form) &amp;&amp; CheckMultipleAdd(this.form.number_of_copies.value);" />
     </span>
+    <!-- /TMPL_IF -->
 
     <!-- TMPL_ELSE -->
     <input type="hidden" name="tag" value="<!-- TMPL_VAR NAME="itemtagfield" -->" />
     <input type="hidden" name="subfield" value="<!-- TMPL_VAR NAME="itemtagsubfield" -->" />
     <input type="hidden" name="field_value" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
-    <input type="submit" value="Save Changes" onclick="return Check(this.form)" />
+    <!-- B06 Suppress temporary items -->
+    <input type="hidden" name="temporary" value="<!-- TMPL_VAR NAME="temporary" -->" />
+    <!-- END -->
+    <!-- TMPL_IF name="itemnumber" --><input type="submit" value="Save Changes" onclick="return Check(this.form)" /><!-- TMPL_ELSE --><input type="submit" name="add_duplicate_submit" value="Save Duplicate" onclick="return Check(this.form)" /><!-- /TMPL_IF --><!-- Progilone B10 : Duplicate item -->
     <!-- /TMPL_IF --></fieldset>
 
     </form>

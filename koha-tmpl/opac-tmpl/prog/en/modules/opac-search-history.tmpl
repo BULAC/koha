@@ -16,6 +16,15 @@
             });
 //]]>
 
+// PROGILONE
+// Modify "onclick option" to translate
+function confirm_delete_history()
+{
+var MSG_CONFIRM_DEL_HISTORY = _('Are you sure you want to delete your search history?');
+return confirm(MSG_CONFIRM_DEL_HISTORY);
+}    
+// PROGILONE
+
 </script>
 </head>
 <body id="opac-search-history">
@@ -33,24 +42,84 @@
 <div class="yui-b"><div class="yui-g">
         <div id="searchhistory" class="container">
 	<h1>Search history</h1>
-	<!-- TMPL_IF NAME="recentSearches" --><form action="/cgi-bin/koha/opac-search-history.pl" method="get"><input type="hidden" name="action" value="delete" /><input type="submit" class="deleteshelf" value="Delete your search history" onclick="return confirm(MSG_CONFIRM_DELETE_HISTORY);" /></form><!-- TMPL_ELSE --><!-- TMPL_IF NAME="previousSearches" --><form action="/cgi-bin/koha/opac-search-history.pl" method="get"><input type="hidden" name="action" value="delete" /><input type="submit" class="deleteshelf" value="Delete your search history" onclick="return confirm(MSG_CONFIRM_DELETE_HISTORY);" /></form><!-- /TMPL_IF --><!-- /TMPL_IF -->
-
+	<!-- PROGILONE -->
+	<!-- Modify "onclick option" to translate -->
+	<!-- TMPL_IF NAME="recentSearches" -->
+		<form action="/cgi-bin/koha/opac-search-history.pl" method="get">
+			<input type="hidden" name="action" value="delete" />
+			<input type="submit" class="deleteshelf" value="Delete your search history" onclick="return confirm_delete_history();" />
+		</form>
+	<!-- TMPL_ELSE -->
+		<!-- TMPL_IF NAME="previousSearches" -->
+		<form action="/cgi-bin/koha/opac-search-history.pl" method="get">
+			<input type="hidden" name="action" value="delete" />
+			<input type="submit" class="deleteshelf" value="Delete your search history" onclick="return confirm_delete_history();" />
+		</form>
+		<!-- /TMPL_IF -->
+	<!-- /TMPL_IF -->
+	<!-- END PROGILONE -->
 	    <!-- TMPL_IF NAME="recentSearches" -->
 	    <table class="historyt">
 	    <!-- TMPL_IF NAME="previousSearches" -->
 	    <caption>Current session</caption>
 	    <!-- /TMPL_IF -->
 		<thead>
+			<!-- PROGILONE - june 2010 - F14 -->
 		    <tr><th>Date</th><th>Search</th><th>Results</th></tr>
+	        <!-- PROGILONE - june 2010 - F14 -->	
 		</thead>
 		<tbody>
 		    <!-- TMPL_LOOP NAME="recentSearches" -->
 		    <tr>
-			<td><!-- TMPL_VAR NAME="time" --></td>
-			<td><a href="/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR NAME="query_cgi" ESCAPE="html" -->"><!-- TMPL_VAR NAME="query_desc" ESCAPE="html" --></a></td>
-			<td><!-- TMPL_VAR NAME="total" --></td>
-		    </tr>
-		    <!-- /TMPL_LOOP -->
+		    <!-- PROGILONE - june 2010 - F14 -->
+		    <!-- FIXME rowspan -->
+			<td ><!-- TMPL_VAR NAME="time" --></td>
+
+			<td>
+			<a href="/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR NAME="query_cgi"  -->">
+		    <!-- TMPL_LOOP NAME="searchhistodetail" -->
+		    	<!-- TMPL_IF NAME="OPERAND_AND" -->
+		    	And
+		    	<!-- TMPL_ELSIF NAME="OPERAND_OR" -->
+		    	Or
+		    	<!-- TMPL_ELSIF NAME="OPERAND_NOT" -->
+		    	Not
+		    	<!-- TMPL_ELSE -->	
+		    	<!-- /TMPL_IF -->
+		    	
+		    	<!-- Indexes -->
+		    	<!-- TMPL_IF NAME="INDEX_KEYWORD" -->Keyword
+		    	<!-- TMPL_ELSIF NAME="INDEX_AUTHOR" -->Author
+				<!-- TMPL_ELSIF NAME="INDEX_AUTHOR_PHRASE" -->Author Phrase
+				<!-- TMPL_ELSIF NAME="INDEX_COPRPORATE_NAME" -->Corporate Name
+				<!-- TMPL_ELSIF NAME="INDEX_CONFERENCE_NAME_PHRASE" -->Corporate Name Phrase
+				<!-- TMPL_ELSIF NAME="INDEX_CONFERENCE_NAME" -->Conference Name
+				<!-- TMPL_ELSIF NAME="INDEX_PERSONAL_NAME_PHRASE" -->Personal Name Phrase
+				<!-- TMPL_ELSIF NAME="INDEX_PERSONAL_NAME" -->Personal Name
+				<!-- TMPL_ELSIF NAME="INDEX_NOTES_NAME" -->Notes
+				<!-- TMPL_ELSIF NAME="INDEX_PUBLISHER" -->Publisher
+				<!-- TMPL_ELSIF NAME="INDEX_PUBLISHER_LOCATION" -->Publisher Location
+				<!-- TMPL_ELSIF NAME="INDEX_STANDARD_NUMBER" -->Standard Number
+				<!-- TMPL_ELSIF NAME="INDEX_ISBN" -->ISBN
+				<!-- TMPL_ELSIF NAME="INDEX_ISSN" -->ISSN
+				<!-- TMPL_ELSIF NAME="INDEX_CALL_NUMBER" -->Call Number
+				<!-- TMPL_ELSIF NAME="INDEX_SUBJECT_PHRASE" -->Subject Phrase
+				<!-- TMPL_ELSIF NAME="INDEX_SUBJECT" -->Subject
+				<!-- TMPL_ELSIF NAME="INDEX_TITLE_PHRASE" -->Title Phrase
+				<!-- TMPL_ELSIF NAME="INDEX_TITLE" -->Title
+				<!-- TMPL_ELSIF NAME="INDEX_SERIES" -->Series
+				<!-- TMPL_ELSE -->Library Catalog
+				<!-- /TMPL_IF -->
+
+            <!-- TMPL_VAR NAME="KEYWORD" -->
+
+   			<!-- /TMPL_LOOP -->
+   			</a>
+   			<!-- PROGILONE - june 2010 - F14 -->
+   			</td>
+   			<td ><!-- TMPL_VAR NAME="total" --></td>
+   			</tr>
+   		    <!-- /TMPL_LOOP -->
 		</tbody>
 	    </table>
 	    <!-- /TMPL_IF -->
@@ -59,14 +128,61 @@
 	    <table class="historyt">
 	    <caption>Previous sessions</caption>
 		<thead>
+			<!-- PROGILONE - june 2010 - F14 -->
 		    <tr><th>Date</th><th>Search</th><th>Results</th></tr>
+		    <!-- PROGILONE - june 2010 - F14 -->
 		</thead>
 		<tbody>
 		    <!-- TMPL_LOOP NAME="previousSearches" -->
 		    <tr>
-			<td><!-- TMPL_VAR NAME="time" --></td>
-			<td><a href="/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR NAME="query_cgi" ESCAPE="html" -->"><!-- TMPL_VAR NAME="query_desc" ESCAPE="html" --></a></td>
-			<td><!-- TMPL_VAR NAME="total" --></td>
+						
+			<!-- PROGILONE - june 2010 - F14 -->
+		    <!-- FIXME rowspan -->
+			<td ><!-- TMPL_VAR NAME="time" --></td>
+			
+			<td>
+			<a href="/cgi-bin/koha/opac-search.pl?<!-- TMPL_VAR NAME="query_cgi"  -->">
+		    <!-- TMPL_LOOP NAME="searchprevioushistodetail" -->
+		    	<!-- TMPL_IF NAME="OPERAND_AND" -->
+		    	And
+		    	<!-- TMPL_ELSIF NAME="OPERAND_OR" -->
+		    	Or
+		    	<!-- TMPL_ELSIF NAME="OPERAND_NOT" -->
+		    	Not
+		    	<!-- TMPL_ELSE -->	
+		    	<!-- /TMPL_IF -->
+		    	
+		    	<!-- Indexes -->
+		    	<!-- TMPL_IF NAME="INDEX_KEYWORD" -->Keyword
+		    	<!-- TMPL_ELSIF NAME="INDEX_AUTHOR" -->Author
+				<!-- TMPL_ELSIF NAME="INDEX_AUTHOR_PHRASE" -->Author Phrase
+				<!-- TMPL_ELSIF NAME="INDEX_COPRPORATE_NAME" -->Corporate Name
+				<!-- TMPL_ELSIF NAME="INDEX_CONFERENCE_NAME_PHRASE" -->Corporate Name Phrase
+				<!-- TMPL_ELSIF NAME="INDEX_CONFERENCE_NAME" -->Conference Name
+				<!-- TMPL_ELSIF NAME="INDEX_PERSONAL_NAME_PHRASE" -->Personal Name Phrase
+				<!-- TMPL_ELSIF NAME="INDEX_PERSONAL_NAME" -->Personal Name
+				<!-- TMPL_ELSIF NAME="INDEX_NOTES_NAME" -->Notes
+				<!-- TMPL_ELSIF NAME="INDEX_PUBLISHER" -->Publisher
+				<!-- TMPL_ELSIF NAME="INDEX_PUBLISHER_LOCATION" -->Publisher Location
+				<!-- TMPL_ELSIF NAME="INDEX_STANDARD_NUMBER" -->Standard Number
+				<!-- TMPL_ELSIF NAME="INDEX_ISBN" -->ISBN
+				<!-- TMPL_ELSIF NAME="INDEX_ISSN" -->ISSN
+				<!-- TMPL_ELSIF NAME="INDEX_CALL_NUMBER" -->Call Number
+				<!-- TMPL_ELSIF NAME="INDEX_SUBJECT_PHRASE" -->Subject Phrase
+				<!-- TMPL_ELSIF NAME="INDEX_SUBJECT" -->Subject
+				<!-- TMPL_ELSIF NAME="INDEX_TITLE_PHRASE" -->Title Phrase
+				<!-- TMPL_ELSIF NAME="INDEX_TITLE" -->Title
+				<!-- TMPL_ELSIF NAME="INDEX_SERIES" -->Series
+				<!-- TMPL_ELSE -->Library Catalog
+				<!-- /TMPL_IF -->
+
+            <!--TMPL_VAR NAME="KEYWORD"-->
+
+   			<!-- /TMPL_LOOP -->
+   			</a>
+   			<!-- PROGILONE - june 2010 - F14 -->
+   			</td>
+   			<td ><!-- TMPL_VAR NAME="total" --></td>
 		    </tr>
 		    <!-- /TMPL_LOOP -->
 		</tbody>

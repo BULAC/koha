@@ -25,12 +25,17 @@
     <link rel="stylesheet" type="text/css" href="<!-- TMPL_VAR NAME="themelang" -->/<!-- TMPL_VAR NAME="widget" -->" />
     <!-- /TMPL_LOOP -->
 <!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="IntranetUserCSS" --><style type="text/css"><!-- TMPL_VAR NAME="IntranetUserCSS" --></style><!-- /TMPL_IF -->
 
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/jquery.js"></script>
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/ui.tabs.js"></script>
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.hotkeys.min.js"></script>
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.highlight-3.js"></script>
+
+<!-- PROGILONE - june 2010 - C1 -->
+    <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.session.js"></script>
+    <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.json.js"></script>
+    <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/js/pgl-commons.js"></script>
+<!-- End PROGILONE -->
 
 <!-- TMPL_IF NAME="js_libs" -->
     <!-- TMPL_LOOP NAME="js_libs" -->

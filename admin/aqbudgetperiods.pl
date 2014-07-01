@@ -82,9 +82,7 @@ my ($template, $borrowernumber, $cookie, $staff_flags ) = get_template_and_user(
 
 
 my $cur = GetCurrency();
-$template->param( symbol => $cur->{symbol},
-                  currency => $cur->{currency}
-               );
+$template->param( cur => $cur->{symbol} );
 my $cur_format = C4::Context->preference("CurrencyFormat");
 my $num;
 
@@ -120,7 +118,6 @@ if ( $op eq 'add_form' ) {
         my $editnum = new Number::Format(
             'int_curr_symbol'   => '',
             'thousands_sep'     => '',
-            'mon_thousands_sep' => '',
             'mon_decimal_point' => '.'
         );
 

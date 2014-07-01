@@ -25,7 +25,7 @@
 
   <xsl:template name="tag_210">
     <li>
-      <strong>Publication: </strong>
+      <strong>Édition: </strong>
       <xsl:for-each select="marc:datafield[@tag=210]">
         <span>
           <xsl:call-template name="addClassRtl" />
@@ -85,7 +85,7 @@
 	<xsl:template name="tag_4xx">
     <xsl:for-each select="marc:datafield[@tag=464 or @tag=461]">
         <li>
-        <strong>Linked with: </strong>
+        <strong>Extrait de: </strong>
         <span>
           <xsl:call-template name="addClassRtl" />
           <xsl:if test="marc:subfield[@code='t']">
@@ -209,31 +209,54 @@
   <xsl:template name="tag_subject">
     <xsl:param name="tag" />
     <xsl:param name="label" />
-    <xsl:if test="marc:datafield[@tag=$tag]">
+    <xsl:if test="marc:datafield[@tag=$tag]/marc:subfield[@code='9']|marc:datafield[@tag=$tag]/marc:subfield[@code='a']">
       <li>
-        <strong><xsl:value-of select="$label"/>: </strong>
+        <strong><xsl:value-of select="$label" />: </strong>
         <xsl:for-each select="marc:datafield[@tag=$tag]">
-          <a>
+          <xsl:if test="marc:subfield[@code='9']|marc:subfield[@code='a']">
             <xsl:choose>
-              <xsl:when test="marc:subfield[@code=9]">
-                <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=an:<xsl:value-of select="marc:subfield[@code=9]"/></xsl:attribute>
+              <xsl:when test="marc:subfield[@code='9']">
+                <xsl:for-each select="marc:subfield[@code='9']">
+                  <xsl:variable name="authnum"><xsl:value-of select="." /></xsl:variable>
+                  <xsl:variable name="authlab"><xsl:value-of select="//marc:authorities/marc:authority[@an=$authnum]" /></xsl:variable>
+                  <a>
+                    <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=an:<xsl:copy-of select="$authnum" /></xsl:attribute>
+                    <xsl:choose>
+                      <xsl:when test="string-length($authlab)>0">
+                        <xsl:call-template name="chopPunctuation">
+                          <xsl:with-param name="chopString">
+                            <xsl:copy-of select="$authlab" />
+                          </xsl:with-param>
+                        </xsl:call-template>
+                      </xsl:when>
+                      <xsl:otherwise>
+                        <xsl:copy-of select="$authnum" />
+                      </xsl:otherwise>
+                    </xsl:choose>
+                  </a>
+                  <xsl:if test="not (position()=last())">
+                    <xsl:text> -- </xsl:text>
+                  </xsl:if>
+                </xsl:for-each>
               </xsl:when>
               <xsl:otherwise>
-                <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=su:<xsl:value-of select="marc:subfield[@code='a']"/></xsl:attribute>
+                <a>
+                  <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=su:<xsl:value-of select="marc:subfield[@code='a']" /></xsl:attribute>
+                  <xsl:call-template name="chopPunctuation">
+                    <xsl:with-param name="chopString">
+                      <xsl:call-template name="subfieldSelect">
+                        <xsl:with-param name="codes">abcdjpvxyz</xsl:with-param>
+                        <xsl:with-param name="subdivCodes">jpxyz</xsl:with-param>
+                        <xsl:with-param name="subdivDelimiter">-- </xsl:with-param>
+                      </xsl:call-template>
+                    </xsl:with-param>
+                  </xsl:call-template>
+                </a>
               </xsl:otherwise>
             </xsl:choose>
-            <xsl:call-template name="chopPunctuation">
-              <xsl:with-param name="chopString">
-                <xsl:call-template name="subfieldSelect">
-                    <xsl:with-param name="codes">abcdjpvxyz</xsl:with-param>
-                    <xsl:with-param name="subdivCodes">jpxyz</xsl:with-param>
-                    <xsl:with-param name="subdivDelimiter">-- </xsl:with-param>
-                </xsl:call-template>
-              </xsl:with-param>
-            </xsl:call-template>
-          </a>
-          <xsl:if test="not (position()=last())">
-            <xsl:text> | </xsl:text>
+            <xsl:if test="not (position()=last())">
+              <xsl:text> | </xsl:text>
+            </xsl:if>
           </xsl:if>
         </xsl:for-each>
       </li>
@@ -244,55 +267,81 @@
   <xsl:template name="tag_7xx">
     <xsl:param name="tag" />
     <xsl:param name="label" />
-    <xsl:if test="marc:datafield[@tag=$tag]">
+    <xsl:if test="marc:datafield[@tag=$tag]/marc:subfield[@code='9']|marc:datafield[@tag=$tag]/marc:subfield[@code='a']">
       <li>
         <strong><xsl:value-of select="$label" />: </strong>
         <xsl:for-each select="marc:datafield[@tag=$tag]">
-          <span>
-            <xsl:call-template name="addClassRtl" />
-            <a>
-              <xsl:choose>
-                <xsl:when test="marc:subfield[@code=9]">
-                  <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=an:<xsl:value-of select="marc:subfield[@code=9]"/></xsl:attribute>
-                </xsl:when>
-                <xsl:otherwise>
-                  <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=au:<xsl:value-of select="marc:subfield[@code='a']"/><xsl:text> </xsl:text><xsl:value-of select="marc:subfield[@code='b']"/></xsl:attribute>
-                </xsl:otherwise>
-              </xsl:choose>
-              <xsl:if test="marc:subfield[@code='a']">
-                <xsl:value-of select="marc:subfield[@code='a']"/>
-              </xsl:if>
-              <xsl:if test="marc:subfield[@code='b']">
-                <xsl:text>, </xsl:text>
-                <xsl:value-of select="marc:subfield[@code='b']"/>
-              </xsl:if>
-              <xsl:if test="marc:subfield[@code='c']">
-                <xsl:text>, </xsl:text>
-                <xsl:value-of select="marc:subfield[@code='c']"/>
-              </xsl:if>
-              <xsl:if test="marc:subfield[@code='d']">
-                <xsl:text> </xsl:text>
-                <xsl:value-of select="marc:subfield[@code='d']"/>
-              </xsl:if>
-              <xsl:if test="marc:subfield[@code='f']">
-                <span dir="ltr">
-                <xsl:text> (</xsl:text>
-                <xsl:value-of select="marc:subfield[@code='f']"/>
-                <xsl:text>)</xsl:text>
+          <xsl:if test="marc:subfield[@code='9']|marc:subfield[@code='a']" >
+            <xsl:choose>
+              <xsl:when test="marc:subfield[@code='9']">
+                <xsl:for-each select="marc:subfield[@code='9']">
+                  <xsl:variable name="authnum"><xsl:value-of select="." /></xsl:variable>
+                  <xsl:variable name="authlab"><xsl:value-of select="//marc:authorities/marc:authority[@an=$authnum]" /></xsl:variable>
+                  <span>
+                    <xsl:call-template name="addClassRtl" />
+                    <a>
+                      <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=an:<xsl:copy-of select="$authnum" /></xsl:attribute>
+                      <xsl:choose>
+                        <xsl:when test="string-length($authlab)>0">
+                          <xsl:call-template name="chopPunctuation">
+                            <xsl:with-param name="chopString">
+                              <xsl:copy-of select="$authlab" />
+                            </xsl:with-param>
+                          </xsl:call-template>
+                        </xsl:when>
+                        <xsl:otherwise>
+                          <xsl:copy-of select="$authnum" />
+                        </xsl:otherwise>
+                      </xsl:choose>
+                    </a>
+                  </span>
+                  <xsl:if test="not (position()=last())">
+                    <xsl:text> -- </xsl:text>
+                  </xsl:if>
+                </xsl:for-each>
+              </xsl:when>
+              <xsl:otherwise>
+                <span>
+                  <xsl:call-template name="addClassRtl" />
+                  <a>
+                    <xsl:attribute name="href">/cgi-bin/koha/catalogue/search.pl?q=au:<xsl:value-of select="marc:subfield[@code='a']" /><xsl:text> </xsl:text><xsl:value-of select="marc:subfield[@code='b']" /></xsl:attribute>
+                    <xsl:if test="marc:subfield[@code='a']">
+                      <xsl:value-of select="marc:subfield[@code='a']" />
+                    </xsl:if>
+                    <xsl:if test="marc:subfield[@code='b']">
+                      <xsl:text>, </xsl:text>
+                      <xsl:value-of select="marc:subfield[@code='b']" />
+                    </xsl:if>
+                    <xsl:if test="marc:subfield[@code='c']">
+                      <xsl:text>, </xsl:text>
+                      <xsl:value-of select="marc:subfield[@code='c']" />
+                    </xsl:if>
+                    <xsl:if test="marc:subfield[@code='d']">
+                      <xsl:text> </xsl:text>
+                      <xsl:value-of select="marc:subfield[@code='d']" />
+                    </xsl:if>
+                    <xsl:if test="marc:subfield[@code='f']">
+                      <span dir="ltr">
+                        <xsl:text> (</xsl:text>
+                        <xsl:value-of select="marc:subfield[@code='f']" />
+                        <xsl:text>)</xsl:text>
+                      </span>
+                    </xsl:if>
+                    <xsl:if test="marc:subfield[@code='g']">
+                      <xsl:text> </xsl:text>
+                      <xsl:value-of select="marc:subfield[@code='g']" />
+                    </xsl:if>
+                    <xsl:if test="marc:subfield[@code='p']">
+                      <xsl:text> </xsl:text>
+                      <xsl:value-of select="marc:subfield[@code='p']" />
+                    </xsl:if>
+                  </a>
                 </span>
-              </xsl:if>
-              <xsl:if test="marc:subfield[@code='g']">
-                <xsl:text> </xsl:text>
-                <xsl:value-of select="marc:subfield[@code='g']"/>
-              </xsl:if>
-              <xsl:if test="marc:subfield[@code='p']">
-                <xsl:text> </xsl:text>
-                <xsl:value-of select="marc:subfield[@code='p']"/>
-              </xsl:if>
-            </a>
-          </span>
-          <xsl:if test="not (position() = last())">
-            <xsl:text> ; </xsl:text>
+              </xsl:otherwise>
+            </xsl:choose>
+            <xsl:if test="not (position() = last())">
+              <xsl:text> ; </xsl:text>
+            </xsl:if>
           </xsl:if>
         </xsl:for-each>
       </li>

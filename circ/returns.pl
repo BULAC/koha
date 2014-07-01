@@ -41,9 +41,18 @@ use C4::Reserves;
 use C4::Biblio;
 use C4::Items;
 use C4::Members;
+use C4::Overdues qw/CheckBorrowerDebarred/; # PROGILONE - A2
 use C4::Branch; # GetBranches GetBranchName
 use C4::Koha;   # FIXME : is it still useful ?
 use C4::RotatingCollections;
+use C4::Debug;
+# B032
+use C4::Stack::Manager;
+use C4::Stack::Search;
+use C4::Jasper::JasperReport;
+use C4::Utils::Constants;
+# END B032
+
 
 my $query = new CGI;
 
@@ -53,6 +62,11 @@ if (!C4::Context->userenv){
     if ($session->param('branch') eq 'NO_LIBRARY_SET'){
         # no branch set we can't return
         print $query->redirect("/cgi-bin/koha/circ/selectbranchprinter.pl");
+        exit;
+    }
+    if ($session->param('desk') eq 'NO_DESK_SET'){
+        # no desk set
+        print $query->redirect("/cgi-bin/koha/desk/selectdesk.pl?oldreferer=/cgi-bin/koha/circ/returns.pl");
         exit;
     }
 } 
@@ -77,12 +91,15 @@ my $printer = C4::Context->userenv ? C4::Context->userenv->{'branchprinter'} : "
 my $overduecharges = (C4::Context->preference('finesMode') && C4::Context->preference('finesMode') ne 'off');
 
 my $userenv_branch = C4::Context->userenv->{'branch'} || '';
+my $desk_code = C4::Context->userenv->{'desk'}; # B032
+
 #
 # Some code to handle the error if there is no branch or printer setting.....
 #
 
 # Set up the item stack ....
 my %returneditems;
+my %returnedstacks;
 my %riduedate;
 my %riborrowernumber;
 my @inputloop;
@@ -100,6 +117,7 @@ foreach ( $query->param ) {
 
     my %input;
     my $barcode        = $query->param("ri-$counter");
+    my $stack_id       = $query->param("rs-$counter");
     my $duedate        = $query->param("dd-$counter");
     my $borrowernumber = $query->param("bn-$counter");
     $counter++;
@@ -111,12 +129,14 @@ foreach ( $query->param ) {
     ######################
     #Are these lines still useful ?
     $returneditems{$counter}    = $barcode;
+    $returnedstacks{$counter}   = $stack_id;
     $riduedate{$counter}        = $duedate;
     $riborrowernumber{$counter} = $borrowernumber;
 
     #######################
     $input{counter}        = $counter;
     $input{barcode}        = $barcode;
+    $input{stack_id}       = $stack_id;
     $input{duedate}        = $duedate;
     $input{borrowernumber} = $borrowernumber;
     push( @inputloop, \%input );
@@ -126,7 +146,7 @@ foreach ( $query->param ) {
 # Deal with the requests....
 
 if ($query->param('WT-itemNumber')){
-	updateWrongTransfer ($query->param('WT-itemNumber'),$query->param('WT-waitingAt'),$query->param('WT-From'));
+    updateWrongTransfer ($query->param('WT-itemNumber'),$query->param('WT-waitingAt'),$query->param('WT-From'));
 }
 
 if ( $query->param('resbarcode') ) {
@@ -164,6 +184,10 @@ if ( $query->param('resbarcode') ) {
 
 my $borrower;
 my $returned = 0;
+# B032
+my $returned_stack = 0;
+my $stackinformation;
+# END B032
 my $messages;
 my $issueinformation;
 my $itemnumber;
@@ -171,7 +195,12 @@ my $barcode     = $query->param('barcode');
 my $exemptfine  = $query->param('exemptfine');
 my $dropboxmode = $query->param('dropboxmode');
 my $dotransfer  = $query->param('dotransfer');
+my $override    = $query->param('override'); # PROGILONE - A1
 my $calendar    = C4::Calendar->new( branchcode => $userenv_branch );
+
+my $op_materials    = $query->param('op_materials') || 0;
+my $materialsinfo   = $query->param('materialsinfo');
+my $missinginfo     = $query->param('missinginfo');
 #dropbox: get last open day (today - 1)
 my $today       = C4::Dates->new();
 my $today_iso   = $today->output('iso');
@@ -184,11 +213,15 @@ if ($dotransfer){
 }
 
 # actually return book and prepare item table.....
-if ($barcode) {
+if ( $barcode and not $query->param('cancel') ) { # PROGILONE - A1
     $barcode =~ s/^\s*|\s*$//g; # remove leading/trailing whitespace
     $barcode = barcodedecode($barcode) if C4::Context->preference('itemBarcodeInputFilter');
     $itemnumber = GetItemnumberFromBarcode($barcode);
-
+    # B032
+    unless ($itemnumber) {
+        $messages->{'BadBarcode'} = $barcode;
+    } else {
+    # END B032
     if ( C4::Context->preference("InProcessingToShelvingCart") ) {
         my $item = GetItem( $itemnumber );
         if ( $item->{'location'} eq 'PROC' ) {
@@ -206,14 +239,55 @@ if ($barcode) {
 #
 # save the return
 #
-    ( $returned, $messages, $issueinformation, $borrower ) =
-      AddReturn( $barcode, $userenv_branch, $exemptfine, $dropboxmode);     # do the return
-    my $homeorholdingbranchreturn = C4::Context->preference('HomeOrHoldingBranchReturn') or 'homebranch';
 
+    # B032 - add stack return
+    my $item_stack = GetCurrentStackByItemnumber($itemnumber);
+    my $item_issue = GetItemIssue($itemnumber);
+    
+    my $item = GetItem( $itemnumber );
+    
     # get biblio description
     my $biblio = GetBiblioFromItemNumber($itemnumber);
     # fix up item type for display
     $biblio->{'itemtype'} = C4::Context->preference('item-level_itypes') ? $biblio->{'itype'} : $biblio->{'itemtype'};
+    
+    if ( $item_stack || ($item_issue and $item_issue->{'borrowernumber'}) ) {
+        if ( $item->{'materials'} && $item->{'materials'} ne '' &&  !$op_materials ) {
+            my $materialsinfo_loop = GetAuthorisedValues( 'ABS_MATER', $item->{'materialsinfo'} );
+            
+            $messages->{'Materials'} = {
+	            'barcode'        => $item->{'barcode'},
+                'materials_loop' => $materialsinfo_loop,
+                'materials'      => $item->{'materials'}, 
+                'missinginfo'    => $item->{'missinginfo'}
+	        };
+        } else {
+        	if ( $op_materials ) {
+                ModItem( { materialsinfo => $materialsinfo, missinginfo => $materialsinfo eq 'A' ? '' : $missinginfo }, undef, $itemnumber );
+            }
+        	
+	        if ( $item_stack ) {
+		        #
+		        # Return of stack request
+		        #
+		        
+		        ($messages, $stackinformation, $borrower) = AddReturnStack($item_stack, $desk_code);
+		        $returned_stack = 1;
+	    
+	        } elsif ($item_issue and $item_issue->{'borrowernumber'}) {
+		        #
+		        # Return of loan
+		        #
+			    ( $returned, $messages, $issueinformation, $borrower ) =
+			      AddReturn( $barcode, $userenv_branch, $exemptfine, $dropboxmode, $override);     # PROGILONE - A1    
+	        }
+        }
+    } else {
+       $messages->{'NotIssued'} = $barcode;
+    }
+    # END B032
+    
+    my $homeorholdingbranchreturn = C4::Context->preference('HomeOrHoldingBranchReturn') or 'homebranch';
 
     $template->param(
         title            => $biblio->{'title'},
@@ -223,6 +297,7 @@ if ($barcode) {
         itembarcode      => $biblio->{'barcode'},
         itemtype         => $biblio->{'itemtype'},
         ccode            => $biblio->{'ccode'},
+        units            => (index $biblio->{'enumchron'}, 'Volume') > 0 ? (substr $biblio->{'enumchron'}, 0, (index $biblio->{'enumchron'}, 'Volume')) : '1',
         itembiblionumber => $biblio->{'biblionumber'},    
     );
 
@@ -242,10 +317,29 @@ if ($barcode) {
         $input{return_overdue} = 1 if ($duedate and $duedate lt $today->output('iso'));
         push( @inputloop, \%input );
     }
-    elsif ( !$messages->{'BadBarcode'} ) {
-        $input{duedate}   = 0;
-        $returneditems{0} = $barcode;
-        $riduedate{0}     = 0;
+    # B032
+    elsif ( $returned_stack ) { 
+        my $duedate = $today->output('iso'); # MAN349
+        if ($stackinformation->{'end_date'} and $stackinformation->{'end_date'} lt $today->output('iso') and $item_stack->{'istate'} eq $ISTATE_ON_STACK) {
+            $duedate = $stackinformation->{'end_date'};
+        }  	
+        $returneditems{0}      = $barcode;
+        $returnedstacks{0}     = $item_stack->{'request_number'};
+        $riborrowernumber{0}   = $borrower->{'borrowernumber'};
+        $riduedate{0}          = $duedate;
+        $input{stack_id}       = $item_stack->{'request_number'}; 
+        $input{borrowernumber} = $borrower->{'borrowernumber'};
+        $input{duedate}        = $duedate;
+        $input{return_overdue} = 1 if ($duedate and $duedate lt $today->output('iso'));
+        push( @inputloop, \%input );
+     }
+    # END B032
+    elsif ( !$messages->{'BadBarcode'} and !$messages->{'Wrongbranch'} && !$messages->{'Materials'} ) { # PROGILONE - A1
+        $input{duedate}    = 0;
+        $input{stack_id}   = $returned_stack ? $item_stack->{'request_number'} : 0;
+        $returneditems{0}  = $barcode;
+        $returnedstacks{0} = $returned_stack ? $item_stack->{'request_number'} : 0;
+        $riduedate{0}      = 0;
         if ( $messages->{'wthdrawn'} ) {
             $input{withdrawn}      = 1;
             $input{borrowernumber} = 'Item Cancelled';  # FIXME: should be in display layer ?
@@ -258,6 +352,7 @@ if ($barcode) {
         push( @inputloop, \%input );
     }
 }
+} # B032
 $template->param( inputloop => \@inputloop );
 
 my $found    = 0;
@@ -283,9 +378,15 @@ if ( $messages->{'NeedsTransfer'} ){
 }
 
 if ( $messages->{'Wrongbranch'} ){
+    # PROGILONE - A1
     $template->param(
-        wrongbranch => 1,
+        wrongbranch => $branches->{ $messages->{'Wrongbranch'}->{'Wrongbranch'} }->{'branchname'},
+        rightbranch => $branches->{ $messages->{'Wrongbranch'}->{'Rightbranch'} }->{'branchname'},
+        barcode     => $barcode,
+        exemptfine  => $exemptfine,
+        dropboxmode => $dropboxmode,
     );
+    # END PROGILONE
 }
 
 # case of wrong transfert, if the document wasn't transfered to the right library (according to branchtransfer (tobranch) BDD)
@@ -319,6 +420,19 @@ if ( $messages->{'WrongTransfer'} and not $messages->{'WasTransfered'}) {
     );
 }
 
+if ( $messages->{'Materials'} ){
+    # PROGILONE - A1
+    
+    $template->param( 
+        'barcode'        => $messages->{'Materials'}->{'barcode'},
+        'materials'      => $messages->{'Materials'}->{'materials'},
+        'materials_loop' => $messages->{'Materials'}->{'materials_loop'},
+        'missinginfo'    => $messages->{'Materials'}->{'missinginfo'} 
+    );
+
+    # END PROGILONE
+}
+
 #
 # reserve found and item arrived at the expected branch
 #
@@ -340,6 +454,16 @@ if ( $messages->{'ResFound'}) {
                 reserved     => 1,
             );
         }
+        my $debarred = CheckBorrowerDebarred( $reserve->{borrowernumber} ); # PROGILONE - A2
+        
+        my $stackrq_details = GetAllOperationsStackByItemnumber($itemnumber);
+        if (defined $stackrq_details) {
+	        $template->param(
+                on_stackrq    => 1,
+                request_number  => $stackrq_details->{'request_number'},
+                begin_date_ui   => $stackrq_details->{'begin_date_ui'},
+            );
+        }
 
         # same params for Waiting or Reserved
         $template->param(
@@ -357,7 +481,7 @@ if ( $messages->{'ResFound'}) {
             borcity        => $borr->{'city'},
             borzip         => $borr->{'zipcode'},
             borcnum        => $borr->{'cardnumber'},
-            debarred       => $borr->{'debarred'},
+            debarred       => $debarred, # PROGILONE - A2
             gonenoaddress  => $borr->{'gonenoaddress'},
             barcode        => $barcode,
             destbranch     => $reserve->{'branchcode'},
@@ -366,6 +490,73 @@ if ( $messages->{'ResFound'}) {
             reservenotes   => $reserve->{'reservenotes'},
         );
     } # else { ; }  # error?
+}
+
+# B11 Report: Generate Hold report
+if ( $query->param( 'print_hold' ) ) {
+	my @report_parameters_list = ();
+	my ( $report_directory, $report_name, $report_action ) = ( 'exports', 'fiche_reservation', 'visualization' );
+	my @report_errors = ();
+	
+	my $itemnumber     = $query->param('itemnumber');
+    my $borrowernumber = $query->param('borrowernumber');
+	
+	push( @report_parameters_list, { Item_Number => $itemnumber, borrower_number => $borrowernumber } );
+	my ( $report_zipdirectory, $report_zipfile, @report_results ) = GenerateZip( $report_directory, $report_name, $report_action, \@report_parameters_list );
+	
+	for ( my $i = 0; $i < scalar( @report_parameters_list ); $i++ ) {
+		if ( $report_results[$i] == 0) {
+			push @report_errors, { report_name => $report_name, borrower => $report_parameters_list[$i]->{ 'borrower_number' } }; 
+		}
+	}
+	
+	if ( ( scalar @report_errors ) < ( scalar @report_parameters_list ) ) {
+		#At least one report to send
+		$template->param(
+		    report_zipdirectory => $report_zipdirectory,
+			report_zipfile      => $report_zipfile,
+			report_print        => $report_action eq 'print' ? 1 : 0,
+		);
+	}
+		    
+	if ( scalar @report_errors ) {
+		$template->param(
+			report_errors => \@report_errors,
+		);
+	}
+}
+
+# B11 Report: Generate Return Ticket report
+if ( $query->param( 'print_return_ticket' ) ) {
+	my @report_parameters_list = ();
+	my ( $report_directory, $report_name, $report_action ) = ( 'exports', 'bordereau_retour', 'print' );
+	my @report_errors = ();
+	
+	my $itemnumber     = $query->param('itemnumber');
+	
+	push( @report_parameters_list, { Item_Number => $itemnumber } );
+	my ( $report_zipdirectory, $report_zipfile, @report_results ) = GenerateZip( $report_directory, $report_name, $report_action, \@report_parameters_list );
+	
+	for ( my $i = 0; $i < scalar( @report_parameters_list ); $i++ ) {
+		if ( $report_results[$i] == 0) {
+			push @report_errors, { report_name => $report_name, item => $report_parameters_list[$i]->{ 'Item_Number' } }; 
+		}
+	}
+	
+	if ( ( scalar @report_errors ) < ( scalar @report_parameters_list ) ) {
+		#At least one report to send
+		$template->param(
+		    report_zipdirectory => $report_zipdirectory,
+			report_zipfile      => $report_zipfile,
+			report_print        => $report_action eq 'print' ? 1 : 0,
+		);
+	}
+		    
+	if ( scalar @report_errors ) {
+		$template->param(
+			report_errors => \@report_errors,
+		);
+	}
 }
 
 # Error Messages
@@ -392,7 +583,13 @@ foreach my $code ( keys %$messages ) {
     }
     elsif ( $code eq 'WasTransfered' ) {
         ;    # FIXME... anything to do here?
+    # PROGILONE - A2
+    } elsif ( $code eq 'Debarred' ) {
+        $err{debarred}            = format_date( $messages->{'Debarred'} );
+        $err{debarborrowernumber} = $borrower->{borrowernumber};
+        $err{debarname}           = "$borrower->{firstname} $borrower->{surname}";
     }
+    # END PROGILONE
     elsif ( $code eq 'wthdrawn' ) {
         $err{withdrawn} = 1;
         $exit_required_p = 1;
@@ -414,6 +611,20 @@ foreach my $code ( keys %$messages ) {
     }
     elsif ( $code eq 'Wrongbranch' ) {
     }
+    # B032
+    elsif ( $code eq 'notstack' ) {
+        $err{notstack} = 1;
+        $err{msg} = $err{notstack};
+    }
+    elsif ( $code eq 'noprint' ) {
+        $err{noprint} = 1;
+        $err{msg} = $err{noprint};
+    } elsif ( $code eq 'Materials' ) {
+    	$err{'materials'} = 1;
+    	$err{'item'}      = $messages->{'Materials'}->{'barcode'};
+    	$err{'msg'}       = $messages->{'Materials'}->{'materials'};
+    }
+    # END B032
 
     else {
         die "Unknown error code $code";    # note we need all the (empty) elsif's above, or we die.
@@ -501,6 +712,7 @@ foreach ( sort { $a <=> $b } keys %returneditems ) {
     my %ri;
     if ( $count++ < $returned_counter ) {
         my $bar_code = $returneditems{$_};
+        my $stack_request = $returnedstacks{$_};
         my $duedate = $riduedate{$_};
         if ($duedate) {
             my @tempdate = split( /-/, $duedate );
@@ -524,6 +736,7 @@ foreach ( sort { $a <=> $b } keys %returneditems ) {
 
         #        my %ri;
         my $biblio = GetBiblioFromItemNumber(GetItemnumberFromBarcode($bar_code));
+        $biblio = GetStackById($stack_request, 1) unless $biblio;
         # fix up item type for display
         $biblio->{'itemtype'} = C4::Context->preference('item-level_itypes') ? $biblio->{'itype'} : $biblio->{'itemtype'};
         $ri{itembiblionumber} = $biblio->{'biblionumber'};
@@ -532,6 +745,7 @@ foreach ( sort { $a <=> $b } keys %returneditems ) {
         $ri{itemtype}         = $biblio->{'itemtype'};
         $ri{itemnote}         = $biblio->{'itemnotes'};
         $ri{ccode}            = $biblio->{'ccode'};
+        $ri{units}            = (index $biblio->{'enumchron'}, 'Volume') > 0 ? (substr $biblio->{'enumchron'}, 0, (index $biblio->{'enumchron'}, 'Volume')) : '1';
         $ri{itemnumber}       = $biblio->{'itemnumber'};
         $ri{barcode}          = $bar_code;
     }

@@ -9,19 +9,25 @@
 <script type="text/javascript">
     // <![CDATA[
 var patron_homebranch = "<!-- TMPL_VAR NAME="borrower_branchname" ESCAPE="JS" -->";
-var override_items = {<!-- TMPL_LOOP NAME="bibitemloop" --><!-- TMPL_LOOP NAME="itemloop" --><!-- TMPL_IF NAME="override" -->
+//MAN125
+var override_items = {<!-- TMPL_LOOP NAME="bibitemloop" --><!-- TMPL_LOOP NAME="itemloop" -->
     <!-- TMPL_VAR NAME="itemnumber" -->: {
         homebranch: "<!-- TMPL_VAR NAME="homebranchname" ESCAPE="JS" -->",
-        holdallowed: <!-- TMPL_VAR NAME="holdallowed" -->
+        holdallowed: <!-- TMPL_VAR NAME="holdallowed" -->,
+        override: <!-- TMPL_VAR NAME="override" DEFAULT='0' -->,
+        override_quota: <!-- TMPL_VAR NAME="override_quota" DEFAULT='0' -->
     },
-<!-- /TMPL_IF --><!-- /TMPL_LOOP --><!-- /TMPL_LOOP -->
+<!-- /TMPL_LOOP --><!-- /TMPL_LOOP -->
 };
+//END MAN125
 var MSG_NO_ITEMS_AVAILABLE = _("A hold cannot be requested on any of these items.");
 
 function check() {
 	var msg = "";
 	var count_reserv = 0;
 	var alreadyreserved = 0;
+	var already_issued = 0;
+	var already_stack_requested = 0;
 
     // check if we have checkitem form
     if (document.form.checkitem){
@@ -45,6 +51,12 @@ function check() {
     if (document.form.alreadyreserved && document.form.alreadyreserved.value == "1"){
 		 alreadyreserved++ ;
     }
+    if (document.form.already_issued && document.form.already_issued.value == "1"){
+		 already_issued++ ;
+   }
+    if (document.form.already_stack_requested && document.form.already_stack_requested.value == "1"){
+		 already_stack_requested++ ;
+   }
 
     if (count_reserv == "0"){
 		msg += (_("- Please select an item to place a hold") + "\n");
@@ -55,6 +67,12 @@ function check() {
 
     if (alreadyreserved > "0"){
 		msg += (_("- This patron had already placed a hold on this item") + "\n" + _("Please cancel the previous hold first") + "\n");
+    } 
+    if (already_issued > "0"){
+		msg += (_("- This patron had already checked out this item") + "\n" + _("Please cancel the check out first") + "\n");
+    }
+    if (already_stack_requested > "0"){
+		msg += (_("- This patron had already a stack request on this item") + "\n" + _("Please cancel the stack request first") + "\n");
     }
 
 	if (msg == "") return(true);
@@ -95,18 +113,35 @@ function checkMultiHold() {
         var itemnumber = this.value;
         var msg;
 
+        //MAN125
         switch (override_items[itemnumber].holdallowed) {
-            case 0: msg = _( 'This item normally cannot be put on hold.' ); break;
-            case 1: msg = _( 'This item normally cannot be put on hold except for patrons from ' ) + override_items[itemnumber].homebranch + '.'; break;
+            case 0: 
+                msg = _( 'This item normally cannot be put on hold.' ); 
+                break;
+            case 1: 
+                if (override_items[itemnumber].override) {
+                    msg = _( 'This item normally cannot be put on hold except for patrons from ' ) + override_items[itemnumber].homebranch + '.';
+                } else if (override_items[itemnumber].override_quota) {
+                    msg = _( 'Patron has already too many holds.' );
+                }
+                break;
         }
+        //END MAN125
 
         msg += "\n\n" + _( 'Place hold on this item?' );
 
         return confirm(msg);
     });
+    //MAN125
     $("input.warning").click(function() {
-        return confirm( _( 'None of these items can normally be put on hold for this patron.' ) + "\n\n" + _( 'Place hold?' ) );
+        <!-- TMPL_IF EXPR="override_required && CAN_user_circulate_override_reservesallowed" -->
+            return confirm( _( 'None of these items can normally be put on hold for this patron.' ) + "\n\n" + _( 'Place hold?' ) );
+        <!-- TMPL_ELSIF NAME="none_available" -->
+            alert( _('No copies are available to be placed on hold.') );
+            return false;
+        <!-- /TMPL_IF -->
     });
+    //END MAN125
  	$("#requestany").click(function() {
 		if(this.checked){
 		$("input[name=checkitem]").each(function() {
@@ -127,6 +162,10 @@ function checkMultiHold() {
 			$("#requestany").attr("checked","checked");
 		}
 	});
+
+ 	<!-- TMPL_IF NAME="zipName" -->
+    	location = '/cgi-bin/koha/edition/download.pl?directory=<!-- TMPL_VAR NAME="zipDirectory" -->&file=<!-- TMPL_VAR NAME="zipName" -->';
+	<!-- /TMPL_IF -->
  });
 
 // ]]>
@@ -169,6 +208,8 @@ function checkMultiHold() {
     <h1>Confirm Holds</h1>
   <!-- /TMPL_UNLESS -->
 
+<!-- TMPL_INCLUDE NAME="jasper.inc" -->
+
   <!-- TMPL_UNLESS NAME="cardnumber"-->
     <!-- TMPL_IF NAME="messageborrower" -->
       <div class="dialog alert"><h3>Patron Not Found</h3><p>No patron with this name, Please, try another</p> </div>
@@ -207,9 +248,19 @@ function checkMultiHold() {
         <!-- TMPL_IF NAME="alreadyreserved" -->
           <li><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --></a> <strong>already has a hold</strong> on this item </li>
         <!-- /TMPL_IF -->
-        <!-- TMPL_IF NAME="none_available" -->
-          <li> <strong>No copies are available</strong> to be placed on hold</li>
+        <!-- TMPL_IF NAME="already_issued" -->
+          <li><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --></a> <strong>already has an issue</strong> on this item </li>
         <!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="already_stack_requested" -->
+          <li><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="borrowerfirstname" --> <!-- TMPL_VAR NAME="borrowersurname" --></a> <strong>already has a stack request</strong> on this item </li>
+        <!-- /TMPL_IF -->
+        <!-- MAN125 -->
+        <!-- TMPL_IF EXPR="override_required && CAN_user_circulate_override_reservesallowed" -->
+          <li>None of these items can normally be put on hold for this patron</li>
+        <!-- TMPL_ELSIF NAME="none_available" -->
+          <li><strong>No copies are available</strong> to be placed on hold</li>
+        <!-- /TMPL_IF -->
+        <!-- END MAN125 -->
 	  </ul>
     <!-- TMPL_ELSE -->
       <h3>Cannot Place Hold on Some Items</h3>
@@ -307,7 +358,7 @@ function checkMultiHold() {
 				ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
 				button : "CalendarReserveDate",
 				disableFunc : validate1,
-				dateStatusFunc : validate1
+				dateStatusFunc : validate1,
 			}
 		);
 		//]]>
@@ -338,7 +389,7 @@ function checkMultiHold() {
 				ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
 				button : "CalendarExpirationDate",
 				disableFunc : validate1,
-				dateStatusFunc : validate1
+				dateStatusFunc : validate1,
 			}
 		);
 		//]]>
@@ -347,10 +398,13 @@ function checkMultiHold() {
 	</li>
 
         <!-- TMPL_UNLESS NAME="multi_hold" -->
-          <li> <label for="requestany">Place a hold on the next available copy </label>
-               <input type="checkbox" id="requestany" name="request" checked="checked" value="Any" />
+          <li>
+               <!-- B017 Holding on specific item-->
+               <input type="checkbox" style=display:none id="requestany" name="request" value="Any" />
                <input type="hidden" name="biblioitem" value="<!-- TMPL_VAR NAME="biblioitemnumber" -->" />
                <input type="hidden" name="alreadyreserved" value="<!-- TMPL_VAR NAME="alreadyreserved" -->" />
+               <input type="hidden" name="already_issued" value="<!-- TMPL_VAR NAME="already_issued" -->" />
+               <input type="hidden" name="already_stack_requested" value="<!-- TMPL_VAR NAME="already_stack_requested" -->" />
           </li>
         <!-- /TMPL_UNLESS -->
 
@@ -398,6 +452,11 @@ function checkMultiHold() {
             <!-- TMPL_ELSIF NAME="override" -->
                 <input type="radio" name="checkitem" class="needsoverride" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
                 <img src="/intranet-tmpl/<!-- TMPL_VAR NAME="theme" -->/img/famfamfam/silk/error.png" alt="Requires override of hold policy" />
+            <!-- MAN125 -->
+            <!-- TMPL_ELSIF EXPR="override_quota && CAN_user_circulate_override_reservesallowed" -->
+                <input type="radio" name="checkitem" class="needsoverride" value="<!-- TMPL_VAR NAME='itemnumber' -->" />
+                <img src="/intranet-tmpl/<!-- TMPL_VAR NAME='theme' -->/img/famfamfam/silk/error.png" alt="Requires override of quota" />
+            <!-- END MAN125 -->
             <!-- TMPL_ELSE -->
                 <input disabled="disabled" type="radio" name="checkitem" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
                 <img src="/intranet-tmpl/<!-- TMPL_VAR NAME="theme" -->/img/famfamfam/silk/cross.png" alt="Cannot be put on hold" />
@@ -405,10 +464,7 @@ function checkMultiHold() {
             </td>
             <!-- TMPL_IF NAME="item-level_itypes" -->
                 <td>
-                    <!-- TMPL_UNLESS NAME="noItemTypeImages" -->
-                        <!-- TMPL_IF NAME="imageurl" --><img src="<!-- TMPL_VAR name="imageurl" -->" alt="" /> <br /> <!-- /TMPL_IF -->
-                    <!-- /TMPL_UNLESS -->
-                    <!-- TMPL_VAR NAME="itypename" -->
+                    <img src="<!-- TMPL_VAR name="imageurl" -->" alt="" /> <br /> <!-- TMPL_VAR NAME="itypename" -->
                 </td>
             <!-- /TMPL_IF -->
 
@@ -435,6 +491,13 @@ function checkMultiHold() {
         	<!-- /TMPL_IF -->
         	<!-- /TMPL_IF -->
 
+            <!-- B011 -->
+                   <!-- TMPL_IF EXPR="istate eq 'STACKREQ'" -->Requested<br/>
+                <!-- TMPL_ELSIF EXPR="istate eq 'WAIT_STACK' OR istate eq 'WAIT_RENEW'" -->Wait for delivery<br/>
+                <!-- TMPL_ELSIF EXPR="istate eq 'ON_STACK'" -->On stack<br/>
+                <!-- /TMPL_IF -->
+            <!-- END B011 -->
+            
         	<!-- TMPL_IF Name="message" -->
             Unavailable (lost or missing)
         	<!-- /TMPL_IF -->
@@ -456,6 +519,7 @@ function checkMultiHold() {
             <!-- TMPL_ELSE -->
                     Not on hold
             <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="override_quota" --><br/>Quota reached<!-- /TMPL_IF --><!-- MAN125 -->
             </td>
         </tr>
     <!-- /TMPL_LOOP --> <!-- itemloop -->
@@ -566,20 +630,23 @@ function checkMultiHold() {
       <tr>
         <!-- TMPL_IF NAME="CAN_user_reserveforothers_modify_holds_priority" -->
             <th>Priority</th>
-	        <th>&nbsp;</th>
+            <!-- B017 column appears only if reserveloop size greater than 1 -->
+                <!-- TMPL_IF NAME="countreserveloop" -->
+    	        <th>&nbsp</th><!-- priority buttons -->
+                <!-- /TMPL_IF -->
+            <!-- END B017 -->
         <!-- TMPL_ELSE -->
             <th>Delete?</th>
         <!-- /TMPL_IF -->
         <th>Patron</th>
         <th>Notes</th>
         <th>Date</th>
-	<th>Expiration</th>
+        <th>Expiration</th>
         <th>Pick up Library</th>
         <th>Details</th>
-        <!-- TMPL_IF NAME="CAN_user_reserveforothers_modify_holds_priority" -->
-            <th><img src="/intranet-tmpl/<!-- TMPL_VAR NAME='theme' -->/img/go-bottom.png" border="0" alt="Toggle Set to Lowest Priority" /></th>
-        <!-- /TMPL_IF -->
-	<th>&nbsp;</th>
+        <!-- removed colomn -->
+		<th>Hold form</th><!-- reprint button -->
+		<th>&nbsp;</th><!-- cancel button -->
       </tr>
   <!-- TMPL_LOOP Name="reserveloop" -->
   <!-- TMPL_UNLESS Name="__odd__" --><tr class="highlight"><!-- TMPL_ELSE --><tr><!-- /TMPL_UNLESS -->
@@ -602,23 +669,28 @@ function checkMultiHold() {
         </td>
 
      <!-- TMPL_IF NAME="CAN_user_reserveforothers_modify_holds_priority" -->
+        <!-- B017 column appears only if reserveloop size greater than 1 -->
+        <!-- TMPL_IF NAME="countreserveloop" -->
         <td style="white-space:nowrap;">
-	        <a title="Move Hold Up" href="request.pl?action=move&amp;where=up&amp;borrowernumber=<!-- TMPL_VAR Name="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR Name="biblionumber" -->&amp;date=<!-- TMPL_VAR Name="date" -->">
-			<img src="/intranet-tmpl/<!-- TMPL_VAR NAME='theme' -->/img/go-up.png" border="0" alt="Go up" />
-                </a>
-
-		<a title="Move Hold To Top" href="request.pl?action=move&amp;where=top&amp;borrowernumber=<!-- TMPL_VAR Name="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR Name="biblionumber" -->&amp;date=<!-- TMPL_VAR Name="date" -->">
-                	<img src="/intranet-tmpl/<!-- TMPL_VAR NAME='theme' -->/img/go-top.png" border="0" alt="Go top" />
-                </a>
-
-                <a title="Move Hold To Bottom" href="request.pl?action=move&amp;where=bottom&amp;borrowernumber=<!-- TMPL_VAR Name="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR Name="biblionumber" -->&amp;date=<!-- TMPL_VAR Name="date" -->">
-                	<img src="/intranet-tmpl/<!-- TMPL_VAR NAME='theme' -->/img/go-bottom.png" border="0" alt="Go bottom" />
-                </a>
-
-                <a title="Move Hold Down" href="request.pl?action=move&amp;where=down&amp;borrowernumber=<!-- TMPL_VAR Name="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR Name="biblionumber" -->&amp;date=<!-- TMPL_VAR Name="date" -->">
-                	<img src="/intranet-tmpl/<!-- TMPL_VAR NAME='theme' -->/img/go-down.png" border="0" alt="Go down" />
-                </a>
+            <!-- B017 change buttons order -->
+            <!-- TMPL_IF NAME="__first__" --><span style="visibility:hidden;"><!-- /TMPL_IF -->
+            <a title="Move Hold To Top" href="request.pl?action=move&amp;where=top&amp;borrowernumber=<!-- TMPL_VAR Name="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR Name="biblionumber" -->&amp;date=<!-- TMPL_VAR Name="date" -->">
+                <img src="/intranet-tmpl/<!-- TMPL_VAR NAME='theme' -->/img/go-top.png" border="0" alt="Go top" /></a>
+            <a title="Move Hold Up" href="request.pl?action=move&amp;where=up&amp;borrowernumber=<!-- TMPL_VAR Name="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR Name="biblionumber" -->&amp;date=<!-- TMPL_VAR Name="date" -->">
+                <img src="/intranet-tmpl/<!-- TMPL_VAR NAME='theme' -->/img/go-up.png" border="0" alt="Go up" /></a>
+            <!-- TMPL_IF NAME="__first__" --></span><!-- /TMPL_IF -->
+            
+            <!-- TMPL_IF NAME="__last__" --><span style="visibility:hidden;"><!-- /TMPL_IF -->
+            <a title="Move Hold Down" href="request.pl?action=move&amp;where=down&amp;borrowernumber=<!-- TMPL_VAR Name="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR Name="biblionumber" -->&amp;date=<!-- TMPL_VAR Name="date" -->">
+                <img src="/intranet-tmpl/<!-- TMPL_VAR NAME='theme' -->/img/go-down.png" border="0" alt="Go down" /></a>
+            <a title="Move Hold To Bottom" href="request.pl?action=move&amp;where=bottom&amp;borrowernumber=<!-- TMPL_VAR Name="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR Name="biblionumber" -->&amp;date=<!-- TMPL_VAR Name="date" -->">
+                <img src="/intranet-tmpl/<!-- TMPL_VAR NAME='theme' -->/img/go-bottom.png" border="0" alt="Go bottom" /></a>
+            <!-- TMPL_IF NAME="__last__" --></span><!-- /TMPL_IF -->
+            
+            <!-- END B017 -->
         </td>
+        <!-- /TMPL_IF -->
+        <!-- END B017 -->
     <!-- /TMPL_IF -->
 
         <td>
@@ -642,7 +714,7 @@ function checkMultiHold() {
                 Waiting to be pulled
             <!-- /TMPL_IF -->
           <!-- TMPL_ELSE -->
-            Item being transferred to <b> <!-- TMPL_VAR NAME="wbrname" --></b> <input type="hidden" name="pickup" value="<!-- TMPL_VAR NAME="wbrcode" -->" />
+            Item being transfered to <b> <!-- TMPL_VAR NAME="wbrname" --></b> <input type="hidden" name="pickup" value="<!-- TMPL_VAR NAME="wbrcode" -->" />
          <!-- /TMPL_IF -->
     <!-- TMPL_ELSE -->
           <select name="pickup">
@@ -692,19 +764,10 @@ function checkMultiHold() {
       <!-- /TMPL_IF -->
     <!-- /TMPL_IF -->
         </td>
-
-    <!-- TMPL_IF NAME="CAN_user_reserveforothers_modify_holds_priority" -->
+        
 	<td>
-		<a title="Toggle Lowest Priority" href="request.pl?action=setLowestPriority&amp;borrowernumber=<!-- TMPL_VAR Name="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR Name="biblionumber" -->&amp;date=<!-- TMPL_VAR Name="date" -->"> 
-			<!-- TMPL_IF NAME="lowestPriority" -->
-	                	<img src="/intranet-tmpl/<!-- TMPL_VAR NAME='theme' -->/img/go-bottom.png" border="0" alt="Unset Lowest Priority" />
-		        <!-- TMPL_ELSE -->
-		                <img src="/intranet-tmpl/<!-- TMPL_VAR NAME='theme' -->/img/go-down.png" border="0" alt="Set To Lowest Priority" />
-		        <!-- /TMPL_IF -->
-		</a>
-	</td> 
-    <!-- /TMPL_IF -->
-
+		<input type="button" class="submit" name="opprint" value="Reprint" onclick="window.location.href = 'request.pl?action=reprint&amp;borrowernumber=<!-- TMPL_VAR Name="borrowernumber" -->&amp;itemnumber=<!-- TMPL_VAR Name="itemnumber" -->&amp;date=<!-- TMPL_VAR Name="date" -->&amp;biblionumber=<!-- TMPL_VAR Name="biblionumber" -->'" />
+	</td>
 	<td>
 		<a title="Cancel Hold" href="request.pl?action=cancel&amp;borrowernumber=<!-- TMPL_VAR Name="borrowernumber" -->&amp;biblionumber=<!-- TMPL_VAR Name="biblionumber" -->&amp;date=<!-- TMPL_VAR Name="date" -->">
                 	<img src="/intranet-tmpl/<!-- TMPL_VAR NAME='theme' -->/img/x.png" border="0" alt="Cancel" />

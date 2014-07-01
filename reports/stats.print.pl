@@ -85,7 +85,12 @@ while ($i<$count ){
        my $count;
        my @charges;
 
-       if ($payments[$i]{'type'} ne 'writeoff'){         # lets ignore writeoff payments!.
+       # B015 lets ignore special payments
+       if ($payments[$i]{'type'} ne 'writeoff'
+        && $payments[$i]{'type'} ne 'exempt'
+        && $payments[$i]{'type'} ne 'error'
+       ){
+       # END B015
            @charges=getcharges($payments[$i]{'borrowernumber'}, $payments[$i]{'timestamp'}, $payments[$i]{'proccode'});
            $totalcharges++;
            $count=@charges;

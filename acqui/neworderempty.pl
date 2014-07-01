@@ -26,7 +26,6 @@
 neworderempty.pl
 
 =head1 DESCRIPTION
-
 this script allows to create a new record to order it. This record shouldn't exist
 on database.
 
@@ -105,6 +104,7 @@ my $suggestionid    = $input->param('suggestionid');
 my $close           = $input->param('close');
 my $uncertainprice  = $input->param('uncertainprice');
 my $import_batch_id = $input->param('import_batch_id'); # if this is filled, we come from a staged file, and we will return here after saving the order !
+my $breedingid      = $input->param('breedingid'); # PROGILONE - C5
 my $data;
 my $new = 'no';
 
@@ -126,46 +126,75 @@ my $contract = &GetContract($basket->{contractnumber});
 
 #simple parameters reading (all in one :-)
 my $params = $input->Vars;
-my $listprice=0; # the price, that can be in MARC record if we have one
-if ( $ordernumber eq '' and defined $params->{'breedingid'}){
+
+# PROGILONE - C5
+my $listprice = 0; # the price, that can be in MARC record if we have one
+my $ask4duplicate = 0;
+
+if ( $ordernumber eq '' and defined $breedingid ) {
 #we want to import from the breeding reservoir (from a z3950 search)
-    my ($marcrecord, $encoding) = MARCfindbreeding($params->{'breedingid'});
+    my ($marcrecord, $encoding) = MARCfindbreeding($breedingid);
     die("Could not find the selected record in the reservoir, bailing") unless $marcrecord;
 
-    my $duplicatetitle;
-#look for duplicates
-    if (! (($biblionumber,$duplicatetitle) = FindDuplicate($marcrecord))){
-        if (C4::Context->preference("BiblioAddsAuthorities")){
-            my ($countlinked,$countcreated)=BiblioAddAuthorities($marcrecord, $params->{'frameworkcode'});
-        }
-        my $bibitemnum;
-        $params->{'frameworkcode'} or $params->{'frameworkcode'} = "";
-        ( $biblionumber, $bibitemnum ) = AddBiblio( $marcrecord, $params->{'frameworkcode'} );
-        # get the price if there is one.
-        # filter by storing only the 1st number
-        # we suppose the currency is correct, as we have no possibilities to get it.
-        if ($marcrecord->subfield("345","d")) {
-            $listprice = $marcrecord->subfield("345","d");
-            if ($listprice =~ /^([\d\.,]*)/) {
-                $listprice = $1;
-                $listprice =~ s/,/\./;
-            } else {
-                $listprice = 0;
+    #look for duplicates
+    my $on_duplicate = $input->param('onduplicate') || '';
+    my ($duplicatebiblionumber, $duplicatetitle) = FindDuplicate($marcrecord);
+    if ( !$duplicatebiblionumber || $on_duplicate ) {
+        ## no duplicate or already asked
+        if ( !$duplicatebiblionumber || $on_duplicate eq 'createnew' ) {
+            ## it is not a duplicate or user checked it's not a duplicate
+            if (C4::Context->preference("BiblioAddsAuthorities")){
+                my ($countlinked,$countcreated)=BiblioAddAuthorities($marcrecord, $params->{'frameworkcode'});
             }
-        }
-        elsif ($marcrecord->subfield("010","d")) {
-            $listprice = $marcrecord->subfield("010","d");
-            if ($listprice =~ /^([\d\.,]*)/) {
-                $listprice = $1;
-                $listprice =~ s/,/\./;
-            } else {
-                $listprice = 0;
+            my $bibitemnum;
+            $params->{'frameworkcode'} or $params->{'frameworkcode'} = "";
+            ( $biblionumber, $bibitemnum ) = AddBiblio( $marcrecord, $params->{'frameworkcode'} );
+            # get the price if there is one.
+            # filter by storing only the 1st number
+            # we suppose the currency is correct, as we have no possibilities to get it.
+            if ($marcrecord->subfield("345","d")) {
+                $listprice = $marcrecord->subfield("345","d");
+                if ($listprice =~ /^([\d\.,]*)/) {
+                    $listprice = $1;
+                    $listprice =~ s/,/\./;
+                } else {
+                    $listprice = 0;
+                }
             }
+            elsif ($marcrecord->subfield("010","d")) {
+                $listprice = $marcrecord->subfield("010","d");
+                if ($listprice =~ /^([\d\.,]*)/) {
+                    $listprice = $1;
+                    $listprice =~ s/,/\./;
+                } else {
+                    $listprice = 0;
+                }
+            }
+            SetImportRecordStatus($breedingid, 'imported');
+        } elsif ( $on_duplicate eq 'useexisting' ) {
+            ## Use existing biblio
+            $biblionumber = $duplicatebiblionumber;
+            # Remove from breeding
+            SetImportRecordStatus($breedingid, 'imported');
         }
-        SetImportRecordStatus($params->{'breedingid'}, 'imported');
+    } else {
+        # show duplicate confirmation
+        $ask4duplicate = 1;
+        ## it may be a duplicate, warn the user and do nothing
+        $template->param(
+            ask4duplicate         => $ask4duplicate,
+            duplicatebiblionumber => $duplicatebiblionumber,
+            duplicatetitle        => $duplicatetitle,
+            booksellerid          => $booksellerid,
+            basketno              => $basketno,
+            import_record_id      => $breedingid,
+            import_batch_id       => $import_batch_id,
+        );
     }
 }
 
+unless ($ask4duplicate) {
+# END PROGILONE
 
 my $cur = GetCurrency();
 
@@ -361,12 +390,14 @@ $template->param(
     gstreg           => $bookseller->{'gstreg'},
 );
 
+} # PROGILONE - C5
+
 output_html_with_http_headers $input, $cookie, $template->output;
 
 
-=head2 MARCfindbreeding
+=item MARCfindbreeding
 
-  $record = MARCfindbreeding($breedingid);
+    $record = MARCfindbreeding($breedingid);
 
 Look up the import record repository for the record with
 record with id $breedingid.  If found, returns the decoded

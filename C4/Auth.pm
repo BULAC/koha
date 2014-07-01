@@ -27,6 +27,7 @@ use CGI::Session;
 require Exporter;
 use C4::Context;
 use C4::Output;    # to get the template
+use C4::Utils::Constants;
 use C4::Members;
 use C4::Koha;
 use C4::Branch; # GetBranches
@@ -171,6 +172,11 @@ sub get_template_and_user {
         $borrowernumber = getborrowernumber($user) if defined($user);
 
         my ( $borr ) = GetMemberDetails( $borrowernumber );
+        
+        if ( $borr->{'categorycode'} && $borr->{'categorycode'} eq $PRE_REG_CATEGORY) {
+        	$template->param("PREINS" => 1 );
+        }
+        
         my @bordat;
         $bordat[0] = $borr;
         $template->param( "USER_INFO" => \@bordat );
@@ -199,6 +205,9 @@ sub get_template_and_user {
             $template->param( CAN_user_serials          => 1 );
             $template->param( CAN_user_reports          => 1 );
             $template->param( CAN_user_staffaccess      => 1 );
+            $template->param( CAN_user_advanced_callnumber_management => 1 ); #Progilone B10 : Callnumber management
+            $template->param( CAN_user_spacesAdministrationManagement => 1); #Progilone B05: Spaces management
+            $template->param( CAN_user_spacesBookingManagement => 1); # Progilone B05: Booking management
             foreach my $module (keys %$all_perms) {
                 foreach my $subperm (keys %{ $all_perms->{$module} }) {
                     $template->param( "CAN_user_${module}_${subperm}" => 1 );
@@ -224,6 +233,7 @@ sub get_template_and_user {
             foreach my $module (keys %$flags) {
                 if ( $flags->{$module} == 1 or ref($flags->{$module}) ) {
                     $template->param( "CAN_user_$module" => 1 );
+                    warn "CAN_user_$module";
                     if ($module eq "parameters") {
                         $template->param( CAN_user_management => 1 );
                     }
@@ -232,7 +242,7 @@ sub get_template_and_user {
         }
 		# Logged-in opac search history
 		# If the requested template is an opac one and opac search history is enabled
-		if ($in->{'type'} == "opac" && C4::Context->preference('EnableOpacSearchHistory')) {
+		if ($in->{'type'} eq 'opac' && C4::Context->preference('EnableOpacSearchHistory')) {
 			my $dbh = C4::Context->dbh;
 			my $query = "SELECT COUNT(*) FROM search_history WHERE userid=?";
 			my $sth = $dbh->prepare($query);
@@ -308,19 +318,16 @@ sub get_template_and_user {
 			}
 	    }
  	}
-
-    if(C4::Context->preference('dateformat')){
-        if(C4::Context->preference('dateformat') eq "metric"){
-            $template->param(dateformat_metric => 1);
-        } elsif(C4::Context->preference('dateformat') eq "us"){
-            $template->param(dateformat_us => 1);
-        } else {
-            $template->param(dateformat_iso => 1);
-        }
-    } else {
-        $template->param(dateformat_iso => 1);
-    }
-
+    
+    # BUG 5543
+    # Date format system pref, for calendar.inc and date-format.inc
+    my $prefdf = C4::Context->preference("dateformat") || 'iso';
+    $template->param(
+        dateformat => $prefdf,
+        'dateformat_'.$prefdf => 1,
+    );
+    # END
+    
     # these template parameters are set the same regardless of $in->{'type'}
     $template->param(
             "BiblioDefaultView".C4::Context->preference("BiblioDefaultView")         => 1,
@@ -339,7 +346,22 @@ sub get_template_and_user {
             XSLTResultsDisplay           => C4::Context->preference("XSLTResultsDisplay"),
             BranchesLoop                 => GetBranchesLoop(),
             using_https                  => $in->{'query'}->https() ? 1 : 0,
-            noItemTypeImages            => C4::Context->preference("noItemTypeImages"),
+            # B041 #
+            DuplicationUrl               => C4::Context->preference('DuplicationUrl'),
+            UseDuplication               => C4::Context->preference("UseDuplication"),
+            # END #
+            # B05 #
+            UseSpaces                    => C4::Context->preference("UseSpaces"),
+            SpacesUrl                    => C4::Context->preference('SpacesUrl'),
+            # END #
+            # B03
+            UseStackrequest              => C4::Context->preference('UseStackrequest'),
+            # END B03
+            UseSCA                       => C4::Context->preference('UseSCA'),
+            ScaUrl                       => C4::Context->preference('ScaUrl'),
+            ScaKey                       => C4::Context->preference('ScaKey'),
+            ScaUser                      => C4::Context->preference('ScaUser'),
+            ScaPassword                  => C4::Context->preference('ScaPassword'),
     );
 
     if ( $in->{'type'} eq "intranet" ) {
@@ -357,18 +379,33 @@ sub get_template_and_user {
             IntranetmainUserblock       => C4::Context->preference("IntranetmainUserblock"),
             LibraryName                 => C4::Context->preference("LibraryName"),
             LoginBranchname             => (C4::Context->userenv?C4::Context->userenv->{"branchname"}:"insecure"),
+            # B032
+            LoginDeskname           	=> (C4::Context->userenv?C4::Context->userenv->{"deskname"}:"insecure"),
+            # END B032
             advancedMARCEditor          => C4::Context->preference("advancedMARCEditor"),
             canreservefromotherbranches => C4::Context->preference('canreservefromotherbranches'),
             intranetcolorstylesheet     => C4::Context->preference("intranetcolorstylesheet"),
             intranetreadinghistory      => C4::Context->preference("intranetreadinghistory"),
             intranetstylesheet          => C4::Context->preference("intranetstylesheet"),
-            IntranetUserCSS             => C4::Context->preference("IntranetUserCSS"),
             intranetuserjs              => C4::Context->preference("intranetuserjs"),
             intranetbookbag             => C4::Context->preference("intranetbookbag"),
+            noItemTypeImages            => C4::Context->preference("noItemTypeImages"),
             suggestion                  => C4::Context->preference("suggestion"),
             virtualshelves              => C4::Context->preference("virtualshelves"),
             StaffSerialIssueDisplayCount => C4::Context->preference("StaffSerialIssueDisplayCount"),
             NoZebra                     => C4::Context->preference('NoZebra'),
+            # Progilone : B10 #
+            UseAdvancedCallNumberManagement => C4::Context->preference('UseAdvancedCallNumberManagement'),
+            UseCallNumberActivationButton   => C4::Context->preference('UseCallNumberActivationButton'),
+            DuplicateFields                 => C4::Context->preference('DuplicateFields'),
+            #End Progilone #
+            # B12 #
+            UseAdvancedCountInventory       => C4::Context->preference('UseAdvancedCountInventory'),
+            UseAdvancedInventoryManagement  => C4::Context->preference('UseAdvancedInventoryManagement'),
+            # END #
+            # B073 #
+            UseOfflineCircManagement    => C4::Context->preference('UseOfflineCircManagement'),
+            # END #
         );
     }
     else {
@@ -394,6 +431,9 @@ sub get_template_and_user {
             LibraryName               => "" . C4::Context->preference("LibraryName"),
             LibraryNameTitle          => "" . $LibraryNameTitle,
             LoginBranchname           => C4::Context->userenv?C4::Context->userenv->{"branchname"}:"",
+            # B032
+            LoginDeskname           => C4::Context->userenv?C4::Context->userenv->{"deskname"}:"",
+            # END B032
             OPACAmazonEnabled         => C4::Context->preference("OPACAmazonEnabled"),
             OPACAmazonSimilarItems    => C4::Context->preference("OPACAmazonSimilarItems"),
             OPACAmazonCoverImages     => C4::Context->preference("OPACAmazonCoverImages"),
@@ -454,6 +494,9 @@ sub get_template_and_user {
             SyndeticsAwards              => C4::Context->preference("SyndeticsAwards"),
             SyndeticsSeries              => C4::Context->preference("SyndeticsSeries"),
             SyndeticsCoverImageSize      => C4::Context->preference("SyndeticsCoverImageSize"),
+#B051
+            spaces                       => C4::Context->preference("Spaces"),
+#END
         );
     }
 	$template->param(listloop=>[{shelfname=>"Freelist", shelfnumber=>110}]);
@@ -630,7 +673,11 @@ sub checkauth {
             C4::Context::set_userenv(
                 $session->param('number'),       $session->param('id'),
                 $session->param('cardnumber'),   $session->param('firstname'),
-                $session->param('surname'),      $session->param('branch'),
+                $session->param('surname'),
+                # B032
+                $session->param('desk'),         $session->param('deskname'),
+                # END B032
+                $session->param('branch'),
                 $session->param('branchname'),   $session->param('flags'),
                 $session->param('emailaddress'), $session->param('branchprinter')
             );
@@ -714,11 +761,15 @@ sub checkauth {
 		    ( $return, $cardnumber, $retuserid ) = checkpw( $dbh, $userid, $password, $query );
 		    $userid = $retuserid;
 		    $info{'invalidCasLogin'} = 1 unless ($return);
-        	} else {
-		    ( $return, $cardnumber ) = checkpw( $dbh, $userid, $password, $query );
+    	} else {
+            #MAN082
+            my $retuserid;
+            ( $return, $retuserid ) = checkpw( $dbh, $userid, $password, $query );
+            $userid = $retuserid if ($retuserid ne '');
+            #END MAN082
 		}
 		if ($return) {
-               _session_log(sprintf "%20s from %16s logged in  at %30s.\n", $userid,$ENV{'REMOTE_ADDR'},(strftime '%c', localtime));
+            	_session_log(sprintf "%20s from %16s logged in  at %30s.\n", $userid,$ENV{'REMOTE_ADDR'},localtime);
             	if ( $flags = haspermission(  $userid, $flagsrequired ) ) {
 					$loggedin = 1;
             	}
@@ -798,6 +849,10 @@ sub checkauth {
 					$session->param('cardnumber',$cardnumber);
 					$session->param('firstname',$firstname);
 					$session->param('surname',$surname);
+					# B032
+					$session->param('desk','NO_DESK_SET');
+					$session->param('deskname','NO_DESK_SET');
+					#END B032
 					$session->param('branch',$branchcode);
 					$session->param('branchname',$branchname);
 					$session->param('flags',$userflags);
@@ -814,6 +869,10 @@ sub checkauth {
 					$session->param('cardnumber',C4::Context->config('user'));
 					$session->param('firstname',C4::Context->config('user'));
 					$session->param('surname',C4::Context->config('user'));
+				    # B032
+					$session->param('desk','NO_DESK_SET');
+					$session->param('deskname','NO_DESK_SET');
+					# END B032
 					$session->param('branch','NO_LIBRARY_SET');
 					$session->param('branchname','NO_LIBRARY_SET');
 					$session->param('flags',1);
@@ -824,7 +883,11 @@ sub checkauth {
 				C4::Context::set_userenv(
 					$session->param('number'),       $session->param('id'),
 					$session->param('cardnumber'),   $session->param('firstname'),
-					$session->param('surname'),      $session->param('branch'),
+					$session->param('surname'),      
+					# B032
+					$session->param('desk'), 		 $session->param('deskname'),
+					# END B032
+					$session->param('branch'),
 					$session->param('branchname'),   $session->param('flags'),
 					$session->param('emailaddress'), $session->param('branchprinter')
 				);
@@ -1377,7 +1440,7 @@ sub checkpw {
 
             C4::Context->set_userenv( "$borrowernumber", $userid, $cardnumber,
                 $firstname, $surname, $branchcode, $flags );
-            return 1, $cardnumber;
+            return 1, $userid; # MAN082
         }
     }
     $sth =
@@ -1550,7 +1613,9 @@ sub haspermission {
         # Demo user that can do "anything" (demo=1 in /etc/koha.conf)
         $flags->{'superlibrarian'} = 1;
     }
+
     return $flags if $flags->{superlibrarian};
+
     foreach my $module ( keys %$flagsrequired ) {
         my $subperm = $flagsrequired->{$module};
         if ($subperm eq '*') {

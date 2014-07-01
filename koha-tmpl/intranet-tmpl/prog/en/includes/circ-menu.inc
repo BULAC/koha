@@ -58,7 +58,11 @@
 	<!-- TMPL_IF NAME="CAN_user_borrowers" -->
 	<!-- TMPL_IF NAME="detailview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Details</a></li>
 	<!-- /TMPL_IF -->
-	 <!-- TMPL_IF NAME="CAN_user_updatecharges" -->
+	<!-- B012 -->
+    <!-- TMPL_IF NAME="quotasview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/members/quotas.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Quotas</a></li>
+    <!-- /TMPL_IF -->	
+	<!-- B012 -->
+	<!-- TMPL_IF NAME="CAN_user_updatecharges" -->
 	<!-- TMPL_IF NAME="finesview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Fines</a></li>
 	<!-- /TMPL_IF -->
 	<!-- TMPL_IF NAME="intranetreadinghistory" --><!-- TMPL_IF NAME="readingrecordview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/members/readingrec.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Circulation History</a></li><!-- /TMPL_IF -->

@@ -16,5 +16,8 @@
 <!-- TMPL_IF NAME="serials" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a title="Serials" href="/cgi-bin/koha/admin/preferences.pl?tab=serials">Serials</a></li>
 <!-- TMPL_IF NAME="staff-client" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a title="Staff Client" href="/cgi-bin/koha/admin/preferences.pl?tab=staff-client">Staff Client</a></li>
 <!-- TMPL_IF NAME="web-services" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a title="Web Services" href="/cgi-bin/koha/admin/preferences.pl?tab=web-services">Web Services</a></li>
+<!-- B12 -->
+<!-- TMPL_IF NAME="bulac" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a title="BULAC" href="/cgi-bin/koha/admin/preferences.pl?tab=bulac">BULAC</a></li>
+<!-- END B12 -->
 </ul>
 </div>

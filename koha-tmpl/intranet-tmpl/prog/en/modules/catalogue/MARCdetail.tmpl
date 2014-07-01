@@ -1,6 +1,10 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <title>Koha &rsaquo; Catalog &rsaquo; MARC Details for <!-- TMPL_VAR NAME="bibliotitle" --></title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<!-- PROGILONE - june 2010 - C1 -->
+    <!-- TMPL_INCLUDE NAME="pgl-results-navigation-js.inc" -->
+    <!-- TMPL_INCLUDE NAME="pgl-back-results-js.inc" -->
+<!-- End PROGILONE -->
 <script type="text/javascript">
 //<![CDATA[
 
@@ -36,12 +40,7 @@ function Changefwk(FwkList) {
 
 <!-- /TMPL_UNLESS -->
 
-    <p><b>With Framework : <select name="Frameworks" id="Frameworks" onchange="Changefwk(this);">
-                            <option value="">Default</option>
-                            <!-- TMPL_LOOP NAME="frameworkcodeloop" -->
-                            <!-- TMPL_IF NAME="selected" --><option value="<!-- TMPL_VAR NAME="value"-->" selected="selected"><!-- TMPL_VAR NAME="frameworktext" --></option><!-- TMPL_ELSE --><option value="<!-- TMPL_VAR NAME="value"-->"><!-- TMPL_VAR NAME="frameworktext" --></option><!-- /TMPL_IF -->
-                            <!-- /TMPL_LOOP -->
-            </select> </b></p>
+    <p><b>With Framework :<!--TMPL_VAR Name="framework" --></b></p>
 
 <div id="bibliotabs" class="toptabs numbered">
 	<ul>
@@ -405,4 +404,8 @@ function Changefwk(FwkList) {
 <!-- TMPL_INCLUDE NAME="biblio-view-menu.inc" -->
 </div>
 </div>
+<!-- PROGILONE - june 2010 - C1 -->
+<!-- TMPL_INCLUDE NAME="pgl-results-navigation-html.inc" -->
+<!-- TMPL_INCLUDE NAME="pgl-back-results-html.inc" -->
+<!-- End PROGILONE -->
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

@@ -1,0 +1,63 @@
+<!-- TMPL_INCLUDE name="doc-head-open.inc" --><!-- TMPL_IF NAME="LibraryNameTitle" --><!-- TMPL_IF NAME="LibraryNameTitle" --><!-- TMPL_VAR NAME="LibraryNameTitle" --><!-- TMPL_ELSE -->Koha Online<!-- /TMPL_IF --><!-- TMPL_ELSE -->Koha Online<!-- /TMPL_IF --> Catalog &rsaquo;  Updating Details for <!-- TMPL_LOOP name="BORROWER_INFO" --><!-- TMPL_VAR name="firstname" --> <!-- TMPL_VAR name="surname" --><!-- /TMPL_LOOP -->
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+
+</head>
+<body id="opac-quotas">
+<div id="doc3" class="yui-t1">
+   <div id="bd">
+        <!-- TMPL_INCLUDE name="masthead.inc" -->
+
+        <div id="yui-main">
+            <div class="yui-b">
+
+            <!-- TMPL_LOOP NAME="BORROWER_INFO" -->
+            <h3><a href="/cgi-bin/koha/opac-user.pl"><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" -->'s account</a> <img src="<!-- TMPL_VAR NAME='themelang' -->../../images/caret.gif" width="16" height="16" alt="&gt;" border="0" /> Quotas</h3>
+            <!-- /TMPL_LOOP -->
+
+            <fieldset>
+            <!-- TMPL_IF NAME="QUOTAS" -->
+                
+                <!-- TMPL_IF NAME="maxissueqty_all" -->
+                    <h4>You are allowed to check-out <!-- TMPL_VAR NAME="maxissueqty_all" --> items, between:</h4>
+                    <ul>
+                    <!-- TMPL_LOOP NAME="QUOTAS" -->
+                        <!-- TMPL_IF NAME="maxissueqty" --><!-- TMPL_IF NAME="issuelength" -->
+                        <li>
+                            <!-- TMPL_VAR NAME="maxissueqty" --> <!-- TMPL_VAR NAME="itemtype_ui" -->
+                            <span style="color:gray;">(<!-- TMPL_VAR NAME="issuelength" --> days)</span>
+                        </li>
+                        <!-- /TMPL_IF --><!-- /TMPL_IF -->
+                    <!-- /TMPL_LOOP -->
+                    </ul>
+                <!-- /TMPL_IF -->
+                
+                <!-- TMPL_IF NAME="maxstackqty_all" -->
+                    <h4>You are allowed to create <!-- TMPL_VAR NAME="maxstackqty_all" --> stack requests, between:</h4>
+                    <ul>
+                    <!-- TMPL_LOOP NAME="QUOTAS" -->
+                        <!-- TMPL_IF NAME="maxstackqty" -->
+                        <li>
+                            <!-- TMPL_VAR NAME="maxstackqty" --> <!-- TMPL_VAR NAME="itemtype_ui" -->
+                            <span style="color:gray;">(<!-- TMPL_VAR NAME="maxinstantstackqty" --> instant/<!-- TMPL_VAR NAME="maxdelayedstackqty" --> delayed)
+                        </li>
+                        <!-- /TMPL_IF -->
+                    <!-- /TMPL_LOOP -->
+                    </ul>
+                <!-- /TMPL_IF -->
+                
+              <!-- TMPL_ELSE -->
+                You have no quotas.
+            <!-- /TMPL_IF -->
+            </fieldset>
+            </div>
+        </div>
+
+    <div class="yui-b">
+        <div class="container">
+        <!-- TMPL_INCLUDE NAME="navigation.inc" -->
+        <!-- TMPL_INCLUDE name="usermenu.inc" -->
+        </div>
+    </div>
+
+</div>
+<!-- TMPL_INCLUDE NAME="opac-bottom.inc" -->

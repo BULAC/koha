@@ -1,0 +1,106 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<!-- B12 -->
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>UNIMARC_Field 995z builder</title>
+</head>
+<body>
+<form name="f_pop">
+<table>
+	<tr>
+        <td>Paper state</td>
+        <td>
+            <select name="sf1" size="1">
+                <!-- TMPL_IF NAME="sf1" -->
+                    <option value=" " selected="selected">Non required value</option>
+                <!-- TMPL_ELSE -->
+                    <option value=" ">Non required value</option>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_LOOP NAME="sf1_auth_values_hash" -->
+                    <option value="<!-- TMPL_VAR NAME="valeur" -->" <!-- TMPL_VAR NAME="selected" --> ><!-- TMPL_VAR NAME="libelle" --></option>
+                <!-- /TMPL_LOOP -->
+            </select>
+        </td>
+    </tr>
+    <tr>
+        <td>Shaping state</td>
+        <td>
+            <select name="sf2" size="1">
+                <!-- TMPL_IF NAME="sf2" -->
+                    <option value=" " selected="selected">Non required value</option>
+                <!-- TMPL_ELSE -->
+                    <option value=" ">Non required value</option>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_LOOP NAME="sf2_auth_values_hash" -->
+                    <option value="<!-- TMPL_VAR NAME="valeur" -->" <!-- TMPL_VAR NAME="selected" --> ><!-- TMPL_VAR NAME="libelle" --></option>
+                <!-- /TMPL_LOOP -->
+            </select>
+        </td>
+    </tr>
+    <tr>        
+        <td>Weeding proposal</td>
+        <td>
+            <select name="sf3" size="1">
+                <!-- TMPL_IF NAME="sf30" -->
+                    <option value="0" selected="selected">0- no proposition</option>
+                <!-- TMPL_ELSE -->
+                    <option value="0">0- no proposition</option>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="sf31" -->
+                    <option value="1" selected="selected">1- proposition</option>
+                <!-- TMPL_ELSE -->
+                    <option value="1">1- proposition</option>
+                <!-- /TMPL_IF -->
+            </select>
+        </td>
+    </tr>
+    <tr>
+        <td>Scan proposal</td>
+        <td>
+            <select name="sf4" size="1">
+                <!-- TMPL_IF NAME="sf40" -->
+                    <option value="0" selected="selected">0- no proposition</option>
+                <!-- TMPL_ELSE -->
+                    <option value="0">0- no proposition</option>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="sf41" -->
+                    <option value="1" selected="selected">1- proposition</option>
+                <!-- TMPL_ELSE -->
+                    <option value="1">1- proposition</option>
+                <!-- /TMPL_IF -->
+            </select>
+        </td>
+    </tr>
+    <tr>
+        <td>Intervention level</td>
+        <td>
+            <select name="sf5" size="1">
+                <!-- TMPL_IF NAME="sf5" -->
+                    <option value=" " selected="selected">Non required value</option>
+                <!-- TMPL_ELSE -->
+                    <option value=" ">Non required value</option>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_LOOP NAME="sf5_auth_values_hash" -->
+                    <option value="<!-- TMPL_VAR NAME="valeur" -->" <!-- TMPL_VAR NAME="selected" --> ><!-- TMPL_VAR NAME="libelle" --></option>
+                <!-- /TMPL_LOOP -->
+            </select>
+        </td>
+    </tr>
+	<tr><td colspan="2"><input type="button" value="OK"  onclick="javascript:report()" /></td></tr>
+</table>
+</form>
+<script type="text/javascript">
+function report() {
+	    var doc   = opener.document; 
+        var field = doc.getElementById("<!-- TMPL_VAR NAME='index'-->");
+        
+        field.value = document.f_pop.sf1.value + document.f_pop.sf2.value + document.f_pop.sf3.value + document.f_pop.sf4.value + document.f_pop.sf5.value;
+		window.close();
+		return false;
+	}
+</script>
+</body>
+</html>
+

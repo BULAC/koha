@@ -40,14 +40,19 @@ use C4::Members;
 my $query = new CGI;
 
 if (!C4::Context->userenv){
-	my $sessionID = $query->cookie("CGISESSID");
+    my $sessionID = $query->cookie("CGISESSID");
     my $session;
-	$session = get_session($sessionID) if $sessionID;
-	if (!$session or $session->param('branch') eq 'NO_LIBRARY_SET'){
-		# no branch set we can't transfer
-		print $query->redirect("/cgi-bin/koha/circ/selectbranchprinter.pl");
-		exit;
-	}
+    $session = get_session($sessionID) if $sessionID;
+    if (!$session or $session->param('branch') eq 'NO_LIBRARY_SET'){
+        # no branch set we can't transfer
+        print $query->redirect("/cgi-bin/koha/circ/selectbranchprinter.pl");
+        exit;
+    }
+    if ($session->param('desk') eq 'NO_DESK_SET'){
+        # no desk set
+        print $query->redirect("/cgi-bin/koha/desk/selectdesk.pl?oldreferer=/cgi-bin/koha/circ/branchtransfers.pl");
+        exit;
+    }
 }
 
 #######################################################################################
@@ -215,8 +220,15 @@ foreach my $code ( keys %$messages ) {
 		$err{surname}    = $borrower->{'surname'};
 		$err{cardnumber} = $borrower->{'cardnumber'};
     }
-    $err{errdesteqholding} = ( $code eq 'DestinationEqualsHolding' );
-    push( @errmsgloop, \%err );
+    
+    # PROGILONE - A1 
+    if ( $code eq 'DestinationEqualsHolding' ) {
+        $err{errdesteqholding} = 1;
+    }
+    if (%err) {
+        push( @errmsgloop, \%err );
+    }
+    # END PROGILONE
 }
 
 # use Data::Dumper;
@@ -234,8 +246,9 @@ $template->param(
     cancelled               => $cancelled,
     setwaiting              => $setwaiting,
     trsfitemloop            => \@trsfitemloop,
-    branchoptionloop        => GetBranchesLoop($tobranchcd),
+    branchoptionloop        => GetBranchesLoop($tobranchcd || mybranch(), 0), # PROGILONE - A1
     errmsgloop              => \@errmsgloop,
+    errmsgloopsize              => scalar @errmsgloop,
     CircAutocompl           => C4::Context->preference("CircAutocompl")
 );
 output_html_with_http_headers $query, $cookie, $template->output;

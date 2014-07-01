@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Part of the Koha Library Software www.koha-community.org
+# Part of the Koha Library Software www.koha.org
 # Licensed under the GPL.
 
 use strict;

@@ -103,21 +103,16 @@ __END__
 
 =head1 NAME
 
-C4::External::BakerTaylor
-
-=head1 DESCRIPTION
-
-Functions for retrieving content from Baker and Taylor, inventory availability and "Content Cafe".
-
+C4::External::BakerTaylor - Functions for retrieving content from Baker and Taylor, inventory availability and "Content Cafe".
 The settings for this module are controlled by System Preferences:
 
 These can be overridden for testing purposes using the initialize function.
 
 =head1 FUNCTIONS
 
-=head2 availability($isbn);
+=head1 availability($isbn);
 
-$isbn is a isbn string
+=head2 $isbn is a isbn string
 
 =head1 NOTES
 

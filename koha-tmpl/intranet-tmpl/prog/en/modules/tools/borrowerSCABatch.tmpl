@@ -1,0 +1,277 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Tools &rsaquo; SCA Borrower enlistment</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<!-- TMPL_INCLUDE NAME="calendar.inc" -->
+</head>
+<body>
+<!-- B12 -->
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="cat-search.inc"-->
+
+<div id="breadcrumbs">
+	<a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo;
+	<a href="/cgi-bin/koha/tools/tools-home.pl">Tools</a> &rsaquo;
+	<a href="/cgi-bin/koha/tools/borrowerSCABatch.pl">SCA Borrower enlistment</a>
+</div>
+
+<div id="doc3" class="yui-t2">
+    <div id="bd">
+        <div id="yui-main">
+            <div class="yui-b">
+                <h1>SCA Borrower enlistment</h1>
+                <!-- TMPL_IF NAME="error_sca" -->
+                    <div class="dialog alert">
+                        <!-- TMPL_IF EXPR="error_message eq 'MISSING_DATE'" -->Please choose the maximum enrollement date.<!-- /TMPL_IF -->
+                        <!-- TMPL_IF EXPR="error_message eq 'MISSING_CATEGORY'" -->Please chosse a category.<!-- /TMPL_IF -->
+                    </div>
+                <!-- /TMPL_IF -->
+                <div class="yui-g">
+	                <form name="f" action="/cgi-bin/koha/tools/borrowerSCABatch.pl" method="post">
+	                	<!-- TMPL_IF NAME="message" -->
+	                		<div class="dialog alert"><!-- TMPL_VAR name="message" --></div>
+	                	<!-- /TMPL_IF -->
+						<fieldset class="rows">
+                            <legend>Specify the limit date and the patron category</legend>
+                            <ol>
+                                <li>
+                                    <label for="category">Patron category : </label>
+                                    <select id="category" name="category">
+                                        <!-- TMPL_LOOP NAME="category_loop" -->
+                                            <option value="<!-- TMPL_VAR NAME="categorycode" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="description" --></option>
+                                        <!-- /TMPL_LOOP -->
+                                    </select>
+                                </li>
+                                
+                                <li>
+				                    <label for="end_date">Patron registered before</label>
+				                    <input type="text" size="10" id="end_date" name="end_date" value="<!-- TMPL_VAR NAME="end_date" -->" />
+				                    <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" border="0" id="openCalendarEndDate" style="cursor: pointer;" />
+				                    <script type="text/javascript">
+				                        //<![CDATA[
+				                            function validate2(date) {
+				                                    return false;
+				                                }
+				
+				                            Calendar.setup(
+				                                    {
+				                                        inputField : "end_date",
+				                                        ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
+				                                        button : "openCalendarEndDate",
+				                                        disableFunc : validate2,
+				                                        dateStatusFunc : validate2
+				                                    }
+				                                );
+				                        //]]>
+				                    </script>
+				                    <span class="hint"><!-- TMPL_INCLUDE NAME="date-format.inc" --></span>
+				                </li>
+			        			
+			                </ol>
+		                </fieldset>
+		                <fieldset class="action">
+		                	<input type="hidden" name="op" value="op" />
+		                	<input type="submit" value="Submit" class="button" />
+                        </fieldset>
+                    </form>
+                	<!-- TMPL_IF EXPR="sca_ok || sca_fail" -->
+                        <fieldset class="action">
+                            <input type="button" value="Print" id="print" onclick="window.print();return false;" />
+                            <form action="borrowerSCABatch.pl" id="processCsv" method="post" enctype="multipart/form-data">
+                                <!-- TMPL_IF NAME="sca_fail" -->
+                                    <!-- On met tout en français parce que l'outils de traduction n'est pas capable de traduire ces chaines... -->
+                                    <input type="hidden" name="scaCsv" value="Echec de l'enrôlement"/>
+                                    <input type="hidden" name="scaCsv" 
+                                            value="Numéro de carte&#59;Nom de famille&#59;Prénom&#59;Date d'enrôlement&#59;Date d'expiration&#59;Problèmes&#59;" />
+                                    <!-- TMPL_LOOP NAME="sca_fail_loop" -->
+                                        <!-- L'indentation est étrange mais c'est voulu pour éviter les sauts de lignes et les espaces superflus dans le flux de sortie -->
+                                        <input type="hidden" name="scaCsv" 
+                                            value="<!-- 
+                                                    TMPL_VAR NAME="cardnumber" 
+                                                   -->&#59;<!-- 
+                                                    TMPL_VAR NAME="surname" 
+                                                   -->&#59;<!-- 
+                                                    TMPL_VAR NAME="firstname" 
+                                                   -->&#59;<!-- 
+                                                    TMPL_VAR NAME="dateenrolled" 
+                                                   -->&#59;<!-- 
+                                                    TMPL_VAR NAME="dateexpiry" 
+                                                   -->&#59;<!-- 
+                                                    TMPL_IF EXPR="message eq 'ERROR_ADD_PARTITION'" 
+                                                   -->Erreur lors de la tentative d'ajout de la partition dans le système de contrôle des accès.<!-- 
+                                                    /TMPL_IF 
+                                                   --><!-- 
+                                                    TMPL_IF EXPR="message eq 'ERROR_RETRIEVE_CARD'" 
+                                                   -->Erreur lors de la tentative de récupération de la carte dans le système de contrôle des accès.<!-- 
+                                                    /TMPL_IF 
+                                                   --><!-- 
+                                                    TMPL_IF EXPR="message eq 'ERROR_CREATE_CARD'" 
+                                                   -->Erreur lors de la tentative de création de la carte dans le système de contrôle des accès.<!-- 
+                                                    /TMPL_IF 
+                                                   --><!-- 
+                                                    TMPL_IF EXPR="message eq 'ERROR_REMOVE_CARD'" 
+                                                   -->Erreur lors de la tentative de suppression de la carte dans le système de contrôle des accès.<!-- 
+                                                    /TMPL_IF 
+                                                   --><!-- 
+                                                    TMPL_IF EXPR="message eq 'ERROR_RETRIEVE_CARDHOLDER'" 
+                                                   -->Erreur lors de la tentative de récupération du titulaire dans le système de contrôle des accès.<!-- 
+                                                    /TMPL_IF 
+                                                   --><!-- 
+                                                    TMPL_IF EXPR="message eq 'ERROR_CREATE_CARDHOLDER'" 
+                                                   -->Erreur lors de la tentative de création du titulaire dans le système de contrôle des accès.<!-- 
+                                                    /TMPL_IF 
+                                                   --><!-- 
+                                                    TMPL_IF EXPR="message eq 'ERROR_UPDATE_CARDHOLDER'" 
+                                                   -->Erreur lors de la tentative de mise à jour du titulaire dans le système de contrôle des accès.<!-- 
+                                                    /TMPL_IF 
+                                                   --><!-- 
+                                                    TMPL_IF EXPR="message eq 'ERROR_REMOVE_CARDHOLDER'" 
+                                                   -->Erreur lors de la tentative de suppression du titulaire dans le système de contrôle des accès.<!-- 
+                                                    /TMPL_IF 
+                                                   --><!-- 
+                                                    TMPL_IF EXPR="message eq 'ERROR_RETRIEVE_STATE_ENTITY'" 
+                                                   -->Erreur lors de la tentative de récupération de l'état de l'entité dans le système de contrôle des accès.<!-- 
+                                                    /TMPL_IF 
+                                                   --><!-- 
+                                                    TMPL_IF EXPR="message eq 'ERROR_SET_STATE_ENTITY'" 
+                                                   -->Erreur lors de la tentative de mise en place de l'état de l'entité dans le système de contrôle des accès.<!-- 
+                                                    /TMPL_IF 
+                                                   --><!-- 
+                                                    TMPL_IF EXPR="message eq 'ERROR_RETRIEVE_GROUP'" 
+                                                   -->Erreur lors de la tentative de récupération du groupe de rattachement du titulaire dans le système de contrôle des accès.<!-- 
+                                                    /TMPL_IF 
+                                                   --><!-- 
+                                                    TMPL_IF EXPR="message eq 'ERROR_ADD_GROUP_TO_CARDHOLDER'" 
+                                                   -->Erreur lors de la tentative de création du groupe de rattachement du titulaire dans le système de contrôle des accès.<!-- 
+                                                    /TMPL_IF 
+                                                   --><!-- 
+                                                    TMPL_IF EXPR="message eq 'ERROR_REMOVE_GROUP_TO_CARDHOLDER'" 
+                                                   -->Erreur lors de la tentative de suppression du groupe de rattachement du titulaire dans le système de contrôle des accès.<!-- 
+                                                    /TMPL_IF 
+                                                   -->" />
+                                    <!-- /TMPL_LOOP -->
+                                <!-- /TMPL_IF -->
+                                <!-- TMPL_IF NAME="sca_ok" -->
+                                    <input type="hidden" name="scaCsv" value="Enrôlement réussi"/>
+                                    <input type="hidden" name="scaCsv" 
+                                            value="Numéro de carte&#59;Nom de famille&#59;Prénom&#59;Date d'enrôlement&#59;Date d'expiration&#59;" />
+                                    <!-- TMPL_LOOP NAME="sca_ok_loop" -->
+                                        <input type="hidden" name="scaCsv" 
+                                            value="<!-- TMPL_VAR NAME="cardnumber" -->&#59;<!-- TMPL_VAR NAME="surname" -->&#59;<!-- TMPL_VAR NAME="firstname" -->&#59;<!-- TMPL_VAR NAME="dateenrolled" -->&#59;<!-- TMPL_VAR NAME="dateexpiry" -->&#59;" />
+                                    <!-- /TMPL_LOOP -->
+                                <!-- /TMPL_IF -->
+                                <input type="submit" value="Export to csv file" id="CSVexport" />
+                            </form>
+                        </fieldset>
+                    <!-- /TMPL_IF -->
+	                
+	                <!-- TMPL_IF NAME="sca_fail" -->
+	                   <h2>Failed enlistment</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Cardnumber</th>
+                                    <th>Surname</th>
+                                    <th>Firstname</th>
+                                    <th>Date enrolled</th>
+                                    <th>Date expiry</th>
+                                    <th>Problems</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- TMPL_LOOP NAME="sca_fail_loop" -->
+                                    <!-- TMPL_UNLESS NAME="__odd__" -->
+                                        <tr class="highlight">
+                                    <!-- TMPL_ELSE -->
+                                        <tr>
+                                    <!-- /TMPL_UNLESS -->
+                                        <td><!-- TMPL_VAR NAME="cardnumber" --></td>
+                                        <td><!-- TMPL_VAR NAME="surname" --></td>
+                                        <td><!-- TMPL_VAR NAME="firstname" --></td>
+                                        <td><!-- TMPL_VAR NAME="dateenrolled" --></td>
+                                        <td><!-- TMPL_VAR NAME="dateexpiry" --></td>
+                                        <td>
+                                            <!-- TMPL_IF EXPR="message eq 'ERROR_ADD_PARTITION'" -->
+                                                Error while trying to add the partition in the the access control system.
+                                            <!-- /TMPL_IF -->
+                                            <!-- TMPL_IF EXPR="message eq 'ERROR_RETRIEVE_CARD'" -->
+                                                Error while trying to retrieve the card in the the access control system.
+                                            <!-- /TMPL_IF -->
+                                            <!-- TMPL_IF EXPR="message eq 'ERROR_CREATE_CARD'" -->
+                                                Error while trying to create the card in the the access control system.
+                                            <!-- /TMPL_IF -->
+                                            <!-- TMPL_IF EXPR="message eq 'ERROR_REMOVE_CARD'" -->
+                                                Error while trying to remove the card in the the access control system.
+                                            <!-- /TMPL_IF -->
+                                            <!-- TMPL_IF EXPR="message eq 'ERROR_RETRIEVE_CARDHOLDER'" -->
+                                                Error while trying to retrieve the cardholder in the the access control system.
+                                            <!-- /TMPL_IF -->
+                                            <!-- TMPL_IF EXPR="message eq 'ERROR_CREATE_CARDHOLDER'" -->
+                                                Error while trying to create the cardholder in the the access control system.
+                                            <!-- /TMPL_IF -->
+                                            <!-- TMPL_IF EXPR="message eq 'ERROR_UPDATE_CARDHOLDER'" -->
+                                                Error while trying to update the cardholder in the the access control system.
+                                            <!-- /TMPL_IF -->
+                                            <!-- TMPL_IF EXPR="message eq 'ERROR_REMOVE_CARDHOLDER'" -->
+                                                Error while trying to remove the cardholder in the the access control system.
+                                            <!-- /TMPL_IF -->
+                                            <!-- TMPL_IF EXPR="message eq 'ERROR_RETRIEVE_STATE_ENTITY'" -->
+                                                Error while trying to retrieve the state of an entity in the the access control system.
+                                            <!-- /TMPL_IF -->
+                                            <!-- TMPL_IF EXPR="message eq 'ERROR_SET_STATE_ENTITY'" -->
+                                                Error while trying to set the state of an entity in the the access control system.
+                                            <!-- /TMPL_IF -->
+                                            <!-- TMPL_IF EXPR="message eq 'ERROR_RETRIEVE_GROUP'" -->
+                                                Error while trying to retrieve the cardholder group in the the access control system.
+                                            <!-- /TMPL_IF -->
+                                            <!-- TMPL_IF EXPR="message eq 'ERROR_ADD_GROUP_TO_CARDHOLDER'" -->
+                                                Error while trying to create the cardholder group in the the access control system.
+                                            <!-- /TMPL_IF -->
+                                            <!-- TMPL_IF EXPR="message eq 'ERROR_REMOVE_GROUP_TO_CARDHOLDER'" -->
+                                                Error while trying to remove the cardholder group in the the access control system.
+                                            <!-- /TMPL_IF -->
+                                        </td>
+                                    </tr>
+                                <!-- /TMPL_LOOP -->
+                            </tbody>
+                        </table>
+	                <!-- /TMPL_IF -->
+	                
+	                <!-- TMPL_IF NAME="sca_ok" -->
+	                   <h2>Successful enlistment</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Cardnumber</th>
+                                    <th>Surname</th>
+                                    <th>Firstname</th>
+                                    <th>Date enrolled</th>
+                                    <th>Date expiry</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- TMPL_LOOP NAME="sca_ok_loop" -->
+                                    <!-- TMPL_UNLESS NAME="__odd__" -->
+							            <tr class="highlight">
+							        <!-- TMPL_ELSE -->
+							            <tr>
+							        <!-- /TMPL_UNLESS -->
+                                        <td><!-- TMPL_VAR NAME="cardnumber" --></td>
+                                        <td><!-- TMPL_VAR NAME="surname" --></td>
+                                        <td><!-- TMPL_VAR NAME="firstname" --></td>
+                                        <td><!-- TMPL_VAR NAME="dateenrolled" --></td>
+                                        <td><!-- TMPL_VAR NAME="dateexpiry" --></td>
+                                    </tr>
+                                <!-- /TMPL_LOOP -->
+                            </tbody>
+                        </table>
+                    <!-- /TMPL_IF -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="yui-b">
+            <!-- TMPL_INCLUDE NAME="tools-menu.inc" -->
+        </div>
+    </div>
+</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

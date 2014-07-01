@@ -8,9 +8,9 @@
 
 <div id="main">
 
-<h3><a href="/cgi-bin/koha/circ/circulation.pl?findborrower=<!-- TMPL_VAR NAME="cardnumber" -->">Account Summary: <!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --> (<!-- TMPL_VAR NAME="cardnumber" -->)</a></h3>
+<h3><a href="/cgi-bin/koha/circ/circulation.pl?findborrower=<!-- TMPL_VAR NAME="cardnumber" -->">Account Summary: <!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --> <!-- TMPL_VAR NAME="userid" --> (<!-- TMPL_VAR NAME="cardnumber" -->)</a></h3><!-- B014 -->
 
-<ul><li><!-- TMPL_VAR NAME="address" --><br /><!-- TMPL_VAR NAME="address2" --></li><li><!-- TMPL_VAR NAME="city" -->, <!-- TMPL_VAR NAME="zipcode" --></li>
+<ul><li><!-- TMPL_VAR NAME="address" --><br /><!-- TMPL_VAR NAME="address2" --></li><li><!-- TMPL_VAR NAME="city" -->, <!-- TMPL_VAR NAME="zipcode" -->, <!-- TMPL_VAR NAME="userid" --></li><!-- B014 -->
 <li><!-- TMPL_IF NAME="phone" --><!-- TMPL_VAR NAME="phone" --><!-- TMPL_ELSE -->(no phone number on file)<!-- /TMPL_IF --></li>
 <li><!-- TMPL_IF NAME="email" --><!-- TMPL_VAR NAME="email" --><!-- TMPL_ELSE -->(no email on file)<!-- /TMPL_IF --></li>
 </ul>

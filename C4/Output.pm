@@ -159,7 +159,9 @@ sub themelanguage {
               getTranslatedLanguages($interface,'prog') )
       if $http_accept_language;
     # But, if there's a cookie set, obey it
-    $lang = $query->cookie('KohaOpacLanguage') if (defined $query and $query->cookie('KohaOpacLanguage'));
+    my $cookie_lang = getlanguagecookie($query) if (defined $query);
+    $lang =  $cookie_lang if $cookie_lang;
+    ; # PROGILONE - MAN321
     # Fall back to English
     my @languages;
     if ($interface eq 'intranet') {
@@ -182,7 +184,7 @@ sub themelanguage {
       # we are in the opac here, what im trying to do is let the individual user
       # set the theme they want to use.
       # and perhaps the them as well.
-        #my $lang = $query->cookie('KohaOpacLanguage');
+        #my $lang = getlanguagecookie($query);
         @themes = split " ", C4::Context->preference("opacthemes");
     }
 
@@ -222,19 +224,18 @@ sub setlanguagecookie {
     );
 }
 
+# PROGILONE - MAN321 - sanitize against script injection
 sub getlanguagecookie {
     my ($query) = @_;
-    my $lang;
-    if ($query->cookie('KohaOpacLanguage')){
+    my $lang = '';
+    if (defined $query && $query->cookie('KohaOpacLanguage')){
         $lang = $query->cookie('KohaOpacLanguage') ;
-    }else{
-        $lang = $ENV{HTTP_ACCEPT_LANGUAGE};
-        
     }
-    $lang = substr($lang, 0, 2);
-
+    $lang =~ s/[^-_a-zA-Z]//g; # Sanitize
+    
     return $lang;
 }
+# END MAN 321
 
 =item FormatNumber
 =cut

@@ -53,6 +53,11 @@ BEGIN {
 	}
 }
 
+# PROGILONE - may 2010 - F10 F11
+my $session = get_session($cgi->cookie("CGISESSID")); 
+my $query_is_advanced = 0;
+# End PROGILONE
+
 my ($template,$borrowernumber,$cookie);
 
 # decide which template to use
@@ -207,6 +212,16 @@ if ( $template_type && $template_type eq 'advsearch' ) {
         if (C4::Context->preference('OPACdefaultSortField') && C4::Context->preference('OPACdefaultSortOrder'));
     $template->param($default_sort_by => 1);
 
+    # PROGILONE - may 2010 - F17
+    # Allowed sort orders (default sort order is always allowed)
+    foreach (qw(relevance popularity callnumber pubdate acqdate title author)) {
+        my $sortpref = 'OPAC'.$_.'SortOrder';
+        if (C4::Context->preference($sortpref) || C4::Context->preference('OPACdefaultSortField') eq $_ ) {
+            $template->param($sortpref => 1);
+        }
+    }
+    # End PROGILONE
+
     # determine what to display next to the search boxes (ie, boolean option
     # shouldn't appear on the first one, scan indexes should, adding a new
     # box should only appear on the last, etc.
@@ -279,6 +294,16 @@ foreach my $sort (@sort_by) {
 }
 $template->param('sort_by' => $sort_by[0]);
 
+# PROGILONE - may 2010 - F17
+# Allowed sort orders (default sort order is always allowed)
+foreach (qw(relevance popularity callnumber pubdate acqdate title author)) {
+    my $sortpref = 'OPAC'.$_.'SortOrder';
+    if (C4::Context->preference($sortpref) || C4::Context->preference('OPACdefaultSortField') eq $_ ) {
+        $template->param($sortpref => 1);
+    }
+}
+# End PROGILONE
+
 # Use the servers defined, or just search our local catalog(default)
 my @servers;
 @servers = split("\0",$params->{'server'}) if $params->{'server'};
@@ -309,7 +334,11 @@ my @operands;
 # if a simple search, display the value in the search box
 if ($operands[0] && !$operands[1]) {
     $template->param(ms_value => $operands[0]);
+# PROGILONE - may 2010 - F10 F11
+} else {
+    $query_is_advanced = 1; 
 }
+# End PROGILONE
 
 # limits are use to limit to results to a pre-defined category such as branch or language
 my @limits;
@@ -387,8 +416,45 @@ my @limit_inputs = $limit_cgi ? _input_cgi_parse($limit_cgi) : ();
 if (C4::Context->preference('OpacSuppression')) {
     $query = "($query) not Suppress=1";
 }
+if (C4::Context->preference('UseStackrequest')) {
+    $query = "($query) not BiblioTemp=1"; # B06 : temporary biblio must be hidden in opac
+}
 
 $template->param ( LIMIT_INPUTS => \@limit_inputs );
+
+# PROGILONE - may 2010 - F10 F11
+my $is_advanced_search = '0';
+# if query is simple search can be simple or advanced, if query is advanced search is inevitably advanced
+if ($query_is_advanced == 0) {
+    my $advparam = $cgi->param('advsearch');
+    if ( defined $advparam ) {
+        if ($advparam eq '1') {
+            $is_advanced_search = '1'; # commes from advanced search form
+        } else {
+            $is_advanced_search = '0'; # commes from simple search form
+        }
+    } else {
+        # change only if query has changed (don't care about sort, navigation, limits)
+        my $prev_search_query = $session->param('currentsearchquery');
+        my $prev_is_advanced = $session->param('currentsearchisadvanced');
+        my $do_keep_session = ($prev_search_query && $prev_search_query eq $query_cgi) ? 1 : 0;
+        if ($do_keep_session) {
+            $is_advanced_search = $prev_is_advanced;
+        } else {
+            $is_advanced_search = '0';
+        }
+    }
+} else {
+    $is_advanced_search = '1';
+}
+$session->param('currentsearchisadvanced', $is_advanced_search);
+$session->param('currentsearchisoneresult', '0'); # init is only one result
+$session->param('currentsearchquery', $query_cgi);
+# href for back to results
+my $current_search_url = $ENV{'REQUEST_URI'};
+$current_search_url =~ s/;/&/g; # some URL use ; instead of &
+$session->param('currentsearchurl', $current_search_url);
+# End PROGILONE
 
 ## II. DO THE SEARCH AND GET THE RESULTS
 my $total = 0; # the total results for the whole set
@@ -421,13 +487,6 @@ elsif (C4::Context->preference('NoZebra')) {
         ($error, $results_hashref, $facets) = getRecords($query,$simple_query,\@sort_by,\@servers,$results_per_page,$offset,$expanded_facet,$branches,$query_type,$scan);
     };
 }
-# This sorts the facets into alphabetical order
-if ($facets) {
-    foreach my $f (@$facets) {
-        $f->{facets} = [ sort { uc($a->{facet_title_value}) cmp uc($b->{facet_title_value}) } @{ $f->{facets} } ];
-    }
-}
-
 # use Data::Dumper; print STDERR "-" x 25, "\n", Dumper($results_hashref);
 if ($@ || $error) {
     $template->param(query_error => $error.$@);
@@ -438,7 +497,7 @@ if ($@ || $error) {
 # At this point, each server has given us a result set
 # now we build that set for template display
 my @sup_results_array;
-for (my $i=0;$i<@servers;$i++) {
+for (my $i=0;$i<=@servers;$i++) {
     my $server = $servers[$i];
     if ($server && $server =~/biblioserver/) { # this is the local bibliographic server
         $hits = $results_hashref->{$server}->{"hits"};
@@ -483,38 +542,61 @@ for (my $i=0;$i<@servers;$i++) {
  	    my $searchcookie = $cgi->cookie('KohaOpacRecentSearches');
  	    if ($searchcookie){
  		$searchcookie = uri_unescape($searchcookie);
- 		if (thaw($searchcookie)) {
- 		    @recentSearches = @{thaw($searchcookie)};
- 		}
+ 		# PROGILONE - may 2010 - F14
+		# Manage Search History by session
+ 		# -- if (thaw($searchcookie)) {
+ 	 	# --@recentSearches = @{thaw($searchcookie)};
+ 		# --}
  	    }
- 
+ 		if ( $session->param('historySession') ){
+ 		@recentSearches = @{$session->param('historySession')};
+ 		}
  	    # Adding the new search if needed
-           if (!$borrowernumber || $borrowernumber eq '') {
+ 	    if ($borrowernumber eq '') {
  	    # To a cookie (the user is not logged in)
  
-               if (($params->{'offset'}||'') eq '') {
- 
+     		if (!$offset) {
+                
+            my $isodate = strftime "%Y-%m-%d", localtime();
+
+			# PROGILONE - may 2010 - F14
+		    # So we can create a C4::Dates object, to get the date formatted according to the dateformat syspref
+		    my $date = C4::Dates->new($isodate, "iso");
+		    my $sysprefdate = $date->output("syspref");
+		    
+		    # We also get the time of the day from the unix timestamp
+		    my $time = strftime " %H:%M:%S", localtime(time());
+
+		    # And we got our human-readable date : 
+		    $time = $sysprefdate . $time;
+		    # END PROGILONE - may 2010 - F14
+
      		    push @recentSearches, {
      					    "query_desc" => $query_desc || "unknown", 
      					    "query_cgi"  => $query_cgi  || "unknown", 
-     					    "time"       => time(),
+     					    "time"       => $time,  	# PROGILONE - may 2010 - F14
      					    "total"      => $total
      					  };
      		    $template->param(ShowOpacRecentSearchLink => 1);
      		}
  
+ 			# PROGILONE - may 2010 - F14
+			# Manage Search History by session
+			$session->param( 'historySession', \@recentSearches );
+     		
      		# Pushing the cookie back 
-     		$newsearchcookie = $cgi->cookie(
- 					    -name => 'KohaOpacRecentSearches',
- 					    # We uri_escape the whole freezed structure so we're sure we won't have any encoding problems
- 					    -value => uri_escape(freeze(\@recentSearches)),
- 					    -expires => ''
- 			);
- 			$cookie = [$cookie, $newsearchcookie];
+     		#$newsearchcookie = $cgi->cookie(
+ 			#		    -name => 'KohaOpacRecentSearches',
+ 			#		    # We uri_escape the whole freezed structure so we're sure we won't have any encoding problems
+ 			#		    -value => uri_escape(freeze(\@recentSearches)),
+ 			#		    -expires => ''
+ 			#);
+ 			#$cookie = [$cookie, $newsearchcookie];
+ 	    	# END PROGILONE - may 2010 - F14    
  	    } 
 		else {
  	    # To the session (the user is logged in)
-                       if (($params->{'offset'}||'') eq '') {
+ 			if ($params->{'offset'} eq '') {
 				AddSearchHistory($borrowernumber, $cgi->cookie("CGISESSID"), $query_desc, $query_cgi, $total);
      		    $template->param(ShowOpacRecentSearchLink => 1);
      		}
@@ -531,6 +613,7 @@ for (my $i=0;$i<@servers;$i++) {
             } else {
                 print $cgi->redirect("/cgi-bin/koha/opac-detail.pl?biblionumber=$biblionumber");
             } 
+            $session->param('currentsearchisoneresult', 1); # PROGILONE - may 2010 - F10 F11
             exit;
         }
         if ($hits) {
@@ -542,15 +625,16 @@ for (my $i=0;$i<@servers;$i++) {
             $template->param(query_cgi => $query_cgi);
             $template->param(query_desc => $query_desc);
             $template->param(limit_desc => $limit_desc);
-            $template->param(offset     => $offset);
             $template->param(DisplayMultiPlaceHold => $DisplayMultiPlaceHold);
             if ($query_desc || $limit_desc) {
                 $template->param(searchdesc => 1);
             }
             $template->param(stopwords_removed => "@$stopwords_removed") if $stopwords_removed;
             $template->param(results_per_page =>  $results_per_page);
+            # PROGILONE - april 2010 - F21
             $template->param(SEARCH_RESULTS => \@newresults,
                                 OPACItemsResultsDisplay => (C4::Context->preference("OPACItemsResultsDisplay") eq "itemdetails"?1:0),
+                                OPACBranchTooltipDisplay => C4::Context->preference("OPACBranchTooltipDisplay")
                             );
             ## Build the page numbers on the bottom of the page
             my @page_numbers;
@@ -637,7 +721,7 @@ if ($query_desc || $limit_desc) {
 
 # VI. BUILD THE TEMPLATE
 # Build drop-down list for 'Add To:' menu...
-my $session = get_session($cgi->cookie("CGISESSID"));
+# PROGILONE - may 2010 - F10 F11 : $session at l56
 my @addpubshelves;
 my $pubshelves = $session->param('pubshelves');
 my $barshelves = $session->param('barshelves');

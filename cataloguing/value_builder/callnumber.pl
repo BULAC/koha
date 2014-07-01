@@ -23,7 +23,7 @@ use C4::Auth;
 use CGI;
 use C4::Context;
 
-=head1 DESCRIPTION
+=head1
 
 Is used for callnumber computation.
 

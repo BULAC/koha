@@ -19,7 +19,7 @@
 
 =head1 NAME
 
-serials-edit.pl
+serials-recieve.pl
 
 =head1 Parameters
 
@@ -133,18 +133,12 @@ foreach my $tmpserialid (@serialids) {
         && !$processedserialid{$tmpserialid} )
     {
         my $data = GetSerialInformation($tmpserialid);
-        for my $datefield ( qw( publisheddate planneddate) ) {
-            if ($data->{$datefield} && $data->{$datefield}!~m/^00/) {
-                $data->{$datefield} = format_date( $data->{$datefield} );
-            }
-            else {
-                $data->{$datefield} = q{};
-            }
-        }
+        $data->{publisheddate} = format_date( $data->{publisheddate} );
+        $data->{planneddate}   = format_date( $data->{planneddate} );
         $data->{arriveddate}=$today->output('syspref');
         $data->{'editdisable'} = (
             (
-                HasSubscriptionExpired( $data->{subscriptionid} ) == 1
+                HasSubscriptionExpired( $data->{subscriptionid} )
                   && $data->{'status1'}
             )
               || $data->{'cannotedit'}
@@ -178,9 +172,8 @@ foreach my $subscriptionid (@subscriptionids) {
         $cell->{'subscriptionid'} = $subscriptionid;
         $cell->{'itemid'}         = "NNEW";
         $cell->{'serialid'}       = "NEW";
+        $cell->{'serialitemid'}   = "";
         $cell->{'issuesatonce'}   = 1;
-        $cell->{arriveddate}=$today->output('syspref');
-
         push @newserialloop, $cell;
         push @subscriptionloop,
           {
@@ -206,7 +199,9 @@ if ( $op and $op eq 'serialchangestatus' ) {
                 ### FIXME if NewIssue is modified to use subscription biblionumber, then biblionumber would not be useful.
                 $newserial = NewIssue(
                     $serialseqs[$i],
+                    # Progilone correction bug : @subscriptionids is an array of only one data 
                     $subscriptionids[0],
+                    # end
                     $serialdatalist[0]->{'biblionumber'},
                     $status[$i],
                     format_date_in_iso( $planneddates[$i] ),
@@ -232,6 +227,7 @@ if ( $op and $op eq 'serialchangestatus' ) {
         my @subfields    = $query->param('subfield');
         my @field_values = $query->param('field_value');
         my @serials      = $query->param('serial');
+        my @serialitemids= $query->param('serialitemid');
         my @bibnums      = $query->param('bibnum');
         my @itemid       = $query->param('itemid');
         my @ind_tag      = $query->param('ind_tag');
@@ -247,112 +243,113 @@ if ( $op and $op eq 'serialchangestatus' ) {
                 if (   $serials[$countdistinct]
                     && $serials[$countdistinct] ne "NEW" )
                 {
-                    $itemhash{ $itemid[$i] }->{'serial'} =
-                      $serials[$countdistinct];
+                    $itemhash{ $itemid[$i] }->{'serial'} = $serials[$countdistinct];
                 }
                 else {
                     $itemhash{ $itemid[$i] }->{'serial'} = $newserial;
                 }
                 $itemhash{ $itemid[$i] }->{'bibnum'} = $bibnums[$countdistinct];
+                $itemhash{ $itemid[$i] }->{'serialitemid'} = $serialitemids[$countdistinct];
                 $countdistinct++;
             }
-            push @{ $itemhash{ $itemid[$i] }->{'tags'} },      $tags[$i];
-            push @{ $itemhash{ $itemid[$i] }->{'subfields'} }, $subfields[$i];
-            push @{ $itemhash{ $itemid[$i] }->{'field_values'} },
-              $field_values[$i];
-            push @{ $itemhash{ $itemid[$i] }->{'ind_tag'} },   $ind_tag[$i];
-            push @{ $itemhash{ $itemid[$i] }->{'indicator'} }, $indicator[$i];
+#Progilone B10 : Serial callnumber
+#            push @{ $itemhash{ $itemid[$i] }->{'tags'} },      $tags[$i];
+#            push @{ $itemhash{ $itemid[$i] }->{'subfields'} }, $subfields[$i];
+#            push @{ $itemhash{ $itemid[$i] }->{'field_values'} },
+#              $field_values[$i];
+#            push @{ $itemhash{ $itemid[$i] }->{'ind_tag'} },   $ind_tag[$i];
+#            push @{ $itemhash{ $itemid[$i] }->{'indicator'} }, $indicator[$i];
         }
         foreach my $item ( keys %itemhash ) {
 
-       # Verify Itemization is "Valid", i.e. serial status is Arrived or Missing
-            my $index = -1;
-            for ( my $i = 0 ; $i < scalar(@serialids) ; $i++ ) {
-                  if (
-                    $itemhash{$item}->{serial} eq $serialids[$i]
-                    || (   $itemhash{$item}->{serial} == $newserial
-                        && $serialids[$i] eq 'NEW' )
-                ) {
-                    $index = $i
-                  }
-            }
-            if ( $index >= 0 && $status[$index] == 2 ) {
-                my $xml = TransformHtmlToXml(
-                    $itemhash{$item}->{'tags'},
-                    $itemhash{$item}->{'subfields'},
-                    $itemhash{$item}->{'field_values'},
-                    $itemhash{$item}->{'indicator'},
-                    $itemhash{$item}->{'ind_tag'}
-                );
-
-                #           warn $xml;
-                my $bib_record = MARC::Record::new_from_xml( $xml, 'UTF-8' );
+#       # Verify Itemization is "Valid", i.e. serial status is Arrived or Missing
+#            my $index = -1;
+#            for ( my $i = 0 ; $i < scalar(@serialids) ; $i++ ) {
+#                  if (
+#                    $itemhash{$item}->{serial} eq $serialids[$i]
+#                    || (   $itemhash{$item}->{serial} == $newserial
+#                        && $serialids[$i] eq 'NEW' )
+#                ) {
+#                    $index = $i
+#                  }
+#            }
+#            if ( $index >= 0 && $status[$index] == 2 ) {
+#                my $xml = TransformHtmlToXml(
+#                    $itemhash{$item}->{'tags'},
+#                    $itemhash{$item}->{'subfields'},
+#                    $itemhash{$item}->{'field_values'},
+#                    $itemhash{$item}->{'indicator'},
+#                    $itemhash{$item}->{'ind_tag'}
+#                );
+#
+#                #           warn $xml;
+#                my $bib_record = MARC::Record::new_from_xml( $xml, 'UTF-8' );
                 if ( $item =~ /^N/ ) {
-
-                    #New Item
-
-                  # if autoBarcode is set to 'incremental', calculate barcode...
-                    my ( $barcodetagfield, $barcodetagsubfield ) =
-                      GetMarcFromKohaField(
-                        'items.barcode',
-                        GetFrameworkCode(
-                            $serialdatalist[0]->{'biblionumber'}
-                        )
-                      );
-                    if ( C4::Context->preference("autoBarcode") eq
-                        'incremental' )
-                    {
-                        if ( !$bib_record->field($barcodetagfield)
-                            ->subfield($barcodetagsubfield) )
-                        {
-                            my $sth_barcode = $dbh->prepare(
-                                "select max(abs(barcode)) from items");
-                            $sth_barcode->execute;
-                            my ($newbarcode) = $sth_barcode->fetchrow;
-
-# OK, we have the new barcode, add the entry in MARC record # FIXME -> should be  using barcode plugin here.
-                            $bib_record->field($barcodetagfield)
-                              ->update( $barcodetagsubfield => ++$newbarcode );
-                        }
-                    }
-
-                    # check for item barcode # being unique
-                    my $exists;
-                    if (
-                        $bib_record->subfield(
-                            $barcodetagfield, $barcodetagsubfield
-                        )
-                      )
-                    {
-                        $exists = GetItemnumberFromBarcode(
-                            $bib_record->subfield(
-                                $barcodetagfield, $barcodetagsubfield
-                            )
-                        );
-                    }
-
-                    #           push @errors,"barcode_not_unique" if($exists);
-                    # if barcode exists, don't create, but report The problem.
-                    if ($exists) {
-                        push @errors, 'barcode_not_unique';
-                        push @errseq, { serialseq => $serialseqs[$index] };
-                    }
-                    else {
-                        my ( $biblionumber, $bibitemnum, $itemnumber ) =
-                          AddItemFromMarc( $bib_record,
-                            $itemhash{$item}->{bibnum} );
-                        AddItem2Serial( $itemhash{$item}->{serial},
-                            $itemnumber );
-                    }
+#
+#                    #New Item
+#
+#                  # if autoBarcode is set to 'incremental', calculate barcode...
+#                    my ( $barcodetagfield, $barcodetagsubfield ) =
+#                      GetMarcFromKohaField(
+#                        'items.barcode',
+#                        GetFrameworkCode(
+#                            $serialdatalist[0]->{'biblionumber'}
+#                        )
+#                      );
+#                    if ( C4::Context->preference("autoBarcode") eq
+#                        'incremental' )
+#                    {
+#                        if ( !$bib_record->field($barcodetagfield)
+#                            ->subfield($barcodetagsubfield) )
+#                        {
+#                            my $sth_barcode = $dbh->prepare(
+#                                "select max(abs(barcode)) from items");
+#                            $sth_barcode->execute;
+#                            my ($newbarcode) = $sth_barcode->fetchrow;
+#
+## OK, we have the new barcode, add the entry in MARC record # FIXME -> should be  using barcode plugin here.
+#                            $bib_record->field($barcodetagfield)
+#                              ->update( $barcodetagsubfield => ++$newbarcode );
+#                        }
+#                    }
+#
+#                    # check for item barcode # being unique
+#                    my $exists;
+#                    if (
+#                        $bib_record->subfield(
+#                            $barcodetagfield, $barcodetagsubfield
+#                        )
+#                      )
+#                    {
+#                        $exists = GetItemnumberFromBarcode(
+#                            $bib_record->subfield(
+#                                $barcodetagfield, $barcodetagsubfield
+#                            )
+#                        );
+#                    }
+#
+#                    #           push @errors,"barcode_not_unique" if($exists);
+#                    # if barcode exists, don't create, but report The problem.
+#                    if ($exists) {
+#                        push @errors, 'barcode_not_unique';
+#                        push @errseq, { serialseq => $serialseqs[$index] };
+#                    }
+#                    else {
+#                        my ( $biblionumber, $bibitemnum, $itemnumber ) =
+#                          AddItemFromMarc( $bib_record,
+#                            $itemhash{$item}->{bibnum} );
+                        AddItem2Serial( $itemhash{$item}->{serial}, $itemhash{$item}->{serialitemid} );
+#                    }
                 }
-                else {
-
-                    #modify item
-                    my ( $oldbiblionumber, $oldbibnum, $itemnumber ) =
-                      ModItemFromMarc( $bib_record,
-                        $itemhash{$item}->{'bibnum'}, $item );
-                }
-            }
+#                else {
+#
+#                    #modify item
+#                    my ( $oldbiblionumber, $oldbibnum, $itemnumber ) =
+#                      ModItemFromMarc( $bib_record,
+#                        $itemhash{$item}->{'bibnum'}, $item );
+#                }
+#            }
+#End Progilone
         }
     }
 
@@ -377,6 +374,7 @@ $template->param(
     biblionumber    => $serialdatalist[0]->{'biblionumber'},
     serialslist     => \@serialdatalist,
     default_bib_view => $default_bib_view,
+    callnumber      => $serialdatalist[0]->{'callnumber'},
 );
 output_html_with_http_headers $query, $cookie, $template->output;
 

@@ -100,6 +100,7 @@
                 		<li><label for="libopac<!-- TMPL_VAR NAME="row" -->">Text for OPAC: </label><input type="text" id="libopac<!-- TMPL_VAR NAME="row" -->" name="libopac" value="<!-- TMPL_VAR NAME="libopac" -->" size="40" maxlength="80" /></li>
                 		<li><label for="repeatable<!-- TMPL_VAR NAME="row" -->">Repeatable: </label><!-- TMPL_VAR NAME="repeatable" --></li>
                 		<li><label for="mandatory<!-- TMPL_VAR NAME="row" -->">Mandatory: </label><!-- TMPL_VAR NAME="mandatory" --></li>
+                		<li><label for="readonly<!-- TMPL_VAR NAME="row" -->">Read only: </label><!-- TMPL_VAR NAME="readonly" --></li> <!-- Progilone B10: allow readonly subfield -->
                 		<li><label for="tab<!-- TMPL_VAR NAME="row" -->">Managed in tab: </label><!-- TMPL_VAR NAME="tab" --> (ignore means that the subfield does not display in the record editor)</li>
                 	</ol>
             </fieldset>
@@ -165,7 +166,7 @@
 
 
 <!-- TMPL_IF NAME="else" -->
-<h1>MARC subfield structure admin for <!-- TMPL_VAR NAME="tagfield" --> <!-- TMPL_IF NAME="frameworkcode" -->(framework <!--TMPL_VAR NAME="frameworkcode" -->)<!-- TMPL_ELSE -->(default framework)<!-- /TMPL_IF --></h1>
+<h1>MARC subfield structure admin for <!-- TMPL_VAR NAME="tagfield" --> (framework <!--TMPL_VAR NAME="frameworkcode" -->)</h1>
 <p>This screen shows the subfields associated with the selected tag. You can edit subfields or add a new one by clicking on edit. </p>
 <p>The column Koha field shows that the subfield is linked with a Koha field. Koha can manage a MARC interface, or a Koha interface. This link ensures that both DB are synchronized, thus you can change from a MARC to a Koha interface easily.</p>
 
@@ -174,7 +175,6 @@
     <th>Subfield</th>
     <th>Text</th>
     <th>Constraints</th>
-    <th>Edit</th>
     <th>Delete</th>
 </tr>
 <!-- TMPL_LOOP NAME="loop" -->
@@ -183,7 +183,7 @@
 <!-- TMPL_ELSE -->
 <tr>
 <!-- /TMPL_UNLESS -->
-    <td><a href="/cgi-bin/koha/admin/marc_subfields_structure.pl?op=add_form&amp;tagfield=<!-- TMPL_VAR NAME="tagfield" -->&amp;frameworkcode=<!-- TMPL_VAR NAME="frameworkcode" -->#sub<!-- TMPL_VAR NAME="tagsubfield" -->field"><!-- TMPL_VAR NAME="tagsubfield" --></a></td>
+    <td><!-- TMPL_VAR NAME="tagsubfield" --></td>
     <td>
         <!-- TMPL_IF NAME="subfield_ignored" -->
             <i><!-- TMPL_VAR NAME="liblibrarian" --></i>
@@ -199,6 +199,7 @@
             <!-- TMPL_IF NAME="kohafield" --> | Koha field: <!-- TMPL_VAR NAME="kohafield" -->, <!--/TMPL_IF -->
             <!-- TMPL_IF NAME="repeatable" -->Repeatable, <!-- TMPL_ELSE -->Not repeatable,<!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="mandatory" -->Mandatory, <!-- TMPL_ELSE -->Not mandatory,<!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="readonly" -->Read only, <!-- TMPL_ELSE --><!-- /TMPL_IF --> <!-- Progilone B10: allow readonly subfield -->
             <!-- TMPL_IF NAME="seealso" --> | See Also: <!-- TMPL_VAR NAME="seealso" -->,<!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="hidden" -->hidden,<!-- /TMPL_IF -->
             <!-- TMPL_IF NAME="isurl" -->is a URL,<!-- /TMPL_IF -->
@@ -208,8 +209,7 @@
             <!-- TMPL_IF NAME="link" --> | Link:<!-- TMPL_VAR NAME="link" -->,<!-- /TMPL_IF -->
         <!-- /TMPL_IF -->
     </td>
-    <td><a href="/cgi-bin/koha/admin/marc_subfields_structure.pl?op=add_form&amp;tagfield=<!-- TMPL_VAR NAME="tagfield" -->&amp;frameworkcode=<!-- TMPL_VAR NAME="frameworkcode" -->#sub<!-- TMPL_VAR NAME="tagsubfield" -->field">Edit</a></td>
-    <td><a class="" href="<!-- TMPL_VAR NAME="delete" -->">Delete</a></td>
+    <td><a href="<!-- TMPL_VAR NAME="delete" -->">Delete</a></td>
 </tr>
 <!-- /TMPL_LOOP -->
 </table>

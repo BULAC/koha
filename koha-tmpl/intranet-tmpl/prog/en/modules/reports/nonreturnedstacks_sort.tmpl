@@ -1,0 +1,94 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Reports <!-- TMPL_IF NAME="do_it" -->&rsaquo; Acquisitions Statistics &rsaquo; Results<!-- TMPL_ELSE -->&rsaquo; Acquisitions Statistics<!-- /TMPL_IF --></title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<!-- TMPL_INCLUDE NAME="calendar.inc" -->
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="cat-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/reports/reports-home.pl">Reports</a> &rsaquo; Non returned stack requests </div>
+
+<div id="doc3" class="yui-t2">
+
+<div id="bd">
+<div id="yui-main">
+<div class="yui-b">
+
+	<!-- TMPL_INCLUDE NAME="jasper.inc" -->
+
+	<form method="post" action="/cgi-bin/koha/edition/<!-- TMPL_VAR NAME="report" -->">
+
+		<fieldset class="rows">
+			<legend>Sort by</legend>
+			<ol>
+				<li>
+					<label for="first_criteria">First criteria</label>
+					<select name="first_criteria" id="first_criteria" size="1">
+						<option value=""></option>
+						<option value="borrower">Name of borrower</option>
+						<option value="desk_or_space">Desk or Space</option>
+						<option value="end_date">End of stack requests</option>
+					</select>
+					<select name="first_direction" id="first_direction" size="1">
+						<option value="ASC">Ascending</option>
+						<option value="DESC">Descending</option>
+					</select>
+				</li>
+				<li>
+					<label for="second_criteria">Second criteria</label>
+					<select name="second_criteria" id="second_criteria" size="1">
+						<option value=""></option>
+						<option value="borrower">Name of borrower</option>
+						<option value="desk_or_space">Desk or Space</option>
+						<option value="end_date">End of stack requests</option>
+					</select>
+					<select name="second_direction" id="second_direction" size="1">
+						<option value="ASC">Ascending</option>
+						<option value="DESC">Descending</option>
+					</select>
+				</li>
+				<li>
+					<label for="third_criteria">Third criteria</label>
+					<select name="third_criteria" id="third_criteria" size="1">
+						<option value=""></option>
+						<option value="borrower">Name of borrower</option>
+						<option value="desk_or_space">Desk or Space</option>
+						<option value="end_date">End of stack requests</option>
+					</select>
+					<select name="third_direction" id="third_direction" size="1">
+						<option value="ASC">Ascending</option>
+						<option value="DESC">Descending</option>
+					</select>
+				</li>
+			</ol>
+		</fieldset>
+		
+		<fieldset class="rows">
+            <legend>Output</legend>
+            <ol>
+                <li>
+                    <label for="exporttype">To a file of type:</label>
+                    <select name="exporttype" id="exporttype" size="1">
+                        <!-- TMPL_LOOP NAME="exporttypeloop" -->
+                            <option value="<!-- TMPL_VAR NAME="value" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="label" --></option>
+                        <!-- /TMPL_LOOP  -->
+                    </select>
+                </li>
+            </ol>
+        </fieldset>
+		
+		<fieldset class="action">
+			<input type="submit" value="Submit" />
+			<input type="hidden" name="op" value="report" />
+		</fieldset>
+
+	</form>
+	
+</div>
+</div>
+<div class="yui-b">
+<!-- TMPL_INCLUDE NAME="reports-menu.inc" -->
+</div>
+</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

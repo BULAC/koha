@@ -1,0 +1,68 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Add temporary biblio and items</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="cataloging-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a> &rsaquo; <!-- TMPL_IF NAME="transactions_loaded" --> <a href="/cgi-bin/koha/stack/search-items-temp.pl">Temporary items</a> &rsaquo; Results<!-- TMPL_ELSE --> Temporary items<!-- /TMPL_IF --></div>
+<div id="doc" class="yui-t2">
+
+   <div id="bd">
+    <div id="yui-main">
+          
+    <h2>Temporary items list</h2>
+    <!-- TMPL_IF NAME="error" -->
+        <div class="dialog alert">
+            <!-- TMPL_IF EXPR="error eq 'forbiden_delete'" -->
+                <strong>Item <!-- TMPL_VAR NAME="asked_itemnumber" --> can&apos;t currently be deleted</strong>
+            <!-- TMPL_ELSIF EXPR="error eq 'book_on_loan'" -->
+                <strong>Item <!-- TMPL_VAR NAME="asked_itemnumber" --> can&apos;t currently be deleted</strong> because it is on loan
+            <!-- TMPL_ELSIF EXPR="error eq 'book_reserved'" -->
+                <strong>Item <!-- TMPL_VAR NAME="asked_itemnumber" --> can&apos;t currently be deleted</strong> because it is requested
+            <!-- TMPL_ELSE -->
+                <!-- TMPL_VAR NAME="error" -->
+            <!-- /TMPL_IF -->
+        </div>
+    <!-- /TMPL_IF -->  
+    
+    <!-- TMPL_IF NAME="itemLoop" -->
+    <table id="resultst">
+    <thead>
+    <tr>
+        <th>Title</th>
+        <th>Author</th>
+        <th>Publication year</th>
+        <th>Call number</th>
+        <th>Barcode</th>
+        <th>Nature</th>
+        <th colspan="3">Actions</th>
+    </tr></thead>
+    <tbody>
+        <!-- TMPL_LOOP NAME="itemLoop" -->
+	    <tr>
+	        <td><a href="/cgi-bin/koha/catalogue/MARCdetail.pl?biblionumber=<!-- TMPL_VAR NAME='biblionumber' -->"><!-- TMPL_VAR NAME="title" ESCAPE="HTML" --></a></td>
+            <td><!-- TMPL_VAR NAME="author" ESCAPE="HTML" --></td>
+            <td><!-- TMPL_VAR NAME="publicationyear" ESCAPE="HTML" --></td>
+            <td><!-- TMPL_VAR NAME="itemcallnumber" ESCAPE="HTML" --></td>
+	        <td><!-- TMPL_VAR NAME="barcode" ESCAPE="HTML" --></td>
+            <td><!-- TMPL_IF NAME="temporary" -->Temporary<!-- TMPL_ELSE -->Permanent<!-- /TMPL_IF --></td>
+            <td><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME='biblionumber' -->#item<!-- TMPL_VAR NAME='itemnumber' -->">Edit</a></td>            
+            <td><!-- TMPL_UNLESS NAME="temporary" --><a href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&biblionumber=<!-- TMPL_VAR NAME='biblionumber' -->&itemnumber=<!-- TMPL_VAR NAME='itemnumber' -->&temporary=1">Catalogue</a><!-- /TMPL_IF --></td>
+            <td>
+                <!-- TMPL_IF NAME="allow_delete" -->
+                    <a href="/cgi-bin/koha/stack/search-items-temp.pl?op=delete_confirm&itemnumber=<!-- TMPL_VAR NAME='itemnumber' -->">Delete</a>
+                <!-- /TMPL_IF -->
+            </td>
+        </tr>
+        <!-- /TMPL_LOOP -->
+    </tbody>
+    </table>
+    <!-- TMPL_ELSE --><p>There are no Temporary Items.</p>
+    <!-- /TMPL_IF -->
+</div>
+</div>
+
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->
+

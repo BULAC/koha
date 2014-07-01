@@ -55,8 +55,9 @@ if (C4::Context->preference('TagsEnabled')) {
 		C4::Context->preference($_) and $template->param($_ => 1);
 	}
 }
-
-
+# PROGILONE - may 2010 - F21
+$template->param( 'OPACBranchTooltipDisplay' => C4::Context->preference('OPACBranchTooltipDisplay') );
+  		
 foreach my $biblionumber ( @bibs ) {
     $template->param( biblionumber => $biblionumber );
 
@@ -88,7 +89,40 @@ foreach my $biblionumber ( @bibs ) {
         $dat->{'even'} = 1;
     }
 
+	# PROGILONE - may 2010 - F27
+	my @items_library;
+	my @itemsbybranch;
+	foreach my $group_items ( @items ){
+		#Verify if items_mod contains library name
+		if ( "@items_library" =~ /$group_items->{branchname}/){
+			# Verify if @itemsbybranch contains library 
+			foreach my $search_exist ( @itemsbybranch ){
+				if ( $search_exist->{branchname} eq $group_items->{branchname} ){
+					if ( ( !$group_items->{onloan}) && ($group_items->{itemlost} == 0) && ($group_items->{wthdrawn} == 0) && ($group_items->{damaged} == 0)
+					 	&& ($group_items->{notforloan} == 0 || $group_items->{notforloan} == 3) ){
+					$search_exist->{numberItems} = $search_exist->{numberItems}+1;
+					}
+				}
+			}
+		}
+		else{
+			$group_items->{numberItems} = 0;
+			push (@items_library, $group_items->{branchname});
+			$group_items->{location} = GetAuthorisedValueDesc('','',   $group_items->{location} ,'','','LOC', 'opac');
+			push (@itemsbybranch, $group_items);
+				if ( ( !$group_items->{onloan}) && ($group_items->{itemlost} == 0) && ($group_items->{wthdrawn} == 0) && ($group_items->{damaged} == 0)
+				&& ($group_items->{notforloan} == 0 || $group_items->{notforloan} == 3) ){
+				$group_items->{numberItems} = 1;
+			}	
+		}				
+	}
+  	# PROGILONE - may 2010 - F27
+
     $num++;
+    
+    # PROGILONE - may 2010 - F27
+    $dat->{ITEMS_RESULTS_BY_BRANCH} = \@itemsbybranch;
+    # PROGILONE - may 2010 - F27
     $dat->{biblionumber} = $biblionumber;
     $dat->{ITEM_RESULTS}   = \@items;
     $dat->{MARCNOTES}      = $marcnotesarray;

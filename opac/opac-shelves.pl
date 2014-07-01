@@ -32,6 +32,9 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user({
         authnotrequired => 1,
     });
 $template->param(listsview => 1);
+# PROGILONE - may 2010 - F21
+$template->param( 'OPACBranchTooltipDisplay' => C4::Context->preference('OPACBranchTooltipDisplay') );
+
 # if $loggedinuser is not defined, set it to -1, which should
 # not correspond to any real borrowernumber.  
 # FIXME: this is a hack to temporarily avoid changing several

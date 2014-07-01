@@ -78,6 +78,15 @@ YAHOO.util.Event.onContentReady("header_search", function() {
     </form>
 </div>
 	<!-- /TMPL_IF -->
+    
+<!-- B032 -->
+    <!-- TMPL_IF EXPR="UseStackrequest && CAN_user_circulate" -->
+        <!-- TMPL_INCLUDE NAME="stack/retrieval-box.inc" -->
+        <!-- TMPL_INCLUDE NAME="stack/delivery-box.inc" -->
+        <!-- TMPL_INCLUDE NAME="stack/allop-box.inc" -->
+    <!-- /TMPL_IF -->
+<!-- END B032 -->
+    
 	<!-- TMPL_IF NAME="CAN_user_catalogue" -->
 	<div id="catalog_search" class="residentsearch">
 	<p class="tip">Enter search keywords:</p>
@@ -91,6 +100,15 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 			<ul>
 			<!-- TMPL_IF NAME="CAN_user_circulate" --><li><a href="/cgi-bin/koha/circ/circulation.pl#circ_search">Check Out</a></li><!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="CAN_user_circulate" --><li><a href="/cgi-bin/koha/circ/returns.pl#checkin_search">Check In</a></li><!-- /TMPL_IF -->
+    
+            <!-- B032 -->
+                <!-- TMPL_IF EXPR="UseStackrequest && CAN_user_circulate" -->
+                    <li><a href="/cgi-bin/koha/stack/stack-retrieval.pl#retrieval_box">Retrieval</a></li>
+                    <li><a href="/cgi-bin/koha/stack/stack-delivery.pl#delivery_box">Delivery</a></li>
+                    <li><a href="/cgi-bin/koha/stack/all-operations.pl#allop_box">All operations</a></li>
+                <!-- /TMPL_IF -->
+            <!-- END B032 -->
+    
 			<!-- TMPL_IF NAME="CAN_user_catalogue" --><li class="ui-tabs-selected"><a href="/cgi-bin/koha/catalogue/search.pl#catalog_search">Search the Catalog</a></li><!-- /TMPL_IF -->
 			</ul>	
 </div>

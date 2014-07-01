@@ -1,0 +1,1020 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Desk management</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<!-- TMPL_INCLUDE NAME="calendar.inc" -->
+
+<script type="text/javascript" src="<!-- TMPL_VAR NAME="themelang" -->/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
+<script language="JavaScript" type="text/javascript">
+	//<![CDATA[
+		// Captura el evento onmousemove para cualquier navegador
+		if (document.layers) { // Netscape
+			document.captureEvents(Event.MOUSEMOVE);
+		    document.onmousemove = captureMousePosition;
+		} else if (document.all) { // Internet Explorer
+		    document.onmousemove = captureMousePosition;
+		} else if (document.getElementById) { // Netcsape 6
+		    document.onmousemove = captureMousePosition;
+		}
+	
+		var mouseXMax = 0;
+		var mouseYMax = 0;
+		var mouseX = 0;
+		var mouseY = 0;
+		var weekdays = new Array("Sundays", "Mondays", "Tuesdays",
+		    		"Wednesdays", "Thursdays", "Fridays", "Saturdays");
+		
+		function captureMousePosition(e) {
+		    if (document.layers) {
+			    mouseX = e.pageX;
+				mouseY = e.pageY;
+		        mouseXMax = window.innerWidth + window.pageXOffset;
+			    mouseYMax = window.innerHeight + window.pageYOffset;
+		    } else if (document.all) {
+			    mouseX = window.event.x + document.body.scrollLeft;
+		        mouseY = window.event.y + document.body.scrollTop;
+		        mouseXMax = document.body.clientWidth + document.body.scrollLeft;
+		        mouseYMax = document.body.clientHeight + document.body.scrollTop;
+		    } else if (document.getElementById) {
+		        mouseX = e.pageX;
+			    mouseY = e.pageY;
+		        mouseXMax = window.innerWidth + window.pageXOffset;
+		        mouseYMax = window.innerHeight + window.pageYOffset;
+		    }
+		} 
+		
+		function holidayOperation(formObject, opType) {
+			var op = document.getElementsByName('operation');
+			op[0].value = opType;
+			formObject.submit();
+		}
+
+		function createLine(type, label, key, date, start, end) {
+			cssed = "";
+			if (type == "ymd") {
+				cssed = "holiday";
+			} else if (type == "weekday" || type == "daymonth") {
+				cssed = "repeatableday";
+			} else if (type == "exception") {
+				cssed = "exception";
+			}
+			
+			line = "<tr>";
+			line += "<td class=\"" + cssed + "\">" + label + "</td>";
+			line += "<td>" + date + "</td>";
+			line += "<td>" + start + "</td>";
+			line += "<td>" + end + "</td>";
+			line += "<td>" + "<a onclick=\"editSelectedHoliday('"+type+"','"+key+"')\" >Edit</a>" + "</td>"
+			line += "</tr>";
+
+			return line;
+		}
+
+		function showHoliday(holiday_keys, exception_keys, week_keys, day_month_keys) {
+			$("#newHoliday").slideUp("fast");
+			$("#showHoliday").slideUp("fast");
+			$("#showHolidayDiv").show("fast");
+			
+			divListHolidayDetails = document.getElementById('showHolidayDetails');
+
+			var inner = "<table><thead><tr><th>Type</th><th>Date</th><th>Start</th><th>End</th><th>&nbsp;</th><tr></thead><tbody>";
+
+			for (key in holiday_keys) {
+				var holidayDetails = holidays[holiday_keys[key]];
+				var type = "ymd";
+				var label = "Unique";
+				inner += createLine(type, label, holiday_keys[key], holidayDetails['date'], holidayDetails['start_hour']+':'+holidayDetails['start_minute'], holidayDetails['end_hour']+':'+holidayDetails['end_minute'])
+			}
+
+			for (key in week_keys) {
+				var holidayDetails = week_days[week_keys[key]];
+				var type = "weekday";
+				var label = "Weekly";
+				inner += createLine(type, label, week_keys[key], 'Every '+weekdays[holidayDetails['weekday']], holidayDetails['start_hour']+':'+holidayDetails['start_minute'], holidayDetails['end_hour']+':'+holidayDetails['end_minute'])
+			}
+
+			for (key in day_month_keys) {
+				var holidayDetails = day_month_holidays[day_month_keys[key]];
+				var type = "daymonth";
+				var label = "Yearly";
+				inner += createLine(type, label, day_month_keys[key], 'Every '+holidayDetails['date'], holidayDetails['start_hour']+':'+holidayDetails['start_minute'], holidayDetails['end_hour']+':'+holidayDetails['end_minute'])
+			}
+
+			for (key in exception_keys) {
+				var holidayDetails = exception_holidays[exception_keys[key]];
+				var type = "exception";
+				var label = "Exception";
+				inner += createLine(type, label, exception_keys[key], holidayDetails['date'], holidayDetails['start_hour']+':'+holidayDetails['start_minute'], holidayDetails['end_hour']+':'+holidayDetails['end_minute'])
+			}
+			
+			inner += "</tbody></table";
+			divListHolidayDetails.innerHTML = inner;
+		}
+
+		function editSelectedHoliday(type, key) {
+			var details;
+			var exceptionPossibility;
+
+			if (type == "ymd") {
+				details = holidays[key];
+				exceptionPossibility = 0;
+			}
+			
+			if (type == "weekday") {
+				details = week_days[key];
+				var exceptionKey = selectedDate['date'] + "-" + details['start_hour'] + ":" + details['start_minute'];
+				if (exception_holidays[exceptionKey]) {
+					exceptionPossibility = 0;
+				} else {
+					exceptionPossibility = 1;
+				}
+			}
+			
+			if (type == "daymonth") {
+				details = day_month_holidays[key];
+				var exceptionKey = selectedDate['date'] + "-" + details['start_hour'] + ":" + details['start_minute'];
+				if (exception_holidays[exceptionKey]) {
+					exceptionPossibility = 0;
+				} else {
+					exceptionPossibility = 1;
+				}
+			}
+			
+			if (type == "exception") {
+				details = exception_holidays[key];
+				exceptionPossibility = 0;
+			}
+			
+			showSelectedHoliday(exceptionPossibility, selectedDate, details, type);
+		}
+	
+		// This function shows the "Show Holiday" panel //
+		function showSelectedHoliday (exceptionPosibility, selectedDate, details, holidayType) {
+			$("#newHoliday").slideUp("fast");
+			$("#showHoliday").slideDown("fast");
+			$("#showHolidayDiv").hide("fast");
+			
+			document.getElementById('showHolidayDeskName').value = document.getElementById('desk').value;
+			document.getElementById('showHolidayType').value = holidayType;
+
+			//selectedDate: dayName, day, month, year and weekDay
+			document.getElementById('showDayname').value = selectedDate['dayName'];
+			document.getElementById('showDay').value = selectedDate['day'];
+			document.getElementById('showMonth').value = selectedDate['month'];
+			document.getElementById('showYear').value = selectedDate['year'];
+			document.getElementById('showWeekday').value = selectedDate['weekDay'];
+
+			//details: title, description, start_hour, start_minute, end_hour and end_minute
+			document.getElementById('showTitle').value = details['title'];
+			document.getElementById('showDescription').value = details['description'];
+			document.getElementById('showStartHour').value = details['start_hour'];
+			document.getElementById('showStartMinute').value = details['start_minute'];
+			document.getElementById('showEndHour').value = details['end_hour'];
+			document.getElementById('showEndMinute').value = details['end_minute'];
+	
+			if (holidayType == 'exception') {
+				document.getElementById('showOperationDelLabel').innerHTML = 'Delete this exception.';
+			} else {
+				document.getElementById('showOperationDelLabel').innerHTML = 'Delete this opening period.';
+			}
+			
+			if (exceptionPosibility == 1) {
+				document.getElementById('exceptionPosibility').style.display = 'inline';
+			} else {
+				document.getElementById('exceptionPosibility').style.display = 'none';
+			}
+		}
+	
+		// This function shows the "Add Holiday" panel //
+		function newHoliday (dayName, day, month, year, weekDay) {
+			$("#showHoliday").slideUp("fast");
+			$("#newHoliday").slideDown("fast");
+			$("#showHolidayDiv").hide("fast");
+			
+			$("#newDayname").val(dayName);
+			$("#newHolidayDeskName").val($('#desk').val());
+			$("#newDay").val(day);
+			$("#newMonth").val(month);
+			$("#newYear").val(year);
+			$("#newWeekday").val(weekDay);
+		}
+
+		function findArrayDates (array, date) {
+			keys = new Array();
+			for (var key in array) {
+				if (array[key]['date'] == date) {
+					keys.push(key);
+				}
+			}
+			return keys;
+		}
+	
+		function hidePanel(aPanelName) {
+			$("#"+aPanelName).slideUp("fast");
+		}
+	
+		function changeDesk () {
+			var deskcode = $("#desk option:selected").val();
+			location.href='/cgi-bin/koha/desk/desk.pl?op=calendar&deskcode=' + deskcode + '&calendardate=' + "<!-- TMPL_VAR NAME='calendardate' -->";
+		}
+	
+		function additionalInformation (anExplanation) {
+			var panel = document.getElementById('information');
+			var paragraph = document.getElementById('explanation');
+			panel.style.display = 'inline'
+			panel.style.top = mouseY;
+			panel.style.left = mouseX;
+			var info = document.createTextNode(anExplanation);
+			if (paragraph.hasChildNodes()) {
+				paragraph.removeChild(paragraph.lastChild);
+			}
+			paragraph.appendChild(info);
+		}
+	
+		function Help() {
+			newin=window.open("/cgi-bin/koha/help.pl","KohaHelp",'width=600,height=600,toolbar=false,scrollbars=yes');
+		}
+		
+		$(document).ready(function() {
+			$("#desk").change(function(){
+				changeDesk();
+			});
+			$("#holidayexceptions").tablesorter({
+			  sortList: [[0,0]], widgets: ['zebra']
+			});
+			$("#holidayweeklyrepeatable").tablesorter({
+			  sortList: [[0,0]], widgets: ['zebra']
+			});
+			$("#holidaysyearlyrepeatable").tablesorter({
+			  sortList: [[0,0]], widgets: ['zebra']
+			});
+			$("#holidaysunique").tablesorter({
+			  sortList: [[0,0]], widgets: ['zebra']
+			});
+			
+			new YAHOO.widget.Button("newdesk");
+		});
+		
+		function displayInfoNewOperationOnce() {
+			var message = _("Make a single opening period. For example, selecting August 1st, 2012 will make it an opening period, but will not affect August 1st in other years.");
+			additionalInformation(message);
+		}
+		
+		function displayInfoNewOperationDay() {
+			var message = _("Make this weekday an opening period, every week. For example, if your library is open on Saturdays, use this option to make every Saturday an opening period.");
+			additionalInformation(message);
+		}
+		
+		function displayInfoNewOperationYear() {
+			var message = _("This will take this day and month as a reference to make it an opening period. Through this option, you can repeat this rule for every year. For example, selecting August 1st will make August 1st an opening period every year.");
+			additionalInformation(message);
+		}
+		
+		function displayInfoAllDesks() {
+			var message = _("If checked, this opening period will be copied to all libraries. If the opening period already exists for a library, no change is made.");
+			additionalInformation(message);
+		}
+		
+	//]]>
+</script>
+<style type="text/css">
+    .normalday,
+    .calendar td.normalday
+    {
+        background-color: #EDEDED;
+    }
+    
+    .exception,
+    .calendar td.exception
+    {
+        background-color: #FF4000;
+    }
+    
+    .holiday,
+    .calendar td.holiday
+    {
+        background-color: #46B311;
+    }
+
+    .repeatableday,
+    .calendar td.repeatableday
+    {
+        background-color: #5AE616;
+    }
+    
+    span.normalday,
+    span.exception,
+    span.holiday,
+    span.repeatableday
+    {
+        border: 1px solid #000000;
+        padding: .2em;
+    }
+    
+    .information {
+        z-index: 1;
+        background-color: #DCD2F1;
+        width: 300px;
+        display: none;
+        border: 1px solid #000000;
+        color: #000000;
+        font-size: 8pt;
+        font-weight: bold;
+        background-color: #FFD700;
+        cursor: pointer;
+        padding: 2px;
+    }
+    
+    .panel {
+        z-index: 1;
+        width: 500px;
+        display: none;
+        border: 1px solid #000000;
+        padding: 3px; /* position: absolute; */
+        background-color: #CCCCCC;
+    }
+    
+    div.dmy {
+        display: inline;
+    }
+    
+    .blacklabel,div.dmy input {
+        background-color: #FFFFFF;
+        color: Black;
+        font-size: 10px;
+    }
+    
+    h1 select {
+        width: 20em;
+    }
+    
+    .calendarTable {
+        border: 0px;
+    }
+    
+    fieldset.rows#itemtypes li {
+        padding-bottom: .2em;
+    }
+    
+    fieldset.rows#itemtypes label {
+        float: none;
+        text-align: left;
+        margin-left: .5em;
+        vertical-align: top;
+    }
+</style>
+
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="cat-search.inc" -->
+
+<!-- TMPL_IF NAME="list" -->
+	<div id="breadcrumbs">
+		<a href="/cgi-bin/koha/mainpage.pl">Home</a>
+		&rsaquo; 
+		<a href="/cgi-bin/koha/admin/admin-home.pl">Administration</a> 
+		&rsaquo;
+		Desk management
+	</div>
+<!-- /TMPL_IF -->
+
+<!-- TMPL_IF NAME="calendar" -->
+	<div id="breadcrumbs">
+		<a href="/cgi-bin/koha/mainpage.pl">Home</a>
+		&rsaquo; 
+		<a href="/cgi-bin/koha/admin/admin-home.pl">Administration</a> 
+		&rsaquo;
+		<a href="/cgi-bin/koha/desk/desk.pl">Desk management</a>
+		&rsaquo; 
+		Calendar
+	</div>
+<!-- /TMPL_IF -->
+
+<!-- TMPL_IF NAME="add_form" -->
+	<div id="breadcrumbs">
+		<a href="/cgi-bin/koha/mainpage.pl">Home</a>
+		&rsaquo; 
+		<a href="/cgi-bin/koha/admin/admin-home.pl">Administration</a> 
+		&rsaquo; 
+		<a href="/cgi-bin/koha/desk/desk.pl">Desk management</a>
+		&rsaquo; 
+		Add desk
+	</div>
+<!-- /TMPL_IF -->
+
+<!-- TMPL_IF NAME="edit_form" -->
+	<div id="breadcrumbs">
+		<a href="/cgi-bin/koha/mainpage.pl">Home</a>
+		&rsaquo; 
+		<a href="/cgi-bin/koha/admin/admin-home.pl">Administration</a> 
+		&rsaquo;
+		<a href="/cgi-bin/koha/desk/desk.pl">Desk management</a>
+		&rsaquo; 
+		Edit desk
+	</div>
+<!-- /TMPL_IF -->
+
+<div id="doc3" class="yui-t2">
+	<div id="bd">
+	
+		<div id="yui-main">
+			<div class="yui-b">
+			
+            <!-- TMPL_IF NAME="list" -->
+				<div id="toolbar">
+					<ul class="toolbar">
+						<li>
+							<a id="newdesk" href="/cgi-bin/koha/desk/desk.pl?op=add_form">New Desk</a>
+						</li>
+					</ul>
+				</div>
+
+				<h1>Desk management</h1>
+                
+                <!-- TMPL_IF NAME="loop" -->
+				<table>
+					<tr>
+						<th>Desk code</th>
+						<th>Name</th>
+						<th>Branch</th>
+						<th>Active</th>
+						<th>&nbsp;</th>
+						<th>&nbsp;</th>
+					</tr>
+					<!-- TMPL_LOOP NAME="loop" -->
+						<!-- TMPL_IF NAME="__odd__" -->
+							<tr class="highlight">
+						<!-- TMPL_ELSE -->
+							<tr>
+						<!-- /TMPL_IF -->
+						<td><!-- TMPL_VAR name="deskcode" --></td>
+						<td><!-- TMPL_VAR NAME="deskname" --></td>
+						<td><!-- TMPL_VAR name="branchname" --></td>
+						<td><!-- TMPL_VAR name="active" --></td>
+						<td><a href="/cgi-bin/koha/desk/desk.pl?op=edit_form&amp;deskcode=<!-- TMPL_VAR name="deskcode" escape="HTML" -->">Edit</a></td></div></td>
+						<td><a href="/cgi-bin/koha/desk/desk.pl?op=calendar&deskcode=<!-- TMPL_VAR name="deskcode" escape="HTML" -->">Calendar</a></td></div></td>
+					</tr>
+					<!-- /TMPL_LOOP -->
+				</table>
+                <!-- /TMPL_IF -->
+				
+				<!-- TMPL_IF NAME="previous" -->
+					<a href="<!-- TMPL_VAR NAME="previous" -->">&lt;&lt; Previous</a>
+				<!-- /TMPL_IF -->
+				<!-- TMPL_IF NAME="next" -->
+					<a href="<!-- TMPL_VAR NAME="next" -->">Next &gt;&gt;</a>
+				<!-- /TMPL_IF -->
+			<!-- TMPL_ELSE -->
+			
+				<!-- TMPL_IF NAME="calendar" -->
+					
+					<!-- *************************************************************************************** -->
+					<!-- ******                     START OF INFORMATION PANEL                            ****** -->
+					<!-- *************************************************************************************** -->
+					<div class="information" style="position:absolute" id="information" onclick=" hidePanel('information')">
+						<table>
+							<tr>
+								<td>
+									<p id="explanation" style="display:inline;align:justify"></p>
+								</td>
+							</tr>
+						</table>
+					</div>
+					<!-- ************************************************************************************** -->
+					<!-- ******                      END OF INFORMATION PANEL                            ****** -->
+					<!-- ************************************************************************************** -->
+
+					<h1>Define the opening periods for:</h1>
+        			<label for="desk">Select a desk:</label>
+            		<select id="desk" name="desk">
+            			<!-- TMPL_UNLESS NAME="deskcode" -->
+            				<option value="" selected="selected">Choose a desk</option>
+            			<!-- /TMPL_UNLESS -->
+		                <!-- TMPL_LOOP NAME="desk" -->
+	                        <option value="<!-- TMPL_VAR NAME='deskcode' -->" title="<!-- TMPL_VAR NAME='deskcode' -->"<!-- TMPL_IF NAME="selected" --> selected="selected"<!-- /TMPL_IF -->>
+                                <!-- TMPL_VAR NAME="deskname" -->
+                            </option>
+		                <!-- /TMPL_LOOP -->
+		            </select>
+		            
+		            <!-- TMPL_IF NAME="deskcode" -->
+						<ul>
+							<li>Search in the calendar the day you want to set an opening period.</li>
+							<li>Complete the information in the right area.</li>
+							<li>Once you finish the steps above, click Save.</li>
+						</ul>
+						<p>
+							<span class="normalday">Closed day</span>
+							<span class="holiday">Unique opening period</span>
+							<span class="repeatableday">Repeatable opening period</span>
+							<span class="exception">Opening period exception</span>
+						</p>
+		
+						<!-- ************************************************************************************** -->
+						<!-- ******                              MAIN SCREEN CODE                            ****** -->
+						<!-- ************************************************************************************** -->
+						<h2>Calendar information</h2>
+						
+						<table class="calendarTable">
+							<tr>
+								<td class="calendarTable">
+									<div id="calendar-container">
+									
+										<script type="text/javascript">
+											/* Creates all the structures to deal with all diferents kinds of holidays */
+											var week_days = new Array();
+											var holidays = new Array();
+											var exception_holidays = new Array();
+											var day_month_holidays = new Array();
+											var selectedDate = new Array();
+											var hola= "<!-- TMPL_VAR NAME="code" -->";
+			
+											<!-- TMPL_LOOP NAME="WEEK_DAYS_LOOP" -->
+												week_days["<!-- TMPL_VAR NAME="KEY" -->"] = 
+													{
+														title:"<!-- TMPL_VAR NAME="TITLE" -->", 
+														description:"<!-- TMPL_VAR NAME="DESCRIPTION" -->",
+														date:"<!-- TMPL_VAR NAME="CALENDAR_DATE" -->",
+														weekday:"<!-- TMPL_VAR NAME="WEEKDAY" -->",
+														start_hour:"<!-- TMPL_VAR NAME="STARTHOUR" -->",
+														start_minute:"<!-- TMPL_VAR NAME="STARTMINUTE" -->",
+														end_hour:"<!-- TMPL_VAR NAME="ENDHOUR" -->",
+														end_minute:"<!-- TMPL_VAR NAME="ENDMINUTE" -->",
+													};
+											<!-- /TMPL_LOOP -->
+			
+											<!-- TMPL_LOOP NAME="HOLIDAYS_LOOP" -->
+												holidays["<!-- TMPL_VAR NAME="KEY" -->"] = 
+													{
+														title:"<!-- TMPL_VAR NAME="TITLE" -->", 
+														description:"<!-- TMPL_VAR NAME="DESCRIPTION" -->",
+														date:"<!-- TMPL_VAR NAME="CALENDAR_DATE" -->",
+														year:"<!-- TMPL_VAR NAME="YEAR" -->",
+														month:"<!-- TMPL_VAR NAME="MONTH" -->",
+														day:"<!-- TMPL_VAR NAME="DAY" -->",
+														start_hour:"<!-- TMPL_VAR NAME="STARTHOUR" -->",
+														start_minute:"<!-- TMPL_VAR NAME="STARTMINUTE" -->",
+														end_hour:"<!-- TMPL_VAR NAME="ENDHOUR" -->",
+														end_minute:"<!-- TMPL_VAR NAME="ENDMINUTE" -->",
+													};
+											<!-- /TMPL_LOOP -->
+			
+											<!-- TMPL_LOOP NAME="EXCEPTION_HOLIDAYS_LOOP" -->
+												exception_holidays["<!-- TMPL_VAR NAME="KEY" -->"] = 
+													{
+														title:"<!-- TMPL_VAR NAME="TITLE" -->", 
+														description:"<!-- TMPL_VAR NAME="DESCRIPTION" -->",
+														date:"<!-- TMPL_VAR NAME="CALENDAR_DATE" -->",
+														year:"<!-- TMPL_VAR NAME="YEAR" -->",
+														month:"<!-- TMPL_VAR NAME="MONTH" -->",
+														day:"<!-- TMPL_VAR NAME="DAY" -->",
+														start_hour:"<!-- TMPL_VAR NAME="STARTHOUR" -->",
+														start_minute:"<!-- TMPL_VAR NAME="STARTMINUTE" -->",
+														end_hour:"<!-- TMPL_VAR NAME="ENDHOUR" -->",
+														end_minute:"<!-- TMPL_VAR NAME="ENDMINUTE" -->",
+													};
+											<!-- /TMPL_LOOP -->
+			
+											<!-- TMPL_LOOP NAME="DAY_MONTH_HOLIDAYS_LOOP" -->
+												day_month_holidays["<!-- TMPL_VAR NAME="KEY" -->"] = 
+													{
+														title:"<!-- TMPL_VAR NAME="TITLE" -->", 
+														description:"<!-- TMPL_VAR NAME="DESCRIPTION" -->",
+														date:"<!-- TMPL_VAR NAME="CALENDAR_DATE" -->",
+														month:"<!-- TMPL_VAR NAME="MONTH" -->",
+														day:"<!-- TMPL_VAR NAME="DAY" -->",
+														start_hour:"<!-- TMPL_VAR NAME="STARTHOUR" -->",
+														start_minute:"<!-- TMPL_VAR NAME="STARTMINUTE" -->",
+														end_hour:"<!-- TMPL_VAR NAME="ENDHOUR" -->",
+														end_minute:"<!-- TMPL_VAR NAME="ENDMINUTE" -->",
+													};
+											<!-- /TMPL_LOOP -->
+										
+											/* This function gives css clases to each kind of day */
+											function dateStatusHandler(date) {
+												var day = date.getDate();
+												var month = date.getMonth() + 1;
+												var year = date.getFullYear();
+												var weekDay = date.getDay();
+												var dayName = date.print('%A');
+
+												if (month < 10) {
+													month = '0'+month;
+												}
+												if (day < 10) {
+													day = '0'+day;
+												}
+												
+												var dateString = year + '/' + month + '/' + day;
+												var dayMonth;
+												<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
+													dayMonth = day + '/' + month;
+												<!-- TMPL_ELSE -->
+													dayMonth = month + '/' + day;
+												<!-- /TMPL_IF -->
+												
+												if (findArrayDates(exception_holidays, dateString).length > 0) {
+													return 'exception';
+												} else if (findArrayDates(week_days, weekDay).length > 0 || findArrayDates(day_month_holidays, dayMonth).length > 0) {
+													return 'repeatableday';
+												} else if (findArrayDates(holidays, dateString).length > 0) {
+													return 'holiday';
+												} else {
+													return 'normalday';
+												}
+											}
+										
+											/* This function is in charge of showing the correct panel considering the kind of holiday */
+											function dateChanged(calendar) {
+												var day = calendar.date.getDate();
+												var month = calendar.date.getMonth() + 1;
+												var year = calendar.date.getFullYear();
+												var weekDay = calendar.date.getDay();
+												var dayName = calendar.date.print('%A');
+
+												selectedDate['day'] = day;
+												selectedDate['month'] = month;
+												selectedDate['year'] = year;
+												selectedDate['weekDay'] = weekDay;
+												selectedDate['dayName'] = dayName;
+												selectedDate['date'] = year + '/' + month + '/' + day;
+												
+												if (month < 10) {
+													month = '0'+month;
+												}
+												if (day < 10) {
+													day = '0'+day;
+												}
+												
+												var dateString = year + '/' + month + '/' + day;
+												var dayMonth;
+												<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
+													dayMonth = day + '/' + month;
+												<!-- TMPL_ELSE -->
+													dayMonth = month + '/' + day;
+												<!-- /TMPL_IF -->
+
+												if (calendar.dateClicked) {
+													var holidays_keys = findArrayDates(holidays, dateString);
+													var exception_keys = findArrayDates(exception_holidays, dateString);
+													var week_keys = findArrayDates(week_days, weekDay);
+													var day_month_keys = findArrayDates(day_month_holidays, dayMonth);
+													
+													if (holidays_keys.length > 0 || exception_keys.length > 0 || week_keys.length > 0 || day_month_keys.length > 0) {
+														showHoliday(holidays_keys, exception_keys, week_keys, day_month_keys);
+													} else {
+														newHoliday(dayName, day, month, year, weekDay);
+													}
+												}
+											};
+											
+											Calendar.setup(
+												{
+													flat : "calendar-container",
+													flatCallback : dateChanged,
+													date: "<!-- TMPL_VAR NAME='keydate' -->",
+													dateStatusFunc : dateStatusHandler
+												}
+											);
+										</script>
+									</div>
+								</td>
+								
+								<td class="calendarTable">
+									<div id="showHolidayDiv" class="panel">
+										<div id="showHolidayDetails">
+										</div>
+										<a href="#" onclick="newHoliday(selectedDate['dayName'], selectedDate['day'], selectedDate['month'], selectedDate['year'], selectedDate['weekDay']);">Add new opening period on this date</a>
+									</div>
+								</td>
+							</tr>
+						</table>
+	
+						<!-- ******************************** FLAT PANELS ******************************************* -->
+						<!-- *****           Makes all the flat panel to deal with holidays                     ***** -->
+						<!-- **************************************************************************************** -->
+						<br/>
+						
+						<!-- ********************** Panel for showing already loaded holidays *********************** -->
+						<div class="panel" id="showHoliday">
+						 	<form action="/cgi-bin/koha/desk/calendar.pl" method="post">
+						 		<input type="hidden" id="showHolidayType" name="showHolidayType" value="" />
+						 		<input type="hidden" name="op" value="edit" />
+								<h2>Edit this opening period</h2>
+								<p>
+									<label for="showHolidayDeskName">Branch</label>
+									<input type="text" size="20" id="showHolidayDeskName" name="showHolidayDeskName" readonly="readonly" class="blacklabel" />
+								</p>
+								<p>
+									<label for="showDayname">Day name</label>
+									<input type="text" size="20" id="showDayname" name="showDayname" readonly="readonly" class="blacklabel" />
+									<input type="hidden" name="showWeekday" id="showWeekday" />
+								</p>
+								<div class="dmy">
+									<label for="showDay">Day</label> <input type="text" size="2" id="showDay" name="showDay" readonly="readonly" />
+									<label for="showMonth">Month</label> <input type="text" size="2" id="showMonth" name="showMonth" readonly="readonly" />
+									<label for="showYear">Year</label> <input type="text" size="4" id="showYear" name="showYear" readonly="readonly" />		
+								</div>
+								<div>
+									<label for="showStartHour">Start Hour</label> <input type="text" size="2" maxlength="2" id="showStartHour" name="showStartHour" readonly="readonly" />
+									<label for="showStartMinute">Start Minute</label> <input type="text" size="2" maxlength="2" id="showStartMinute" name="showStartMinute" readonly="readonly" />
+								</div>
+								<div>
+									<label for="showEndHour">End Hour</label> <input type="text" size="2" maxlength="2" id="showEndHour" name="showEndHour" readonly="readonly" />
+									<label for="showEndMinute">End Minute</label> <input type="text" size="2" maxlength="2" id="showEndMinute" name="showEndMinute" readonly="readonly" />
+								</div>
+							    <!-- showTitle is necessary for exception radio button to work properly --> 
+							    <input type="hidden" id="showTitle" name="showTitle" value="" />
+							    <p><label for="showDescription">Description:</label>
+									<br />
+									<textarea rows="2" cols="40" id="showDescription" name="showDescription"></textarea>	
+								</p>
+								<div id="exceptionPosibility" style="position:static">
+									<input type="radio" name="showOperation" id="showOperationExc" value="exception" /> <label for="showOperationExc">Generate an exception for this repeated opening period.</label>
+									<a href="#" onclick=" additionalInformation('You can make an exception for this opening period rule. This means that you will be able to say for a repeatable opening period, that there is one of those days that is going to be an exception.')"><img src="<!-- TMPL_VAR NAME="themelang" -->/../img/more.gif" border="0" alt="More information" /></a><br />
+								</div>
+								<input type="radio" name="showOperation" id="showOperationDel" value="delete" /> <label for="showOperationDel" id="showOperationDelLabel">Delete this opening period</label>
+								<a href="#" onclick=" additionalInformation('This will delete this opening period rule. If it is a repeatable opening period, this option checks for posible exceptions. If an exception exists, this option will remove the exception and set the date to a regular opening period.')"><img src="<!-- TMPL_VAR NAME="themelang" -->/../img/more.gif" border="0" alt="More information" /></a><br />
+								<input type="radio" name="showOperation" id="showOperationEdit" value="edit" checked="checked" /> <label for="showOperationEdit">Edit this opening period</label>
+								<a href="#" onclick=" additionalInformation('This will save changes to the opening period\'s description. If the description for a repeatable opening period is modified, it affects all of the dates that the opening period is repeated.')"><img src="<!-- TMPL_VAR NAME="themelang" -->/../img/more.gif" border="0" alt="More information" /></a>
+								<p>
+									<input type="submit" name="submit" value="Save" />
+									<input type="button" name="cancel2" value="Cancel" onclick=" hidePanel('showHoliday');hidePanel('information')" />
+								</p>
+							</form>
+						</div>
+						
+						<!-- ***************************** Panel to deal with new holidays **********************  -->
+						<div class="panel" id="newHoliday">
+						 	<form action="/cgi-bin/koha/desk/calendar.pl" method="post">
+									<input type="hidden" name="branchCodes" id="branchCodes" value="<!-- TMPL_VAR NAME="branchcodes" -->" />
+									<input type="hidden" name="op" value="add" /> 
+								<h2>Add new opening period</h2>
+								<p>
+									<label for="newHolidayDeskName">Desk</label>
+									<input type="text" size="20" id="newHolidayDeskName" name="newHolidayDeskName" readonly="readonly" class="blacklabel" />
+								</p>
+								<p>
+									<label for="newDayname">Day name</label>
+									<input type="text" size="20" id="newDayname" name="newDayname" readonly="readonly" class="blacklabel" />
+									<input type="hidden" name="newWeekday" id="newWeekday" />
+								</p>
+								<div class="dmy">
+									<label for="newDay">Day</label> <input type="text" size="2" id="newDay" name="newDay" readonly="readonly" />
+									<label for="newMonth">Month</label> <input type="text" size="2" id="newMonth" name="newMonth"  readonly="readonly" />
+									<label for="newYear">Year</label> <input type="text" size="4" id="newYear" name="newYear" readonly="readonly" />
+								</div>
+								<div>
+									<label for="newStartHour">Start Hour</label> <input type="text" size="2" maxlength="2" id="newStartHour" name="newStartHour" />
+									<label for="newStartMinute">Start Minute</label> <input type="text" size="2" maxlength="2" id="newStartMinute" name="newStartMinute" />
+								</div>
+								<div>
+									<label for="newEndHour">End Hour</label> <input type="text" size="2" maxlength="2" id="newEndHour" name="newEndHour" />
+									<label for="newEndMinute">End Minute</label> <input type="text" size="2" maxlength="2" id="newEndMinute" name="newEndMinute" />
+								</div>
+								<p><label for="newDescription">Description:</label>
+									<br />
+									<textarea rows="2" cols="40" id="newDescription" name="newDescription"></textarea>
+								</p>
+									<input type="radio" name="newOperation" id="newOperationOnce" value="holiday" checked="checked" />
+									<label for="newOperationOnce">Opening period only on this day</label>.
+									<a href="#" onclick="displayInfoNewOperationOnce();"><img src="<!-- TMPL_VAR NAME="themelang" -->/../img/more.gif" border="0" alt="More information" /></a>
+									<br />
+									<input type="radio" name="newOperation" id="newOperationDay" value="weekday" />
+									<label for="newOperationDay">Opening period repeated every same day of the week</label>.
+									<a href="#" onclick="displayInfoNewOperationDay();"><img src="<!-- TMPL_VAR NAME="themelang" -->/../img/more.gif" border="0" alt="More information" /></a>
+									<br />
+									<input type="radio" name="newOperation" id="newOperationYear" value="repeatable" />
+									<label for="newOperationYear">Opening period repeated yearly on the same date</label>.
+									<a href="#" onclick="displayInfoNewOperationYear();"><img src="<!-- TMPL_VAR NAME="themelang" -->/../img/more.gif" border="0" alt="More information" /></a>
+									<p>
+									<input type="checkbox" name="allDesks" id="allDesks" />
+									<label for="allDesks">Copy to all desks</label>.
+									<a href="#" onclick="displayInfoAllDesks();"><img src="<!-- TMPL_VAR NAME="themelang" -->/../img/more.gif" border="0" alt="More information" /></a>
+									</p><p>
+										<input type="submit" name="submit" value="Save" />
+										<input type="button" name="cancel2" value="Cancel" onclick=" hidePanel('newHoliday');hidePanel('information')" />
+									</p>
+						 	</form>
+						</div>
+						
+						<!-- *************************************************************************************** -->
+						<!-- ******                          END OF FLAT PANELS                               ****** -->
+						<!-- *************************************************************************************** -->
+						
+						<div id="holiday-list">
+							<!-- Exceptions First -->
+							<!--   this will probably always have the least amount of data -->
+							<!-- TMPL_IF NAME="EXCEPTION_HOLIDAYS_LOOP" -->
+								<h3>Exceptions</h3>
+								
+								<table id="holidayexceptions">
+									<thead>
+										<tr>
+											<th class="exception">Date</th>
+											<th class="exception">Start</th>
+											<th class="exception">End</th>
+											<th class="exception">Title</th>
+											<th class="exception">Description</th>
+										</tr>
+									</thead>
+									<tbody>
+										<!-- TMPL_LOOP NAME="EXCEPTION_HOLIDAYS_LOOP" -->
+											<tr>
+												<td style="display: none;"><input type="hidden" value="<!-- TMPL_VAR NAME="YEAR" --><!-- TMPL_VAR NAME="MONTH" --><!-- TMPL_VAR NAME="DAY" -->"></td>
+												<td style="display: none;"><input type="hidden" value="<!-- TMPL_VAR NAME="STARTHOUR" --><!-- TMPL_VAR NAME="STARTMINUTE" -->"></td>
+												<td style="display: none;"><input type="hidden" value="<!-- TMPL_VAR NAME="ENDHOUR" --><!-- TMPL_VAR NAME="ENDMINUTE" -->"></td>
+												<td style="display: none;"><input type="hidden" value="<!-- TMPL_VAR NAME="TITLE" -->"></td>
+												<td style="display: none;"><input type="hidden" value="<!-- TMPL_VAR NAME="DESCRIPTION" -->"></td>
+												<td><!-- TMPL_VAR NAME="DATE" --></td>
+												<td><!-- TMPL_VAR NAME="STARTHOUR" -->h<!-- TMPL_VAR NAME="STARTMINUTE" --></td>
+												<td><!-- TMPL_VAR NAME="ENDHOUR" -->h<!-- TMPL_VAR NAME="ENDMINUTE" --></td>
+												<td><!-- TMPL_VAR NAME="TITLE" --></td>
+												<td><!-- TMPL_VAR NAME="DESCRIPTION" --></td>
+											</tr>
+										<!-- /TMPL_LOOP --> 
+									</tbody>
+								</table>
+							<!-- /TMPL_IF -->
+							
+							<!--TMPL_IF NAME="WEEK_DAYS_LOOP" -->
+								<h3>Weekly - Repeatable opening periods</h3>
+									
+								<table id="holidayweeklyrepeatable">
+									<thead>
+										<tr>
+											<th class="repeatableday">Day of Week</th>
+											<th class="repeatableday">Start</th>
+											<th class="repeatableday">End</th>
+											<th class="repeatableday">Title</th>
+											<th class="repeatableday">Description</th>
+										</tr>
+									</thead>
+									<tbody>
+										<!-- TMPL_LOOP NAME="WEEK_DAYS_LOOP" -->
+											<tr>
+												<td><script type="text/javascript">document.write(weekdays[ <!-- TMPL_VAR NAME="WEEKDAY" -->]);</script></td>
+												<td><!-- TMPL_VAR NAME="STARTHOUR" -->h<!-- TMPL_VAR NAME="STARTMINUTE" --></td>
+												<td><!-- TMPL_VAR NAME="ENDHOUR" -->h<!-- TMPL_VAR NAME="ENDMINUTE" --></td>
+												<td><!-- TMPL_VAR NAME="TITLE" --></td> 
+												<td><!-- TMPL_VAR NAME="DESCRIPTION" --></td> 
+											</tr>
+										<!-- /TMPL_LOOP --> 
+									</tbody>
+								</table>
+							<!-- /TMPL_IF -->
+							
+							<!-- TMPL_IF NAME="DAY_MONTH_HOLIDAYS_LOOP" -->
+								<h3>Yearly - Repeatable opening periods</h3>
+								
+								<table id="holidaysyearlyrepeatable">
+									<thead>
+										<tr>
+											<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
+												<th class="repeatableday">Day/Month</th>
+											<!-- TMPL_ELSE -->
+												<th class="repeatableday">Month/Day</th>
+											<!-- /TMPL_IF -->
+											<th class="repeatableday">Start</th>
+											<th class="repeatableday">End</th>
+											<th class="repeatableday">Title</th>
+											<th class="repeatableday">Description</th>
+										</tr>
+									</thead>
+									<tbody>
+										<!-- TMPL_LOOP NAME="DAY_MONTH_HOLIDAYS_LOOP" -->
+											<tr>
+												<td style="display: none;"><input type="hidden" value="<!-- TMPL_VAR NAME="MONTH" --><!-- TMPL_VAR NAME="DAY" -->"></td>
+												<td style="display: none;"><input type="hidden" value="<!-- TMPL_VAR NAME="STARTHOUR" --><!-- TMPL_VAR NAME="STARTMINUTE" -->"></td>
+												<td style="display: none;"><input type="hidden" value="<!-- TMPL_VAR NAME="ENDHOUR" --><!-- TMPL_VAR NAME="ENDMINUTE" -->"></td>
+												<td style="display: none;"><input type="hidden" value="<!-- TMPL_VAR NAME="TITLE" -->"></td>
+												<td style="display: none;"><input type="hidden" value="<!-- TMPL_VAR NAME="DESCRIPTION" -->"></td>
+												<td><!-- TMPL_VAR NAME="DATE" --></td>
+												<td><!-- TMPL_VAR NAME="STARTHOUR" -->h<!-- TMPL_VAR NAME="STARTMINUTE" --></td>
+												<td><!-- TMPL_VAR NAME="ENDHOUR" -->h<!-- TMPL_VAR NAME="ENDMINUTE" --></td>
+												<td><!-- TMPL_VAR NAME="TITLE" --></td> 
+												<td><!-- TMPL_VAR NAME="DESCRIPTION" --></td>
+											</tr>
+										<!-- /TMPL_LOOP --> 
+									</tbody>
+								</table>
+							<!-- /TMPL_IF -->
+	
+							<!-- TMPL_IF NAME="HOLIDAYS_LOOP" -->
+								<h3>Unique Opening periods</h3>
+								
+								<table id="holidaysunique">
+									<thead>
+										<tr>
+											<th class="holiday">Date</th>
+											<th class="holiday">Start</th>
+											<th class="holiday">End</th>
+											<th class="holiday">Title</th>
+											<th class="holiday">Description</th>
+										</tr>
+									</thead>
+									<tbody>
+										<!-- TMPL_LOOP NAME="HOLIDAYS_LOOP" -->
+											<tr>
+												<td style="display: none;"><input type="hidden" value="<!-- TMPL_VAR NAME="YEAR" --><!-- TMPL_VAR NAME="MONTH" --><!-- TMPL_VAR NAME="DAY" -->"></td>
+												<td style="display: none;"><input type="hidden" value="<!-- TMPL_VAR NAME="STARTHOUR" --><!-- TMPL_VAR NAME="STARTMINUTE" -->"></td>
+												<td style="display: none;"><input type="hidden" value="<!-- TMPL_VAR NAME="ENDHOUR" --><!-- TMPL_VAR NAME="ENDMINUTE" -->"></td>
+												<td style="display: none;"><input type="hidden" value="<!-- TMPL_VAR NAME="TITLE" -->"></td>
+												<td style="display: none;"><input type="hidden" value="<!-- TMPL_VAR NAME="DESCRIPTION" -->"></td>
+												<td><!-- TMPL_VAR NAME="DATE" --></td>
+												<td><!-- TMPL_VAR NAME="STARTHOUR" -->h<!-- TMPL_VAR NAME="STARTMINUTE" --></td>
+												<td><!-- TMPL_VAR NAME="ENDHOUR" -->h<!-- TMPL_VAR NAME="ENDMINUTE" --></td>
+												<td><!-- TMPL_VAR NAME="TITLE" --></td>
+												<td><!-- TMPL_VAR NAME="DESCRIPTION" --></td>
+											</tr>
+										<!-- /TMPL_LOOP --> 
+									</tbody>
+								</table>
+							<!-- /TMPL_IF -->
+						</div>
+						
+					<!-- /TMPL_IF -->
+					
+				<!-- TMPL_ELSE -->
+					<!-- TMPL_IF NAME="add_form" -->
+						<h1>Add Desk</h1>
+					<!-- /TMPL_IF -->
+					<!-- TMPL_IF NAME="edit_form" -->
+						<h1>Edit Desk <!-- TMPL_VAR name="deskcode" --></h1>
+					<!-- /TMPL_IF -->
+					
+					<!-- TMPL_IF NAME="message" -->
+                		<div class="dialog alert">
+                            <!-- TMPL_IF NAME="EXISTING_CODE" -->
+                                There is already a desk with this desk code. Please choose another desk code.
+                            <!-- TMPL_ELSIF NAME="EMPTY_CODE" -->
+                                Desk code can not be empty.
+                            <!-- /TMPL_IF -->
+                        </div>
+                	<!-- /TMPL_IF -->
+					
+					<form method="post" action="/cgi-bin/koha/desk/desk.pl">
+						<input type="hidden" name="op" value="save" />
+						
+                        <fieldset class="rows">
+                        <ol>
+                        
+                        <li>
+						<label for="deskcode">Desk code: </label>
+						<!-- TMPL_IF NAME="deskcode" -->
+							<input id="deskcode" type="text" name="deskcode" value="<!-- TMPL_VAR name="deskcode" -->" readonly="readonly" disable="disable" />
+						<!-- TMPL_ELSE -->
+							<input id="deskcode" type="text" name="newdeskcode" />
+						<!-- /TMPL_IF -->
+						</li>
+						
+                        <li>
+						<label for="name">Name: </label>
+						<input type="text" id="name" name="deskname" value="<!-- TMPL_VAR NAME="deskname" -->" />
+						</li>
+						
+                        <li>
+						<label for="branchcode">Branch: </label>
+						<select name="branchcode" id="branchcode">
+							<!-- TMPL_LOOP NAME="branchloop" -->
+								<option value="<!-- TMPL_VAR NAME="branchcode" -->" <!-- TMPL_VAR NAME="selected" -->><!-- TMPL_VAR NAME="branchname" --></option>
+							<!-- /TMPL_LOOP -->
+						</select>
+						</li>
+						
+                        <li>
+						<label for="active">Active: </label>
+						<input type="checkbox" id="active" name="active" value="1" <!-- TMPL_IF NAME="active" -->checked="checked"<!-- /TMPL_IF --> />
+						</li>
+						
+                        </ol>
+                        </fieldset>
+                        
+                        <fieldset class="rows" id="itemtypes">
+                        
+                        <legend>Item types not managed</legend>
+                        <ol>
+						<!-- TMPL_LOOP NAME="itemtypeloop" -->
+							<li>
+								<input type="checkbox" id="<!-- TMPL_VAR NAME="itemtype" -->" name="<!-- TMPL_VAR NAME="itemtype" -->" value="<!-- TMPL_VAR NAME="itemtype" -->" <!-- TMPL_VAR NAME="checked" --> />
+								<label for="<!-- TMPL_VAR NAME="itemtype" -->"><!-- TMPL_VAR NAME="description" --></label>
+							</li>
+						<!-- /TMPL_LOOP -->
+						</ol>
+                        </fieldset>
+						
+                        <fieldset class="action">
+    						<input type="submit" class="submit" name="submit" value="OK"/>
+                        </fieldset>
+					</form>
+				<!-- /TMPL_IF -->
+			<!-- /TMPL_IF -->
+			</div>
+		</div>
+		<div class="yui-b">
+			<!-- TMPL_INCLUDE NAME="admin-menu.inc" -->
+		</div>
+	</div>
+</div>
+
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

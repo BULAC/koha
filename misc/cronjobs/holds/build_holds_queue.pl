@@ -64,11 +64,13 @@ foreach my $biblionumber (@$bibs_with_pending_requests) {
 
 exit 0;
 
-=head1 FUNCTIONS
-
 =head2 GetBibsWithPendingHoldRequests
 
-  my $biblionumber_aref = GetBibsWithPendingHoldRequests();
+=over 4
+
+my $biblionumber_aref = GetBibsWithPendingHoldRequests();
+
+=back
 
 Return an arrayref of the biblionumbers of all bibs
 that have one or more unfilled hold requests.
@@ -93,7 +95,11 @@ sub GetBibsWithPendingHoldRequests {
 
 =head2 GetPendingHoldRequestsForBib
 
-  my $requests = GetPendingHoldRequestsForBib($biblionumber);
+=over 4
+
+my $requests = GetPendingHoldRequestsForBib($biblionumber);
+
+=back
 
 Returns an arrayref of hashrefs to pending, unfilled hold requests
 on the bib identified by $biblionumber.  The following keys
@@ -136,7 +142,11 @@ sub GetPendingHoldRequestsForBib {
 
 =head2 GetItemsAvailableToFillHoldRequestsForBib
 
-  my $available_items = GetItemsAvailableToFillHoldRequestsForBib($biblionumber);
+=over 4
+
+my $available_items = GetItemsAvailableToFillHoldRequestsForBib($biblionumber);
+
+=back
 
 Returns an arrayref of items available to fill hold requests
 for the bib identified by C<$biblionumber>.  An item is available
@@ -165,7 +175,7 @@ sub GetItemsAvailableToFillHoldRequestsForBib {
         $items_query .=   "JOIN biblioitems USING (biblioitemnumber)
                            LEFT JOIN itemtypes USING (itemtype) ";
     }
-    $items_query .=   "WHERE items.notforloan = 0
+    $items_query .=   "WHERE (items.notforloan = 0 or items.notforloan = 99)
                        AND holdingbranch IS NOT NULL
                        AND itemlost = 0
                        AND wthdrawn = 0
@@ -195,7 +205,11 @@ sub GetItemsAvailableToFillHoldRequestsForBib {
 
 =head2 MapItemsToHoldRequests
 
-  MapItemsToHoldRequests($hold_requests, $available_items);
+=over 4
+
+MapItemsToHoldRequests($hold_requests, $available_items);
+
+=back
 
 =cut
 

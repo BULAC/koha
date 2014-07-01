@@ -30,6 +30,7 @@ use CGI;
 use C4::Members;
 use C4::Branch;
 use C4::Category;
+use C4::Utils::Constants;
 use File::Basename;
 
 my $input = new CGI;
@@ -49,21 +50,11 @@ my $theme = $input->param('theme') || "default";
 
 my $patron = $input->Vars;
 foreach (keys %$patron){
-	delete $$patron{$_} unless($$patron{$_});
+	delete $$patron{$_} unless($$patron{$_}); 
 }
+
 my @categories=C4::Category->all;
-
-my $branches = GetBranches;
-my @branchloop;
-
-foreach (sort { $branches->{$a}->{branchname} cmp $branches->{$b}->{branchname} } keys %$branches) {
-  my $selected = 1 if $branches->{$_}->{branchcode} eq $$patron{branchcode};
-  my %row = ( value => $_,
-        selected => $selected,
-        branchname => $branches->{$_}->{branchname},
-      );
-  push @branchloop, \%row;
-}
+my $branches=(defined $$patron{branchcode}?GetBranchesLoop($$patron{branchcode}):GetBranchesLoop());
 
 my %categories_dislay;
 
@@ -114,8 +105,15 @@ my $index=$from;
 foreach my $borrower(@$results[$from..$to-1]){
   #find out stats
   my ($od,$issue,$fines)=GetMemberIssuesAndFines($$borrower{'borrowernumber'});
-
-  $$borrower{'dateexpiry'}= C4::Dates->new($$borrower{'dateexpiry'},'iso')->output('syspref');
+  
+  # MAN 69
+  if ($$borrower{'categorycode'} eq $PRE_REG_CATEGORY ){  
+  	$$borrower{'dateexpiry'} = '';
+  }
+  else{
+	$$borrower{'dateexpiry'}= C4::Dates->new($$borrower{'dateexpiry'},'iso')->output('syspref');
+  }
+  # END MAN 69 
 
   my %row = (
     count => $index++,
@@ -129,6 +127,11 @@ foreach my $borrower(@$results[$from..$to-1]){
   push(@resultsdata, \%row);
 }
 
+if ($$patron{branchcode}){
+	foreach my $branch (grep{$_->{value} eq $$patron{branchcode}}@$branches){
+		$$branch{selected}=1;
+	}
+}
 if ($$patron{categorycode}){
 	foreach my $category (grep{$_->{categorycode} eq $$patron{categorycode}}@categories){
 		$$category{selected}=1;
@@ -147,9 +150,9 @@ my $base_url =
   );
 
 my @letters = map { {letter => $_} } ( 'A' .. 'Z');
+$template->param( letters => \@letters );
 
 $template->param(
-    letters => \@letters,
     paginationbar => pagination_bar(
         $base_url,
         int( $count / $resultsperpage ) + ($count % $resultsperpage ? 1 : 0),
@@ -159,10 +162,15 @@ $template->param(
     from      => ($startfrom-1)*$resultsperpage+1,  
     to        => $to,
     multipage => ($count != $to+1 || $startfrom!=1),
-    advsearch => ($$patron{categorycode} || $$patron{branchcode}),
-    branchloop=>\@branchloop,
+);
+$template->param(
+    branchloop=>$branches,
     categories=>\@categories,
-    searching       => "1",
+);
+
+
+$template->param( 
+        searching       => "1",
 		actionname		=>basename($0),
 		%$patron,
         numresults      => $count,

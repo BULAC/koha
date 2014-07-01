@@ -21,7 +21,7 @@
 
  FIXME: individual fields in branch address need to be exported to templates,
         in order to fix bug 180; need to notify translators
- FIXME: looped html (e.g., list of checkboxes) need to be properly
+FIXME: looped html (e.g., list of checkboxes) need to be properly
         TMPL_LOOP'ized; doing this properly will fix bug 130; need to
         notify translators
  FIXME: need to implement the branch categories stuff
@@ -34,7 +34,7 @@
 
  Finlay working on this file from 26-03-2002
  Reorganising this branches admin page.....
-
+ 
 =cut
 
 use strict;
@@ -346,8 +346,10 @@ sub branchinfotable {
             'branchcity', 'branchcountry',
             'branchphone', 'branchfax',
             'branchemail', 'branchurl',
-            'branchip',       'branchprinter', 'branchnotes'
-          )
+            'branchip',       'branchprinter', 'branchnotes',
+            'branchcallnumberauto', 'duplicationallowed'
+          ) #Progilone B10: Add branchcallnumberauto to manage callnumber
+            #Progilone B04: Add duplicationallowed to allow duplication
         {
             $row{$field} = $branch->{$field};
             $address_empty_p = 0 if ( $branch->{$field} );
@@ -408,8 +410,11 @@ sub _branch_to_template {
          branchemail    => $data->{'branchemail'},
          branchurl      => $data->{'branchurl'},
          branchip       => $data->{'branchip'},
-         branchnotes    => $data->{'branchnotes'}, 
-    );
+         branchnotes    => $data->{'branchnotes'},
+         branchcallnumberauto => $data->{'branchcallnumberauto'},
+         duplicationallowed => $data->{'duplicationallowed'},
+    ); #Progilone B10: Add branchcallnumberauto to manage callnumber
+       #Progilone B04: Add duplicationallowed to allow duplication 
 }
 
 output_html_with_http_headers $input, $cookie, $template->output;

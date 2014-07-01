@@ -466,7 +466,7 @@ our $PERL_DEPS = {
     },
     'Business::ISBN' => {
         'usage'    => 'Core',
-        'required' => '1',
+        'required' => '0',
         'min_ver'  => '2.05',
     },
 };

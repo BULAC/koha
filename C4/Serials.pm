@@ -462,14 +462,15 @@ sub GetSubscriptionsFromBiblionumber {
                branches.branchname,
                subscriptionhistory.*,
                aqbooksellers.name AS aqbooksellername,
-               biblio.title AS bibliotitle
+               biblio.title AS bibliotitle,
+               biblio.author AS biblioauthor
        FROM subscription
        LEFT JOIN subscriptionhistory ON subscription.subscriptionid=subscriptionhistory.subscriptionid
        LEFT JOIN aqbooksellers ON subscription.aqbooksellerid=aqbooksellers.id
        LEFT JOIN biblio ON biblio.biblionumber=subscription.biblionumber
        LEFT JOIN branches ON branches.branchcode=subscription.branchcode
        WHERE subscription.biblionumber = ?
-    );
+    ); # B03
     my $sth = $dbh->prepare($query);
     $sth->execute($biblionumber);
     my @res;
@@ -659,13 +660,8 @@ sub GetSerials {
 
     while ( my $line = $sth->fetchrow_hashref ) {
         $line->{ "status" . $line->{status} } = 1;                                         # fills a "statusX" value, used for template status select list
-        for my $datefield ( qw( planneddate publisheddate) ) {
-            if ($line->{$datefield} && $line->{$datefield}!~m/^00/) {
-                $line->{$datefield} = format_date( $line->{$datefield});
-            } else {
-                $line->{$datefield} = q{};
-            }
-        }
+        $line->{"publisheddate"}              = format_date( $line->{"publisheddate"} );
+        $line->{"planneddate"}                = format_date( $line->{"planneddate"} );
         push @serials, $line;
     }
 
@@ -681,14 +677,8 @@ sub GetSerials {
     while ( ( my $line = $sth->fetchrow_hashref ) && $counter < $count ) {
         $counter++;
         $line->{ "status" . $line->{status} } = 1;                                         # fills a "statusX" value, used for template status select list
-        for my $datefield ( qw( planneddate publisheddate) ) {
-            if ($line->{$datefield} && $line->{$datefield}!~m/^00/) {
-                $line->{$datefield} = format_date( $line->{$datefield});
-            } else {
-                $line->{$datefield} = q{};
-            }
-        }
-
+        $line->{"planneddate"}                = format_date( $line->{"planneddate"} );
+        $line->{"publisheddate"}              = format_date( $line->{"publisheddate"} );
         push @serials, $line;
     }
 
@@ -1619,7 +1609,9 @@ sub HasSubscriptionExpired {
         return 0 unless $res;
         my @res                   = split( /-/, $res );
         my @endofsubscriptiondate = split( /-/, $expirationdate );
-        return 2 if ( scalar(@res) != 3 || scalar(@endofsubscriptiondate) != 3 || not check_date(@res) || not check_date(@endofsubscriptiondate) );
+        # Progilone correction bug -> if enddate is undefined, this date is not invalid
+        return 2 if ( scalar(@res) != 3 || (@endofsubscriptiondate && scalar(@endofsubscriptiondate) != 3) || not check_date(@res) || not check_date(@endofsubscriptiondate) );
+        # End Progilone
         return 1
           if ( ( @endofsubscriptiondate && Delta_Days( $res[0], $res[1], $res[2], $endofsubscriptiondate[0], $endofsubscriptiondate[1], $endofsubscriptiondate[2] ) <= 0 )
             || ( !$res ) );

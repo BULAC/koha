@@ -25,6 +25,7 @@
 use strict;
 use warnings;
 use CGI;
+use C4::Items;
 use C4::Output;
 use C4::Reserves;
 use C4::Auth;
@@ -60,13 +61,17 @@ my $CancelItemnumber=$query->param('CancelItemnumber');
 if ($CancelBorrowerNumber) {
     ModReserveCancelAll($CancelItemnumber, $CancelBorrowerNumber);
     $biblionumber[0] = $CancelBiblioNumber,
+    
+    CheckItemAvailability( $CancelItemnumber, undef);
 }
 
 # 2) Cancel or modify the queue list of reserves (without item linked)
 else {
     for (my $i=0;$i<$count;$i++){
         undef $itemnumber[$i] unless $itemnumber[$i] ne '';
+        my $reserveinfo = GetReserveInfo( $borrower[$i], $biblionumber[$i] );
         ModReserve($rank[$i],$biblionumber[$i],$borrower[$i],$branch[$i],$itemnumber[$i]); #from C4::Reserves
+        CheckItemAvailability( $reserveinfo->{'itemnumber'}, undef);
     }
 }
 my $from=$query->param('from');

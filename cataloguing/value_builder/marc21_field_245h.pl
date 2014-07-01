@@ -22,11 +22,9 @@ use strict;
 #use warnings; FIXME - Bug 2505
 use C4::Context;
 
-=head1 FUNCTIONS
+=head1
 
-=head2 plugin_parameters
-
-other parameters added when the plugin is called by the dopop function
+plugin_parameters : other parameters added when the plugin is called by the dopop function
 
 =cut
 
@@ -34,17 +32,17 @@ sub plugin_parameters {
     return "";
 }
 
-=head2 plugin_javascript
+=head1
 
-Thee javascript function called when the user enters the subfield.
+plugin_javascript : the javascript function called when the user enters the subfield.
 contain 3 javascript functions :
- * one called when the field is entered (OnFocus). Named FocusXXX
- * one called when the field is leaved (onBlur). Named BlurXXX
- * one called when the ... link is clicked (<a href="javascript:function">) named ClicXXX
+* one called when the field is entered (OnFocus). Named FocusXXX
+* one called when the field is leaved (onBlur). Named BlurXXX
+* one called when the ... link is clicked (<a href="javascript:function">) named ClicXXX
 
 returns :
- * XXX
- * a variable containing the 3 scripts.
+* XXX
+* a variable containing the 3 scripts.
 the 3 scripts are inserted after the <input> in the html code
 
 =cut
@@ -81,9 +79,9 @@ function Clic$function_name(subfield_managed) {
 return ($function_name,$res);
 }
 
-=head2 plugin
+=head1
 
-The true value_builded. The screen that is open in the popup window.
+plugin : the true value_builded. The screen that is open in the popup window.
 
 =cut
 

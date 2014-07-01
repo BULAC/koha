@@ -45,7 +45,8 @@ BEGIN {
 		&ModBranchCategoryInfo
 		&DelBranch
 		&DelBranchCategory
-	        &CheckCategoryUnique
+	    &CheckCategoryUnique
+	    &mybranch
 	);
 	@EXPORT_OK = qw( &onlymine &mybranch get_branch_code_from_name );
 }
@@ -148,11 +149,16 @@ sub onlymine {
     C4::Context->userenv->{branch}                 ;
 }
 
+# PROGILONE - A1
 # always returns a string for OK comparison via "eq" or "ne"
 sub mybranch {
-    C4::Context->userenv           or return '';
-    return C4::Context->userenv->{branch} || '';
+    return '' unless C4::Context->userenv;
+    my $branch = C4::Context->userenv->{branch};
+    return '' unless $branch;
+    return '' if ( $branch eq 'NO_LIBRARY_SET' );
+    return $branch;
 }
+# END PROGILONE
 
 sub GetBranchesLoop (;$$) {  # since this is what most pages want anyway
     my $branch   = @_ ? shift : mybranch();     # optional first argument is branchcode of "my branch", if preselection is wanted.
@@ -204,9 +210,10 @@ sub ModBranch {
             (branchcode,branchname,branchaddress1,
             branchaddress2,branchaddress3,branchzip,branchcity,
             branchcountry,branchphone,branchfax,branchemail,
-            branchurl,branchip,branchprinter,branchnotes)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-        ";
+            branchurl,branchip,branchprinter,branchnotes,branchcallnumberauto,duplicationallowed)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        "; #Progilone B10: Add branchcallnumberauto to manage callnumber
+           #Progilone B04: Add duplicationallowed to allow duplication
         my $sth    = $dbh->prepare($query);
         $sth->execute(
             $data->{'branchcode'},       $data->{'branchname'},
@@ -217,7 +224,10 @@ sub ModBranch {
             $data->{'branchemail'},      $data->{'branchurl'},
             $data->{'branchip'},         $data->{'branchprinter'},
             $data->{'branchnotes'},
-        );
+            $data->{'branchcallnumberauto'},
+            $data->{'duplicationallowed'},
+        ); #Progilone B10: Add branchcallnumberauto to manage callnumber
+           #Progilone B04: Add duplicationallowed to allow duplication
         return 1 if $dbh->err;
     } else {
         my $query  = "
@@ -226,9 +236,11 @@ sub ModBranch {
                 branchaddress2=?,branchaddress3=?,branchzip=?,
                 branchcity=?,branchcountry=?,branchphone=?,
                 branchfax=?,branchemail=?,branchurl=?,branchip=?,
-                branchprinter=?,branchnotes=?
+                branchprinter=?,branchnotes=?,
+                branchcallnumberauto=?,duplicationallowed=?
             WHERE branchcode=?
-        ";
+        "; #Progilone B10: Add branchcallnumberauto to manage callnumber
+           #Progilone B04: Add duplicationallowed to allow duplication
         my $sth    = $dbh->prepare($query);
         $sth->execute(
             $data->{'branchname'},
@@ -238,9 +250,11 @@ sub ModBranch {
             $data->{'branchphone'},      $data->{'branchfax'},
             $data->{'branchemail'},      $data->{'branchurl'},
             $data->{'branchip'},         $data->{'branchprinter'},
-            $data->{'branchnotes'},
+            $data->{'branchnotes'},      $data->{'branchcallnumberauto'},
+            $data->{'duplicationallowed'},
             $data->{'branchcode'},
-        );
+        ); #Progilone B10: Add branchcallnumberauto to manage callnumber
+           #Progilone B04: Add duplicationallowed to allow duplication
     }
     # sort out the categories....
     my @checkedcats;

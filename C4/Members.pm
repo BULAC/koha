@@ -23,7 +23,7 @@ use strict;
 use C4::Context;
 use C4::Dates qw(format_date_in_iso);
 use Digest::MD5 qw(md5_base64);
-use Date::Calc qw/Today Add_Delta_YM/;
+use Date::Calc qw/Today Add_Delta_YM check_date Date_to_Days/; # PROGILONE - A2
 use C4::Log; # logaction
 use C4::Overdues;
 use C4::Reserves;
@@ -31,6 +31,10 @@ use C4::Accounts;
 use C4::Biblio;
 use C4::SQLHelper qw(InsertInTable UpdateInTable SearchInTable);
 use C4::Members::Attributes qw(SearchIdMatchingAttribute);
+use C4::Utils::String;
+use C4::Utils::Constants;
+use C4::Spaces::SCA;
+use C4::Stack::Search;
 
 our ($VERSION,@ISA,@EXPORT,@EXPORT_OK,$debug);
 
@@ -59,7 +63,8 @@ BEGIN {
                 &GetFirstValidEmailAddress
 
 		&GetAge 
-		&GetCities 
+		&GetCities
+		&GetCitiesZip
 		&GetRoadTypes 
 		&GetRoadTypeDetails 
 		&GetSortDetails
@@ -78,8 +83,10 @@ BEGIN {
     &GetBorrowercategoryList
 
 		&GetBorrowersWhoHaveNotBorrowedSince
+		&GetBorrowersWhoHaveNeitherBorrowedOrStackrequestedSince
 		&GetBorrowersWhoHaveNeverBorrowed
 		&GetBorrowersWithIssuesHistoryOlderThan
+		&GetBorrowersWithIssuesAndStackRequestsHistoryOlderThan
 
 		&GetExpiryDate
 
@@ -118,6 +125,8 @@ BEGIN {
         &ethnicitycategories
         &fixup_cardnumber
         &checkcardnumber
+        &CheckBorrowerDebarred2
+        &LiftBorrowerDebarred2
     );
 }
 
@@ -344,7 +353,7 @@ sub GetMemberDetails {
         return undef;
     }
     my $borrower = $sth->fetchrow_hashref;
-    my ($amount) = GetMemberAccountRecords( $borrowernumber);
+    my ($amount) = GetMemberAccountRecords( $borrower->{'borrowernumber'} ); # B03 : bug
     $borrower->{'amountoutstanding'} = $amount;
     # FIXME - patronflags calls GetMemberAccountRecords... just have patronflags return $amount
     my $flags = patronflags( $borrower);
@@ -468,14 +477,38 @@ sub patronflags {
         $flaginfo{'noissues'} = 1;
         $flags{'LOST'}        = \%flaginfo;
     }
-    if (   $patroninformation->{'debarred'}
-        && $patroninformation->{'debarred'} == 1 )
+    # PROGILONE - A2
+    if ( $patroninformation->{'debarred'} && check_date( split( /-/, $patroninformation->{'debarred'} ) ) ) {
+        if ( Date_to_Days(Date::Calc::Today) < Date_to_Days( split( /-/, $patroninformation->{'debarred'} ) ) ) {
+            my %flaginfo;
+            $flaginfo{'message'}  = 'Borrower is Debarred.';
+            $flaginfo{'noissues'} = 1;
+            $flaginfo{'dateend'}  = $patroninformation->{'debarred'} if $patroninformation->{'debarred'} ne "9999-12-31";
+            $flags{'DBARRED'}     = \%flaginfo;
+        }
+    }
+    # B015
+    my ($is_debarred2, $nb_overdue) = CheckBorrowerDebarred2( $patroninformation->{'borrowernumber'});
+    if ( $is_debarred2 && check_date( split( /-/, $is_debarred2 ) ) ) {
+        if ( Date_to_Days(Date::Calc::Today) < Date_to_Days( split( /-/, $is_debarred2 ) ) ) {
+            my %flaginfo;
+            $flaginfo{'message'}    = 'Borrower is Debarred.';
+            $flaginfo{'noissues'}   = 1;
+            $flaginfo{'dateend'}    = $is_debarred2 if $is_debarred2 ne "9999-12-31";
+            $flaginfo{'nb_overdue'} = $nb_overdue;
+            $flags{'DBARRED2'}      = \%flaginfo;
+        }
+    }
+    
+     if (   $patroninformation->{'docs'}
+        && $patroninformation->{'docs'} == 1 )
     {
         my %flaginfo;
-        $flaginfo{'message'}  = 'Borrower is Debarred.';
+        $flaginfo{'message'}  = 'Borrower has to provide docs.';
         $flaginfo{'noissues'} = 1;
-        $flags{'DBARRED'}     = \%flaginfo;
+        $flags{'DOCS'}     = \%flaginfo;
     }
+    # END B015
     if (   $patroninformation->{'borrowernotes'}
         && $patroninformation->{'borrowernotes'} )
     {
@@ -570,10 +603,14 @@ sub GetMember {
     return;
 }
 
-
+# PROGILONE - A2
 =head2 IsMemberBlocked
 
-  my ($block_status, $count) = IsMemberBlocked( $borrowernumber );
+=over 4
+
+my ($block_status, $count) = IsMemberBlocked( $borrowernumber );
+
+=back
 
 Returns whether a patron has overdue items that may result
 in a block or whether the patron has active fine days
@@ -600,39 +637,12 @@ sub IsMemberBlocked {
     my $borrowernumber = shift;
     my $dbh            = C4::Context->dbh;
 
-    # does patron have current fine days?
-	my $strsth=qq{
-            SELECT
-            ADDDATE(returndate, finedays * DATEDIFF(returndate,date_due) ) AS blockingdate,
-            DATEDIFF(ADDDATE(returndate, finedays * DATEDIFF(returndate,date_due)),NOW()) AS blockedcount
-            FROM old_issues
-	};
-    if(C4::Context->preference("item-level_itypes")){
-        $strsth.=
-		qq{ LEFT JOIN items ON (items.itemnumber=old_issues.itemnumber)
-            LEFT JOIN issuingrules ON (issuingrules.itemtype=items.itype)}
-    }else{
-        $strsth .= 
-		qq{ LEFT JOIN items ON (items.itemnumber=old_issues.itemnumber)
-            LEFT JOIN biblioitems ON (biblioitems.biblioitemnumber=items.biblioitemnumber)
-            LEFT JOIN issuingrules ON (issuingrules.itemtype=biblioitems.itemtype) };
-    }
-	$strsth.=
-        qq{ WHERE finedays IS NOT NULL
-            AND  date_due < returndate
-            AND borrowernumber = ?
-            ORDER BY blockingdate DESC, blockedcount DESC
-            LIMIT 1};
-	my $sth=$dbh->prepare($strsth);
-    $sth->execute($borrowernumber);
-    my $row = $sth->fetchrow_hashref;
-    my $blockeddate  = $row->{'blockeddate'};
-    my $blockedcount = $row->{'blockedcount'};
+    my $blockeddate = CheckBorrowerDebarred($borrowernumber);
 
-    return (1, $blockedcount) if $blockedcount > 0;
+    return ( 1, $blockeddate ) if $blockeddate;
 
     # if he have late issues
-    $sth = $dbh->prepare(
+    my $sth = $dbh->prepare(
         "SELECT COUNT(*) as latedocs
          FROM issues
          WHERE borrowernumber = ?
@@ -641,10 +651,11 @@ sub IsMemberBlocked {
     $sth->execute($borrowernumber);
     my $latedocs = $sth->fetchrow_hashref->{'latedocs'};
 
-    return (-1, $latedocs) if $latedocs > 0;
+    return ( -1, $latedocs ) if $latedocs > 0;
 
-    return (0, 0);
+    return ( 0, 0 );
 }
+# END PROGILONE
 
 =head2 GetMemberIssuesAndFines
 
@@ -724,6 +735,22 @@ sub ModMember {
     logaction("MEMBERS", "MODIFY", $data{'borrowernumber'}, "UPDATE (executed w/ arg: $data{'borrowernumber'})") 
         if C4::Context->preference("BorrowersLog");
 
+    # B01 : add enrolmentFee
+
+    	# Test if category change
+    	if ( $data{'categorycode'} ne $data{'old_category'} ) {
+	        # check for enrollment fee & add it if needed
+	        my $dbh = C4::Context->dbh;
+	        my $sth = $dbh->prepare("SELECT enrolmentfee FROM categories WHERE categorycode=?");
+	        $sth->execute($data{'categorycode'});
+	        my ($enrolmentfee) = $sth->fetchrow;
+	        if ($enrolmentfee && $enrolmentfee > 0) {
+	            # insert fee in patron debts
+	            manualinvoice($data{'borrowernumber'}, '', '', 'A', $enrolmentfee);
+	        }
+		}
+    # END
+        
     return $execute_success;
 }
 
@@ -783,7 +810,8 @@ sub Generate_Userid {
   do {
     $firstname =~ s/[[:digit:][:space:][:blank:][:punct:][:cntrl:]]//g;
     $surname =~ s/[[:digit:][:space:][:blank:][:punct:][:cntrl:]]//g;
-    $newuid = lc("$firstname.$surname");
+    $newuid = "$firstname.$surname";
+    $newuid = lc( NormalizeStr( $newuid ) );
     $newuid .= $offset unless $offset == 0;
     $offset++;
 
@@ -1206,7 +1234,54 @@ sub checkcardnumber {
     else {
         return 0;
     }
-}  
+}
+
+sub CheckBorrowerDebarred2 {
+	my ($borrowernumber) = @_;
+	
+	my $stacks = GetStacksOfBorrower($borrowernumber);
+    my $debarred_value = undef;
+    my $nb_overdue     = 0;
+    my $today          = C4::Dates->new();
+    
+    foreach my $stack (@$stacks) {
+        if ($stack->{'end_date'} and $stack->{'end_date'} lt $today->output('iso') and $stack->{'istate'} eq $ISTATE_ON_STACK) {
+            $debarred_value = '9999-12-31';
+            $nb_overdue++;
+        }
+    }
+    
+    if (defined $debarred_value) {
+	    my $dbh = C4::Context->dbh;
+	    my $query = "UPDATE borrowers SET debarred2 = ? WHERE borrowernumber = ?";
+	    my $sth = $dbh->prepare($query);
+	    $sth->execute($debarred_value, $borrowernumber);
+    }
+    
+    return ($debarred_value, $nb_overdue);
+}
+
+sub LiftBorrowerDebarred2 {
+    my ($borrowernumber) = @_;
+    
+    my $stacks = GetStacksOfBorrower($borrowernumber);
+    my $debarred_value = undef;
+    my $today       = C4::Dates->new();
+    
+    foreach my $stack (@$stacks) {
+        if ($stack->{'end_date'} and $stack->{'end_date'} lt $today->output('iso') and $stack->{'istate'} eq $ISTATE_ON_STACK) {
+            $debarred_value = '9999-12-31';
+            last;
+        }
+    }
+    
+    unless (defined $debarred_value) {
+        my $dbh = C4::Context->dbh;
+        my $query = "UPDATE borrowers SET debarred2 = ? WHERE borrowernumber = ?";
+        my $sth = $dbh->prepare($query);
+        $sth->execute($debarred_value, $borrowernumber);
+    }
+}
 
 
 =head2 getzipnamecity (OUEST-PROVENCE)
@@ -1557,6 +1632,27 @@ sub GetCities {
     return  $city_arr;
 }
 
+
+
+# B014
+sub GetCitiesZip {
+
+    my $zip=shift;
+    return unless $zip;
+    my $dbh       = C4::Context->dbh;
+	my $size = length($zip);
+	#my $deb = substr $zip,0,2;
+    my $sth       = $dbh->prepare("Select city_name, city_zipcode from cities where substring(city_zipcode,1,$size) = ? ORDER BY city_zipcode");
+    $sth->execute($zip);
+    my %cities;
+    while ( my $data = $sth->fetchrow_hashref() ) {
+       $cities {$data->{'city_zipcode'}} = $data;
+    }
+	return (\%cities);
+}
+# END B014
+
+
 =head2 GetSortDetails (OUEST-PROVENCE)
 
   ($lib) = &GetSortDetails($category,$sortvalue);
@@ -1671,6 +1767,19 @@ EOF
         # insert fee in patron debts
         manualinvoice($borrower->{'borrowernumber'}, '', '', 'A', $enrolmentfee);
     }
+    
+    #SCA : modify user if necessary
+    if ( C4::Context->preference('UseSCA') ) {
+        my ($status, $message, $enrolled_by) = ModScaUser( $borrowerid, $borrower->{'cardnumber'}, $borrower->{'categorycode'}, $borrower->{'sca_enrolled_by'} );
+        if ($status) {
+            ModMember(
+                borrowernumber => $borrowerid, 
+                sca_enrolled_by => $enrolled_by
+            );
+        }
+    }
+    #End SCA
+    
     return $date if ($sth);
     return 0;
 }
@@ -1881,6 +1990,74 @@ sub GetBorrowersWhoHaveNotBorrowedSince {
     return \@results;
 }
 
+=head2 GetBorrowersWhoHaveNeitherBorrowedOrStackrequestedSince
+
+  &GetBorrowersWhoHaveNeitherBorrowedOrStackrequestedSince($date)
+
+this function get all borrowers who have neither borrowed or stack requested since the date given on input arg.
+
+=cut
+
+sub GetBorrowersWhoHaveNeitherBorrowedOrStackrequestedSince {
+    my $filterdate = shift||POSIX::strftime("%Y-%m-%d",localtime());
+    my $filterexpiry = shift;
+    my $filterbranch = shift || 
+                        ((C4::Context->preference('IndependantBranches') 
+                             && C4::Context->userenv 
+                             && C4::Context->userenv->{flags} % 2 !=1 
+                             && C4::Context->userenv->{branch})
+                         ? C4::Context->userenv->{branch}
+                         : "");  
+    my $dbh   = C4::Context->dbh;
+    my $query = "
+        SELECT borrowers.borrowernumber,
+               max(old_issues.timestamp) as latestissue,
+               max(issues.timestamp) as currentissue,
+               max(old_stack_requests.end_date) as lateststack,
+               max(stack_requests.begin_date) as currentstack
+        FROM   borrowers
+        JOIN   categories USING (categorycode)
+        LEFT JOIN old_issues USING (borrowernumber)
+        LEFT JOIN issues USING (borrowernumber) 
+        LEFT JOIN old_stack_requests USING (borrowernumber)
+        LEFT JOIN stack_requests USING (borrowernumber)
+        WHERE  category_type <> 'S'
+        AND borrowernumber NOT IN (SELECT guarantorid FROM borrowers WHERE guarantorid IS NOT NULL AND guarantorid <> 0) 
+   ";
+    my @query_params;
+    if ($filterbranch && $filterbranch ne ""){ 
+        $query.=" AND borrowers.branchcode= ?";
+        push @query_params,$filterbranch;
+    }
+    if($filterexpiry){
+        $query .= " AND dateexpiry < ? ";
+        push @query_params,$filterdate;
+    }
+    $query.=" GROUP BY borrowers.borrowernumber";
+    if ($filterdate){ 
+        $query.=" HAVING (latestissue < ? OR latestissue IS NULL) 
+                         AND (lateststack < ? OR lateststack IS NULL)
+                         AND currentissue IS NULL
+                         AND currentstack IS NULL";
+        push @query_params,$filterdate;
+        push @query_params,$filterdate;
+    }
+    warn $query if $debug;
+    my $sth = $dbh->prepare($query);
+    if (scalar(@query_params)>0){  
+        $sth->execute(@query_params);
+    } 
+    else {
+        $sth->execute;
+    }      
+    
+    my @results;
+    while ( my $data = $sth->fetchrow_hashref ) {
+        push @results, $data;
+    }
+    return \@results;
+}
+
 =head2 GetBorrowersWhoHaveNeverBorrowed
 
   $results = &GetBorrowersWhoHaveNeverBorrowed
@@ -1973,6 +2150,67 @@ sub GetBorrowersWithIssuesHistoryOlderThan {
     return \@results;
 }
 
+=head2 GetBorrowersWithIssuesAndStackRequestsHistoryOlderThan
+
+  $results = &GetBorrowersWithIssuesAndStackRequestsHistoryOlderThan($date)
+
+this function get all borrowers who has an issue or stack request history older than I<$date> given on input arg.
+
+I<$result> is a ref to an array which all elements are a hashref.
+This hashref is containt the number of time this borrowers has borrowed before I<$date> and the borrowernumber.
+
+=cut
+
+sub GetBorrowersWithIssuesAndStackRequestsHistoryOlderThan {
+    my $dbh  = C4::Context->dbh;
+    my $date = shift ||POSIX::strftime("%Y-%m-%d",localtime());
+    my $filterbranch = shift || 
+                        ((C4::Context->preference('IndependantBranches') 
+                             && C4::Context->userenv 
+                             && C4::Context->userenv->{flags} % 2 !=1 
+                             && C4::Context->userenv->{branch})
+                         ? C4::Context->userenv->{branch}
+                         : "");  
+    my $query = "SELECT count(borrowernumber) as n,borrowernumber FROM ( ";
+    my @query_params;
+    
+    #Issues
+    $query .= " SELECT borrowernumber 
+                FROM old_issues 
+                WHERE returndate < ? AND borrowernumber IS NOT NULL ";
+    push @query_params, $date;
+    if ($filterbranch){
+        $query .= " AND branchcode = ? ";
+        push @query_params, $filterbranch;
+    }
+    
+    $query .= " UNION ALL "; 
+    
+    #Stack requests
+    $query .= " SELECT borrowernumber 
+                FROM old_stack_requests 
+                LEFT JOIN borrowers USING (borrowernumber) 
+                WHERE end_date < ? AND borrowernumber IS NOT NULL ";
+    push @query_params, $date;
+    if ($filterbranch){
+        $query .= " AND branchcode = ? ";
+        push @query_params, $filterbranch;
+    }
+    
+    $query.=") AS tmp_borrower_history GROUP BY borrowernumber ";
+    
+    warn $query if $debug;
+    my $sth = $dbh->prepare($query);
+    $sth->execute(@query_params);
+    my @results;
+
+    while ( my $data = $sth->fetchrow_hashref ) {
+        push @results, $data;
+    }
+    return \@results;
+}
+
+
 =head2 GetBorrowersNamesAndLatestIssue
 
   $results = &GetBorrowersNamesAndLatestIssueList(@borrowernumbers)
@@ -1999,9 +2237,12 @@ sub GetBorrowersNamesAndLatestIssue {
     return $results;
 }
 
+# PROGILONE - A2
 =head2 DebarMember
 
-  my $success = DebarMember( $borrowernumber );
+=over 4
+
+my $success = DebarMember( $borrowernumber, $todate );
 
 marks a Member as debarred, and therefore unable to checkout any more
 items.
@@ -2009,18 +2250,24 @@ items.
 return :
 true on success, false on failure
 
+=back
+
 =cut
 
 sub DebarMember {
     my $borrowernumber = shift;
+    my $todate         = shift;
 
     return unless defined $borrowernumber;
     return unless $borrowernumber =~ /^\d+$/;
 
-    return ModMember( borrowernumber => $borrowernumber,
-                      debarred       => 1 );
-    
+    return ModMember(
+        borrowernumber => $borrowernumber,
+        debarred       => $todate
+    );
+
 }
+# END PROGILONE
 
 =head2 AddMessage
 
@@ -2073,7 +2320,7 @@ sub GetMessages {
     my $query = "SELECT
                   branches.branchname,
                   messages.*,
-                  message_date,
+                  DATE_FORMAT( message_date, '%m/%d/%Y' ) AS message_date_formatted,
                   messages.branchcode LIKE '$branchcode' AS can_delete
                   FROM messages, branches
                   WHERE borrowernumber = ?
@@ -2085,8 +2332,6 @@ sub GetMessages {
     my @results;
 
     while ( my $data = $sth->fetchrow_hashref ) {
-        my $d = C4::Dates->new( $data->{message_date}, 'iso' );
-        $data->{message_date_formatted} = $d->output;
         push @results, $data;
     }
     return \@results;

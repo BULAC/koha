@@ -56,7 +56,11 @@ This module provides facilities for retrieving Syndetics.com content in Koha
 
 =head2 get_syndetics_summary
 
-  my $syndetics_summary= &get_syndetics_summary( $isbn );
+=over 4
+
+my $syndetics_summary= &get_syndetics_summary( $isbn );
+
+=back
 
 Get Summary data from Syndetics
 
@@ -270,8 +274,6 @@ sub _fetch_syndetics_content {
 __END__
 
 =head1 NOTES
-
-=cut
 
 =head1 AUTHOR
 

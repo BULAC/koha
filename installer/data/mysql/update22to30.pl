@@ -4,7 +4,7 @@
 # Database Updater
 # This script checks for required updates to the database.
 
-# Part of the Koha Library Software www.koha-community.org
+# Part of the Koha Library Software www.koha.org
 # Licensed under the GPL.
 
 # Bugs/ToDo:
@@ -3538,12 +3538,12 @@ my $DBversion = "3.00.00.000";
     print "upgrade to Koha 3.0 done\n";
     SetVersion ($DBversion);
 
-=head1 GetDefaultClause
+
+=item GetDefaultClause
 
 Generate a default clause (for an ALTER TABLE command)
 
 =cut
-
 sub GetDefaultClause {
     my $default = shift;
 
@@ -3554,11 +3554,11 @@ sub GetDefaultClause {
     return "default " . $dbh->quote($default);
 }
 
-=head1 TransformToNum
+=item TransformToNum
 
-Transform the Koha version from a 4 parts string
-to a number, with just 1.
-
+  Transform the Koha version from a 4 parts string
+  to a number, with just 1 .
+  
 =cut
 
 sub TransformToNum {
@@ -3568,10 +3568,8 @@ sub TransformToNum {
     return $version;
 }
 
-=head1 SetVersion
-
-set the DBversion in the systempreferences
-
+=item SetVersion
+    set the DBversion in the systempreferences
 =cut
 
 sub SetVersion {

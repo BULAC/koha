@@ -1,6 +1,10 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
 <title>Koha &rsaquo; Catalog &rsaquo; Checkout History for <!-- TMPL_VAR NAME="title" ESCAPE="html" --></title>
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<!-- PROGILONE - june 2010 - C1 -->
+    <!-- TMPL_INCLUDE NAME="pgl-results-navigation-js.inc" -->
+    <!-- TMPL_INCLUDE NAME="pgl-back-results-js.inc" -->
+<!-- End PROGILONE -->
 </head>
 <body>
 
@@ -33,8 +37,8 @@
             </tr></thead>
             <tbody>
         <!-- TMPL_LOOP NAME="issues" -->
-        <!-- TMPL_UNLESS NAME="__odd__" --><tr class="highlight"><!-- TMPL_ELSE
---><tr><!-- /TMPL_UNLESS -->
+        <!-- TMPL_UNLESS NAME="__odd__" --><tr class="highlight"><!-- TMPL_ELSE -->
+        <tr><!-- /TMPL_UNLESS -->
                 <td><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="surname" --><!-- TMPL_IF NAME="firstname" -->, <!-- TMPL_VAR NAME="firstname" --><!-- /TMPL_IF --></a></td>
                 <td><!-- TMPL_IF NAME="barcode" -->
                         <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR NAME="barcode" --></a>
@@ -51,11 +55,6 @@
                             <!-- /TMPL_IF -->
                     <!-- TMPL_ELSE -->
                         No
-                    <!-- /TMPL_IF --></td>
-                <td><!-- TMPL_IF NAME="issuedate" -->
-                        <!-- TMPL_VAR NAME="issuedate" -->
-                    <!-- TMPL_ELSE -->
-                        &nbsp;
                     <!-- /TMPL_IF --></td>
                 <td><!-- TMPL_IF NAME="issuedate" -->
                         <!-- TMPL_VAR NAME="issuedate" -->
@@ -82,6 +81,68 @@
 
     <!-- /TMPL_IF -->
 </div>
+<h1>Delivery history</h1>
+
+<div class="searchresults">
+    <!-- TMPL_IF NAME="stackrq_loop" -->
+        <h4>Delivered <!-- TMPL_VAR NAME="stackrq_total" --> times</h4>
+        <table>
+            <thead><tr>
+            <th>Patron</th>
+            <th>Call No.</th>
+            <th>Barcode</th>
+            <th>State</th>
+            <th>Delivery desk</th>
+            <th>Return desk</th>
+            <th>Begin date</th>
+            <th>End date</th>
+            <th>Renewed</th>
+            </tr></thead>
+            <tbody>
+        <!-- TMPL_LOOP NAME="stackrq_loop" -->
+        <!-- TMPL_UNLESS NAME="__odd__" --><tr class="highlight"><!-- TMPL_ELSE -->
+            <tr><!-- /TMPL_UNLESS -->
+                <td><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="surname" --><!-- TMPL_IF NAME="firstname" -->, <!-- TMPL_VAR NAME="firstname" --><!-- /TMPL_IF --></a></td>
+                <td>                 
+                    <!-- TMPL_IF NAME="itemcallnumber" -->
+                        <!-- TMPL_VAR NAME="itemcallnumber" ESCAPE="HTML" -->
+                    <!-- TMPL_ELSE -->
+                        <!-- TMPL_VAR NAME="nc_callnumber" ESCAPE="HTML" -->
+                    <!-- /TMPL_IF -->
+                </td>
+                <td><!-- TMPL_IF NAME="barcode" -->
+                        <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->"><!-- TMPL_VAR NAME="barcode" --></a>
+                    <!-- TMPL_ELSE -->
+                        &nbsp;
+                    <!-- /TMPL_IF -->
+                </td>
+                <td><!-- TMPL_INCLUDE NAME="stack/stack-state.inc" -->
+                    <!-- TMPL_IF NAME="cancel_code" -->
+                        <!-- TMPL_LOOP NAME="cancel_code_loop" -->
+                            <!-- TMPL_IF NAME="selected" --><br><small><!-- TMPL_VAR NAME="lib" --></small><!-- /TMPL_IF -->
+                        <!-- /TMPL_LOOP -->
+                    <!-- /TMPL_IF -->                        
+                </td>                    
+                <td><!-- TMPL_VAR NAME="deliverydesk" --></td>
+                <td><!-- TMPL_VAR NAME="returndesk" --></td>                    
+                <td><!-- TMPL_VAR NAME="begin_date_ui" --></td>
+                <td><!-- TMPL_VAR NAME="end_date_ui" --></td>
+                <td><!-- TMPL_IF NAME="renewals"-->
+                        Yes<!-- TMPL_IF NAME="renew_date_ui" -->, <small>last on: <!-- TMPL_VAR NAME="renew_date_ui" --></small>
+                           <!-- /TMPL_IF -->
+                    <!-- TMPL_ELSE -->
+                        No
+                    <!-- /TMPL_IF --></td>
+             </tr>
+        <!-- /TMPL_LOOP -->
+        </tbody>
+        </table>
+    <!-- TMPL_ELSE -->
+        <div class="dialog message"><p>
+        <b><!-- TMPL_VAR NAME="title" escape="html" --><!-- TMPL_IF NAME="author" -->, by <!-- TMPL_VAR NAME="author" --><!-- /TMPL_IF --></b> has no delivery history.</p></div>
+
+    <!-- /TMPL_IF -->
+</div>
 
 </div>
 </div>
@@ -89,4 +150,8 @@
 <!-- TMPL_INCLUDE NAME="biblio-view-menu.inc" -->
 </div>
 </div>
+<!-- PROGILONE - june 2010 - C1 -->
+<!-- TMPL_INCLUDE NAME="pgl-results-navigation-html.inc" -->
+<!-- TMPL_INCLUDE NAME="pgl-back-results-html.inc" -->
+<!-- End PROGILONE -->
 <!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

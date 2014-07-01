@@ -1,6 +1,12 @@
 <link rel="stylesheet" type="text/css" href="<!-- TMPL_VAR name="themelang" -->/lib/calendar/calendar-system.css"/>
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/calendar/calendar.js"></script>
-<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/calendar/calendar-en.js"></script>
+<!-- B01 -->
+    <!-- TMPL_IF EXPR="lang eq 'fr-FR' or lang eq 'fr'" -->
+        <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/calendar/calendar-fr.js"></script>
+    <!-- TMPL_ELSE -->
+        <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/calendar/calendar-en.js"></script>
+    <!-- /TMPL_IF -->
+<!-- END B01 -->
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/calendar/calendar-setup.js"></script>
 <script type="text/javascript">
 //<![CDATA[

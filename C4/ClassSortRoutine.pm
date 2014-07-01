@@ -24,6 +24,8 @@ require Exporter;
 use Class::Factory::Util;
 use C4::Context;
 use C4::Koha;
+use C4::Utils::Constants;
+use C4::Callnumber::FreeAccessCallnumber;
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
@@ -91,13 +93,17 @@ normalization routine.
 
 =cut
 
-sub GetClassSortKey {
-    my ($sort_routine, $cn_class, $cn_item) = @_;
+sub GetClassSortKey($$$;$) {
+	my $sort_routine = shift;
+    my $cn_class = shift;
+    my $cn_item = shift;
+    my $cn_itemnumber = shift || undef;
+    
     unless (exists $loaded_routines{$sort_routine}) {
         warn "attempting to use non-existent class sorting routine $sort_routine\n";
         $loaded_routines{$sort_routine} = \&_get_class_sort_key;
     }
-    my $key = $loaded_routines{$sort_routine}->($cn_class, $cn_item);
+    my $key = $loaded_routines{$sort_routine}->($cn_class, $cn_item, $cn_itemnumber);
     # FIXME -- hardcoded length for cn_sort
     # should replace with some way of getting column widths from
     # the DB schema -- since doing this should ideally be
@@ -114,11 +120,69 @@ letter characters.
 
 =cut
 
-sub _get_class_sort_key {
-    my ($cn_class, $cn_item) = @_;
-    my $key = uc "$cn_class $cn_item";
-    $key =~ s/\s+/_/;
-    $key =~ s/[^A-Z_0-9]//g;
+#sub _get_class_sort_key {
+#    my ($cn_class, $cn_item) = @_;
+#    my $key = uc "$cn_class $cn_item";
+#    $key =~ s/\s+/_/;
+#    $key =~ s/[^A-Z_0-9]//g;
+#    return $key;
+#}
+
+sub _get_class_sort_key($$;$) {
+	my $cn_class = shift;
+    my $cn_itemcallnumber = shift;
+    my $cn_itemnumber = shift || undef;
+    
+    my $key;
+    
+    if ( defined $cn_itemcallnumber ) {
+	    if ( C4::Callnumber::Utils::IsItemInStore( $cn_itemnumber ) ) {
+	    	if ( C4::Callnumber::StoreCallnumber::IsRetroCallnumber( $cn_itemcallnumber ) ) {
+	    		my ( $base, $sequence, $rest ) =  C4::Callnumber::StoreCallnumber::GetBaseAndSequenceFromStoreCallnumber( $cn_itemcallnumber, 0 );
+	    		$base = substr sprintf("%-*s", 16, $base), 0, 16;
+	    		$sequence = sprintf("%0*d", 7, $sequence);
+	    		$rest = substr sprintf("%-*s", 7, $rest), 0, 7;
+	    		$key = $base . $sequence . $rest;
+	    	} else {
+	    		#Remove intercalate space between elements as the maximum size is 30
+	    		my ( $branch, $mention, $type, $format, $number ) = C4::Callnumber::StoreCallnumber::StoreCallnumberCut( $cn_itemcallnumber );
+	    		
+	    		$branch  = sprintf( "%-*s", $BRANCH_LEN - 1,  $branch );
+			    $mention = sprintf( "%-*s", $MENTION_LEN - 1, $mention );
+			    $type    = sprintf( "%-*s", $TYPE_LEN - 1,    $type );
+			    $format  = sprintf( "%-*s", $FORMAT_LEN - 1,  $format );
+			    $number  = sprintf( "%0*s", $NUMBER_LEN,      $number );
+			    
+			    $key = $branch . $mention . $type . $format . $number;
+	    	}
+	    } else {
+	    	if ( IsFreeInputCallnumber( $cn_itemcallnumber) ) {
+	    		$key = $cn_itemcallnumber;
+	    	} else {
+	    		my ( $geo_index, $classification, $complement, $volume ) = FreeAccessCallnumberCut( $cn_itemcallnumber );
+	    		
+	    		if ( IsSerialCallnumber( $cn_itemcallnumber ) ) {
+	    			my ( $base_complement, $number ) = CutSerialComplement( $complement );
+	    			$base_complement  = sprintf( "%-*s", $SERIAL_COMPLEMENT_LEN,  $base_complement );
+	                $number  = sprintf( "%0*s", $SERIAL_NUMBER_LEN - 1, $number );
+	                $complement = $base_complement . $number;
+	    		} else {
+	    			$complement = sprintf( "%-*s", $COMPLEMENT_LEN - 1, $complement );
+	    		}
+	    		
+	    		$geo_index      = sprintf( "%-*s", $GEO_INDEX_LEN - 1,      $geo_index );
+	    		$classification = sprintf( "%-*s", $CLASSIFICATION_LEN - 1, $classification );
+	    		$volume         = sprintf( "%0*s", $VOLUME_LEN,             $volume );
+	    		
+	    		$key = $geo_index . $classification . $complement . $volume;
+	    	}
+	    }
+    } else {
+    	$key = uc "$cn_class $cn_itemcallnumber";
+        $key =~ s/\s+/_/;
+        $key =~ s/[^A-Z_0-9]//g;
+    }
+    
     return $key;
 }
 

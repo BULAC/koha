@@ -16,6 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 # Current maintainer MJR http://mjr.towers.org.uk/
+# See http://www.koha.org/wiki/?page=KohaInstaller
 #
 
 use strict;
@@ -312,7 +313,6 @@ my $target_map = {
                                            # that should go in /var/tmp/koha
   './tools'                     => 'INTRANET_CGI_DIR',
   './virtualshelves'            => 'INTRANET_CGI_DIR',
-  './xml_sax.pl'                => 'PERL_MODULE_DIR',
   # ignore files and directories created by the install itself
   './pm_to_blib'                => 'NONE',
   './blib'                      => 'NONE',
@@ -539,8 +539,7 @@ my %test_suite_override_dirs = (
 
 WriteMakefile(
               NAME         => 'koha',
-              #VERSION     => strftime('2.9.%Y%m%d%H',gmtime),
-              VERSION_FROM => 'kohaversion.pl',
+              VERSION      => '3.02.00',
               ABSTRACT     => 'Award-winning integrated library system (ILS) and Web OPAC',
               AUTHOR       => 'Koha Contributors <http://koha-community.org/>',
               NO_META      => 1,
@@ -1579,5 +1578,4 @@ MJ Ray mjr at phonecoop.coop
 Galen Charlton galen.charlton at liblime.com
 
 =cut
-
 FIXME: deal with .htaccess

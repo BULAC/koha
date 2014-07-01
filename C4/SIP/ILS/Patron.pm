@@ -48,7 +48,7 @@ sub new {
 	$debug and warn "new Patron (GetMemberDetails): " . Dumper($kp);
 	my $pw        = $kp->{password};  ### FIXME - md5hash -- deal with . 
 	my $flags     = $kp->{flags};     # or warn "Warning: No flags from patron object for '$patron_id'"; 
-	my $debarred  = $kp->{debarred};  # 1 if ($kp->{flags}->{DBARRED}->{noissues});
+	my $debarred  = $kp->{debarred}||$kp->{debarred2};  # 1 if ($kp->{flags}->{DBARRED}->{noissues}); B015
 	$debug and warn sprintf("Debarred = %s : ", ($debarred||'undef')) . Dumper(%{$kp->{flags}});
     my ($day, $month, $year) = (localtime)[3,4,5];
     my $today    = sprintf '%04d-%02d-%02d', $year+1900, $month+1, $day;
@@ -92,6 +92,7 @@ sub new {
         recall_ok       => ( !$debarred && !$expired ),
         hold_ok         => ( !$debarred && !$expired ),
         card_lost       => ( $kp->{lost} || $kp->{gonenoaddress} || $flags->{LOST} ),
+        docs             => ( $kp->{docs} ||  $flags->{DOCS} ), # B015
         claims_returned => 0,
         fines           => $fines_amount, # GetMemberAccountRecords($kp->{borrowernumber})
         fees            => 0,             # currently not distinct from fines
@@ -110,7 +111,7 @@ sub new {
     );
     }
     $debug and warn "patron fines: $ilspatron{fines} ... amountoutstanding: $kp->{amountoutstanding} ... CHARGES->amount: $flags->{CHARGES}->{amount}";
-	for (qw(EXPIRED CHARGES CREDITS GNA LOST DEBARRED NOTES)) {
+	for (qw(EXPIRED CHARGES CREDITS GNA LOST DEBARRED DEBARRED2 DOCS NOTES)) { # B015
 		($flags->{$_}) or next;
         if ($_ ne 'NOTES' and $flags->{$_}->{message}) {
             $ilspatron{screen_msg} .= " -- " . $flags->{$_}->{message};  # show all but internal NOTES
@@ -153,6 +154,7 @@ my %fields = (
     recall_ok               => 0,   # for patron_status[2] (inverted)
     hold_ok                 => 0,   # for patron_status[3] (inverted)
     card_lost               => 0,   # for patron_status[4]
+    docs                    => 0,   # for patron_status[4] B015
     recall_overdue          => 0,
     currency                => 1,
 #   fee_limit               => 0,
@@ -354,9 +356,9 @@ sub charge_denied {
 1;
 __END__
 
-=head1 EXAMPLES
+=head2 EXAMPLES
 
-  our %patron_example = (
+our %patron_example = (
 		  djfiander => {
 		      name => "David J. Fiander",
 		      id => 'djfiander',
@@ -388,96 +390,96 @@ __END__
 		  },
   );
 
- From borrowers table:
- +---------------------+--------------+------+-----+
- | Field               | Type         | Null | Key |
- +---------------------+--------------+------+-----+
- | borrowernumber      | int(11)      | NO   | PRI |
- | cardnumber          | varchar(16)  | YES  | UNI |
- | surname             | mediumtext   | NO   |     |
- | firstname           | text         | YES  |     |
- | title               | mediumtext   | YES  |     |
- | othernames          | mediumtext   | YES  |     |
- | initials            | text         | YES  |     |
- | streetnumber        | varchar(10)  | YES  |     |
- | streettype          | varchar(50)  | YES  |     |
- | address             | mediumtext   | NO   |     |
- | address2            | text         | YES  |     |
- | city                | mediumtext   | NO   |     |
- | zipcode             | varchar(25)  | YES  |     |
- | country             | text         | YES  |     |
- | email               | mediumtext   | YES  |     |
- | phone               | text         | YES  |     |
- | mobile              | varchar(50)  | YES  |     |
- | fax                 | mediumtext   | YES  |     |
- | emailpro            | text         | YES  |     |
- | phonepro            | text         | YES  |     |
- | B_streetnumber      | varchar(10)  | YES  |     |
- | B_streettype        | varchar(50)  | YES  |     |
- | B_address           | varchar(100) | YES  |     |
- | B_address2          | text         | YES  |     |
- | B_city              | mediumtext   | YES  |     |
- | B_zipcode           | varchar(25)  | YES  |     |
- | B_country           | text         | YES  |     |
- | B_email             | text         | YES  |     |
- | B_phone             | mediumtext   | YES  |     |
- | dateofbirth         | date         | YES  |     |
- | branchcode          | varchar(10)  | NO   | MUL |
- | categorycode        | varchar(10)  | NO   | MUL |
- | dateenrolled        | date         | YES  |     |
- | dateexpiry          | date         | YES  |     |
- | gonenoaddress       | tinyint(1)   | YES  |     |
- | lost                | tinyint(1)   | YES  |     |
- | debarred            | tinyint(1)   | YES  |     |
- | contactname         | mediumtext   | YES  |     |
- | contactfirstname    | text         | YES  |     |
- | contacttitle        | text         | YES  |     |
- | guarantorid         | int(11)      | YES  |     |
- | borrowernotes       | mediumtext   | YES  |     |
- | relationship        | varchar(100) | YES  |     |
- | ethnicity           | varchar(50)  | YES  |     |
- | ethnotes            | varchar(255) | YES  |     |
- | sex                 | varchar(1)   | YES  |     |
- | password            | varchar(30)  | YES  |     |
- | flags               | int(11)      | YES  |     |
- | userid              | varchar(30)  | YES  | MUL |
- | opacnote            | mediumtext   | YES  |     |
- | contactnote         | varchar(255) | YES  |     |
- | sort1               | varchar(80)  | YES  |     |
- | sort2               | varchar(80)  | YES  |     |
- | altcontactfirstname | varchar(255) | YES  |     |
- | altcontactsurname   | varchar(255) | YES  |     |
- | altcontactaddress1  | varchar(255) | YES  |     |
- | altcontactaddress2  | varchar(255) | YES  |     |
- | altcontactaddress3  | varchar(255) | YES  |     |
- | altcontactzipcode   | varchar(50)  | YES  |     |
- | altcontactcountry   | text         | YES  |     |
- | altcontactphone     | varchar(50)  | YES  |     |
- | smsalertnumber      | varchar(50)  | YES  |     |
- +---------------------+--------------+------+-----+
+From borrowers table:
++---------------------+--------------+------+-----+
+| Field               | Type         | Null | Key |
++---------------------+--------------+------+-----+
+| borrowernumber      | int(11)      | NO   | PRI |
+| cardnumber          | varchar(16)  | YES  | UNI |
+| surname             | mediumtext   | NO   |     |
+| firstname           | text         | YES  |     |
+| title               | mediumtext   | YES  |     |
+| othernames          | mediumtext   | YES  |     |
+| initials            | text         | YES  |     |
+| streetnumber        | varchar(10)  | YES  |     |
+| streettype          | varchar(50)  | YES  |     |
+| address             | mediumtext   | NO   |     |
+| address2            | text         | YES  |     |
+| city                | mediumtext   | NO   |     |
+| zipcode             | varchar(25)  | YES  |     |
+| country             | text         | YES  |     |
+| email               | mediumtext   | YES  |     |
+| phone               | text         | YES  |     |
+| mobile              | varchar(50)  | YES  |     |
+| fax                 | mediumtext   | YES  |     |
+| emailpro            | text         | YES  |     |
+| phonepro            | text         | YES  |     |
+| B_streetnumber      | varchar(10)  | YES  |     |
+| B_streettype        | varchar(50)  | YES  |     |
+| B_address           | varchar(100) | YES  |     |
+| B_address2          | text         | YES  |     |
+| B_city              | mediumtext   | YES  |     |
+| B_zipcode           | varchar(25)  | YES  |     |
+| B_country           | text         | YES  |     |
+| B_email             | text         | YES  |     |
+| B_phone             | mediumtext   | YES  |     |
+| dateofbirth         | date         | YES  |     |
+| branchcode          | varchar(10)  | NO   | MUL |
+| categorycode        | varchar(10)  | NO   | MUL |
+| dateenrolled        | date         | YES  |     |
+| dateexpiry          | date         | YES  |     |
+| gonenoaddress       | tinyint(1)   | YES  |     |
+| lost                | tinyint(1)   | YES  |     |
+| debarred            | tinyint(1)   | YES  |     |
+| contactname         | mediumtext   | YES  |     |
+| contactfirstname    | text         | YES  |     |
+| contacttitle        | text         | YES  |     |
+| guarantorid         | int(11)      | YES  |     |
+| borrowernotes       | mediumtext   | YES  |     |
+| relationship        | varchar(100) | YES  |     |
+| ethnicity           | varchar(50)  | YES  |     |
+| ethnotes            | varchar(255) | YES  |     |
+| sex                 | varchar(1)   | YES  |     |
+| password            | varchar(30)  | YES  |     |
+| flags               | int(11)      | YES  |     |
+| userid              | varchar(30)  | YES  | MUL |
+| opacnote            | mediumtext   | YES  |     |
+| contactnote         | varchar(255) | YES  |     |
+| sort1               | varchar(80)  | YES  |     |
+| sort2               | varchar(80)  | YES  |     |
+| altcontactfirstname | varchar(255) | YES  |     |
+| altcontactsurname   | varchar(255) | YES  |     |
+| altcontactaddress1  | varchar(255) | YES  |     |
+| altcontactaddress2  | varchar(255) | YES  |     |
+| altcontactaddress3  | varchar(255) | YES  |     |
+| altcontactzipcode   | varchar(50)  | YES  |     |
+| altcontactcountry   | text         | YES  |     |
+| altcontactphone     | varchar(50)  | YES  |     |
+| smsalertnumber      | varchar(50)  | YES  |     |
++---------------------+--------------+------+-----+
 
- From C4::Members
+From C4::Members
 
- $flags->{KEY}
- {CHARGES}
+$flags->{KEY}
+{CHARGES}
 	{message}     Message showing patron's credit or debt
 	{noissues}    Set if patron owes >$5.00
- {GNA}         	Set if patron gone w/o address
+{GNA}         	Set if patron gone w/o address
 	{message}     "Borrower has no valid address"
 	{noissues}    Set.
- {LOST}        	Set if patron's card reported lost
+{LOST}        	Set if patron's card reported lost
 	{message}     Message to this effect
 	{noissues}    Set.
- {DBARRED}     	Set if patron is debarred
+{DBARRED}     	Set if patron is debarred
 	{message}     Message to this effect
 	{noissues}    Set.
- {NOTES}       	Set if patron has notes
+{NOTES}       	Set if patron has notes
 	{message}     Notes about patron
- {ODUES}       	Set if patron has overdue books
+{ODUES}       	Set if patron has overdue books
 	{message}     "Yes"
 	{itemlist}    ref-to-array: list of overdue books
 	{itemlisttext}    Text list of overdue items
- {WAITING}     	Set if there are items available that the patron reserved
+{WAITING}     	Set if there are items available that the patron reserved
 	{message}     Message to this effect
 	{itemlist}    ref-to-array: list of available items
 

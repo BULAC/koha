@@ -106,14 +106,14 @@ RECORD: while ( my $record = $batch->next() ) {
     print ".";
     print "\r$i" unless $i % 100;
 
-    if ($record->encoding() eq 'MARC-8') {
-        my ($guessed_charset, $charset_errors);
-        ($record, $guessed_charset, $charset_errors) = MarcToUTF8Record($record, $marcFlavour);
-        if ($guessed_charset eq 'failed') {
-            warn "ERROR: failed to perform character conversion for record $i\n";
-            next RECORD;            
-        }
-    }
+#    if ($record->encoding() eq 'MARC-8') {
+#        my ($guessed_charset, $charset_errors);
+#        ($record, $guessed_charset, $charset_errors) = MarcToUTF8Record($record, $marcFlavour);
+#        if ($guessed_charset eq 'failed') {
+#            warn "ERROR: failed to perform character conversion for record $i\n";
+#            next RECORD;            
+#        }
+#    }
 
     warn "$i ==>".$record->as_formatted() if $verbose eq 2;
     my $authtypecode;
@@ -122,22 +122,26 @@ RECORD: while ( my $record = $batch->next() ) {
         $authtypecode="CORPO_NAME" if ($record->field('110'));
         $authtypecode="MEETI_NAME" if ($record->field('111'));
         $authtypecode="UNIF_TITLE" if ($record->field('130'));
-        $authtypecode="CHRON_TERM" if ($record->field('148') or $record->field('182'));
-        $authtypecode="TOPIC_TERM" if ($record->field('150') or $record->field('180'));
-        $authtypecode="GEOGR_NAME" if ($record->field('151') or $record->field('181'));
-        $authtypecode="GENRE/FORM" if ($record->field('155') or $record->field('185'));
+        $authtypecode="CHRON_TERM" if ($record->field('148'));
+        $authtypecode="TOPIC_TERM" if ($record->field('150'));
+        $authtypecode="GEOGR_NAME" if ($record->field('151'));
+        $authtypecode="GENRE/FORM" if ($record->field('155'));
         next unless $authtypecode; # skip invalid records FIXME: far too simplistic
     }
     else {
         $authtypecode=substr($record->leader(),9,1);
-        $authtypecode="NP" if ($authtypecode eq 'a'); # personnes
-        $authtypecode="CO" if ($authtypecode eq 'b'); # collectivit�
-        $authtypecode="NG" if ($authtypecode eq 'c'); # g�graphique
-        $authtypecode="NM" if ($authtypecode eq 'd'); # marque
-        $authtypecode="NF" if ($authtypecode eq 'e'); # famille
-        $authtypecode="TI" if ($authtypecode eq 'f'); # Titre uniforme
-        $authtypecode="TI" if ($authtypecode eq 'h'); # auteur/titre
-        $authtypecode="MM" if ($authtypecode eq 'j'); # mot mati�e
+        $authtypecode="TP" if ($authtypecode eq 'a'); # personnes
+        $authtypecode="TB" if ($authtypecode eq 'b'); # collectivite
+        $authtypecode="TG" if ($authtypecode eq 'c'); # geographique
+        $authtypecode="TM" if ($authtypecode eq 'd'); # marque
+        $authtypecode="TA" if ($authtypecode eq 'e'); # famille
+        $authtypecode="TU" if ($authtypecode eq 'f'); # Titre uniforme
+        $authtypecode="TR" if ($authtypecode eq 'g'); # auteur/rubrique classement
+        $authtypecode="TQ" if ($authtypecode eq 'h'); # auteur/titre 
+        $authtypecode="TR" if ($authtypecode eq 'i'); # auteur/rubrique classement
+        $authtypecode="TD" if ($authtypecode eq 'j'); # mot matiere
+        $authtypecode="TE" if ($authtypecode eq 'k'); # lieu edition
+        $authtypecode="TF" if ($authtypecode eq 'l'); # forme/genre
     }
 
     unless ($test_parameter) {

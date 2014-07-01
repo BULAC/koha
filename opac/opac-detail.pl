@@ -22,7 +22,7 @@ use strict;
 use warnings;
 
 use CGI;
-use C4::Auth;
+use C4::Auth qw(:DEFAULT get_session); # PROGILONE - may 2010 - F10
 use C4::Branch;
 use C4::Koha;
 use C4::Serials;    #uses getsubscriptionfrom biblionumber
@@ -30,15 +30,20 @@ use C4::Output;
 use C4::Biblio;
 use C4::Items;
 use C4::Circulation;
+use C4::Reserves; # B017
 use C4::Tags qw(get_tags);
 use C4::Dates qw/format_date/;
 use C4::XISBN qw(get_xisbns get_biblionumber_from_isbn);
 use C4::External::Amazon;
 use C4::External::Syndetics qw(get_syndetics_index get_syndetics_summary get_syndetics_toc get_syndetics_excerpt get_syndetics_reviews get_syndetics_anotes );
 use C4::Review;
+use C4::Serials;
 use C4::Members;
 use C4::VirtualShelves;
 use C4::XSLT;
+use Switch;
+use C4::Stack::Rules qw/CanRequestStackOnItem CanRequestStackOnBiblio/; # B031
+use C4::Utils::IState; # B031
 
 BEGIN {
 	if (C4::Context->preference('BakerTaylorEnabled')) {
@@ -62,6 +67,8 @@ my $biblionumber = $query->param('biblionumber') || $query->param('bib');
 
 $template->param( 'AllowOnShelfHolds' => C4::Context->preference('AllowOnShelfHolds') );
 $template->param( 'ItemsIssued' => CountItemsIssued( $biblionumber ) );
+# PROGILONE - may 2010 - F21
+$template->param( 'OPACBranchTooltipDisplay' => C4::Context->preference('OPACBranchTooltipDisplay') );
 
 my $record       = GetMarcBiblio($biblionumber);
 if ( ! $record ) {
@@ -114,7 +121,18 @@ foreach my $subscription (@subscriptions) {
     $cell{histstartdate}     = format_date($subscription->{histstartdate});
     $cell{histenddate}       = format_date($subscription->{histenddate});
     $cell{branchcode}        = $subscription->{branchcode};
-    $cell{branchname}        = GetBranchName($subscription->{branchcode});
+    # PROGILONE - may 2010 - F21
+    my $branch_infos = GetBranchDetail($subscription->{branchcode}); 
+    $cell{branchname}      = $branch_infos->{branchname};            
+    $cell{branchaddress1}  = $branch_infos->{branchaddress1};
+    $cell{branchaddress2}  = $branch_infos->{branchaddress2};
+    $cell{branchaddress3}  = $branch_infos->{branchaddress3};
+    $cell{branchzip}       = $branch_infos->{branchzip};
+    $cell{branchcity}      = $branch_infos->{branchcity};
+    $cell{branchcountry}   = $branch_infos->{branchcountry};
+    $cell{branchphone}     = $branch_infos->{branchphone};
+    $cell{branchnotes}     = $branch_infos->{branchnotes};
+    # End PROGILONE
     $cell{hasalert}          = $subscription->{hasalert};
     #get the three latest serials.
     $serials_to_display = $subscription->{opacdisplaycount};
@@ -191,13 +209,60 @@ for my $itm (@items) {
         $itm->{transfertfrom} = $branches->{$transfertfrom}{branchname};
         $itm->{transfertto}   = $branches->{$transfertto}{branchname};
      }
+          
+     # B041
+     # is duplication allowed ?
+     my $duplication_allowed = 1;
+     
+     # control on branch
+     my $branchdetail = GetBranchDetail($itm->{'holdingbranch'});
+
+     # control on publication date     
+     my $duplicationPublicationYear = C4::Context->preference('DuplicationPublicationYear');
+     my $record          = GetMarcBiblio($itm->{'biblionumber'});
+     my $publicationyear = substr($record->subfield(100,'a'),9,4);
+     
+     my @datearr = localtime(time);
+     my $yearSystem = ( 1900 + $datearr[5] );
+     
+     # control on magasin location
+     my $magasinlocation = 1;
+     if ($record->subfield(995,'K') ne $record->subfield(995,'k')) {
+        $magasinlocation = 0;
+     }
+     
+     if ((not $branchdetail->{'duplicationallowed'}) ||
+         ($itm->{'wthdrawn'}) ||
+         (not $magasinlocation) ||
+         (($publicationyear =~ m/^\d+$/) && (($yearSystem - $publicationyear) <= $duplicationPublicationYear))) {
+        $duplication_allowed = 0;
+     }
+     
+     $itm->{'itemDuplicationAllowed'} = $duplication_allowed;
+     # END B041
+     
+     $itm->{'allowstackreq'} = 1 if CanRequestStackOnItem($itm->{'itemnumber'}); # B031
+     
+     # B017 see opac-reserve.pl
+     # MAN211
+     if (C4::Context->preference('OPACItemHolds') && IsAvailableForItemLevelRequest($itm->{'itemnumber'})) {
+         $itm->{'allowhold'} = 1;
+     }
+     # END B017
+     
+     # B011
+     AddIStateInfos($itm);
+     # If borrower in istate is me
+     if ($borrowernumber && $borrowernumber eq $itm->{'istate_borrowernumber'}) {
+         $itm->{'istate_isme'} = 1;
+     }
+     # END B011
 }
 
 ## get notes and subjects from MARC record
 my $dbh              = C4::Context->dbh;
 my $marcflavour      = C4::Context->preference("marcflavour");
 my $marcnotesarray   = GetMarcNotes   ($record,$marcflavour);
-my $marcisbnsarray   = GetMarcISBN   ($record,$marcflavour);
 my $marcauthorsarray = GetMarcAuthors ($record,$marcflavour);
 my $marcsubjctsarray = GetMarcSubjects($record,$marcflavour);
 my $marcseriesarray  = GetMarcSeries  ($record,$marcflavour);
@@ -210,7 +275,6 @@ my $subtitle         = GetRecordValue('subtitle', $record, GetFrameworkCode($bib
                      MARCAUTHORS             => $marcauthorsarray,
                      MARCSERIES              => $marcseriesarray,
                      MARCURLS                => $marcurlsarray,
-                     MARCISBNS               => $marcisbnsarray,
                      norequests              => $norequests,
                      RequestOnOpac           => C4::Context->preference("RequestOnOpac"),
                      itemdata_ccode          => $itemfields{ccode},
@@ -596,18 +660,58 @@ if (my $search_for_title = C4::Context->preference('OPACSearchForTitleIn')){
 
 # We try to select the best default tab to show, according to what
 # the user wants, and what's available for display
-my $opac_serial_default = C4::Context->preference('opacSerialDefaultTab');
-my $defaulttab = 
-    $opac_serial_default eq 'subscriptions' && $subscriptionsnumber
-        ? 'subscriptions' :
-    $opac_serial_default eq 'serialcollection' && @serialcollections > 0
-        ? 'serialcollection' :
-    $opac_serial_default eq 'holdings' && $dat->{'count'} > 0
-        ? 'holdings' :
-    $subscriptionsnumber
-        ? 'subscriptions' :
-    @serialcollections > 0 
-        ? 'serialcollection' : 'subscription';
+my $defaulttab = '';
+switch (C4::Context->preference('opacSerialDefaultTab')) {
+
+    # If the user wants subscriptions by default
+    case "subscriptions" { 
+	# And there are subscriptions, we display them
+	if ($subscriptionsnumber) {
+	    $defaulttab = 'subscriptions';
+	} else {
+	   # Else, we try next option
+	   next; 
+	}
+    }
+
+    case "serialcollection" {
+	if (scalar(@serialcollections) > 0) {
+	    $defaulttab = 'serialcollection' ;
+	} else {
+	    next;
+	}
+    }
+
+    case "holdings" {
+	if ($dat->{'count'} > 0) {
+	   $defaulttab = 'holdings'; 
+	} else {
+	     # As this is the last option, we try other options if there are no items
+	     if ($subscriptionsnumber) {
+		$defaulttab = 'subscriptions';
+	     } elsif (scalar(@serialcollections) > 0) {
+		$defaulttab = 'serialcollection' ;
+	     }
+	}
+
+    }
+
+}
 $template->param('defaulttab' => $defaulttab);
+
+# PROGILONE - may 2010 - F10
+my $session = get_session($query->cookie("CGISESSID"));
+if ($session) {
+    # read session variables
+    foreach (qw(currentsearchquery currentsearchurl currentsearchisadvanced currentsearchisoneresult)) {        
+        $template->param( $_ => $session->param( $_ ) );
+    }
+}
+# End PROGILONE
+
+# B032
+# Stack request link for serial
+$template->param( stackrequestonbiblio => 1 ) if CanRequestStackOnBiblio($biblionumber);
+# END B032
 
 output_html_with_http_headers $query, $cookie, $template->output;

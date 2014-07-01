@@ -1,12 +1,15 @@
 <!-- TMPL_INCLUDE NAME="doc-head-open.inc" --><!-- TMPL_IF NAME="LibraryNameTitle" --><!-- TMPL_VAR NAME="LibraryNameTitle" --><!-- TMPL_ELSE -->Koha Online<!-- /TMPL_IF --> Catalog &rsaquo; Details for: <!-- TMPL_VAR NAME="title" escape="html" --><!-- TMPL_LOOP NAME="subtitle" -->, <!-- TMPL_VAR NAME="subfield" --><!-- /TMPL_LOOP -->
 <!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
 <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
+<!-- PROGILONE - april 2010 - F12 --><!-- TMPL_INCLUDE NAME="pgl-results-navigation-js.inc" -->
+<!-- PROGILONE - april 2010 - F21 --><!-- TMPL_INCLUDE NAME="pgl-branch-details-js.inc" -->
 <script type="text/JavaScript" language="JavaScript">
 //<![CDATA[
+
      $(document).ready(function() { 
-        $('#bibliodescriptions > ul').tabs();
-<!-- TMPL_IF NAME="opacuserlogin" --><!-- TMPL_IF NAME="loggedinusername" --><!-- TMPL_IF NAME="TagsEnabled" -->$("#tagform").hide();
+        $("#tagform").hide();
         $("#addtagl").show();
+        $('#bibliodescriptions > ul').tabs();
         $("#addtagl a").click(function(){
             $("#addtagl").hide();
             $("#tagform, #tagform a").show();
@@ -16,16 +19,25 @@
             $("#addtagl").show();
             $("#tagform").hide();
             return false;
-        });<!-- /TMPL_IF --><!-- /TMPL_IF --><!-- /TMPL_IF -->
+        });
         $("#holdingst").tablesorter({<!-- TMPL_IF EXPR="dateformat eq 'metric'" -->
     dateFormat: 'uk',<!-- /TMPL_IF -->
             widgets : ['zebra'],
-            sortList: [[0,0]]
+            sortList: [[3,0]]
         });<!-- TMPL_IF NAME="GoogleJackets" -->
         KOHA.Google.GetCoverFromIsbn();<!-- /TMPL_IF --><!-- TMPL_IF NAME="TagsEnabled" -->
         $(".tagbutton").click(KOHA.Tags.add_tag_button);<!-- /TMPL_IF -->
 		<!-- TMPL_IF NAME="opacbookbag" -->$("a.print").parent().after("<li><a class=\"addtocart\" href=\"#\" onclick=\"addRecord('"+$("input[name=bib]").val()+"'); return false;\">"+_("Add to Your Cart")+"<\/a><\/li>");
-<!-- /TMPL_IF -->});
+        <!-- /TMPL_IF -->
+
+        // PROGILONE - april 2010 - F21
+        <!-- TMPL_IF NAME="OPACBranchTooltipDisplay" -->
+        // branch details tooltip
+        $(".branchref").mouseenter(function(){ showBranchDetails(this) });
+        $(".branchref").mouseleave(function(){ hideBranchDetails(this) });
+        <!-- /TMPL_IF -->
+        // End PROGILONE
+});
 
 YAHOO.util.Event.onContentReady("furtherm", function () {
     $("#furtherm").css("display","block").css("visibility","hidden");
@@ -44,9 +56,9 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
 	
 //]]>
 </script>
-<!-- TMPL_IF NAME="opacuserlogin" --><!-- TMPL_IF NAME="loggedinusername" --><!-- TMPL_IF NAME="TagsEnabled" --><style type="text/css">
+<style type="text/css">
     #addtagl { display: none; }
-</style><!-- /TMPL_IF --><!-- /TMPL_IF --><!-- /TMPL_IF -->
+</style>
 <!-- TMPL_IF NAME="OPACXSLTDetailsDisplay" --><script type="text/javascript">
     var GB_ROOT_DIR = "/opac-tmpl/prog/en/lib/greybox/";                               
 </script>
@@ -140,12 +152,8 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
     
     <!-- TMPL_IF NAME="pages" --><span class="results_summary"><span class="label">Physical details:</span> <!-- TMPL_VAR NAME="pages" --> <!-- TMPL_VAR NAME="illus" --> <!-- TMPL_VAR NAME="size" --></span><!-- /TMPL_IF -->
 
-    <!-- TMPL_IF NAME="MARCISBNS" -->
-        <span class="results_summary"><span class="label">ISBN:</span><!-- TMPL_LOOP NAME="MARCISBNS" --><!-- TMPL_VAR NAME="marcisbn" --><!-- TMPL_IF NAME="__LAST__" -->.<!-- TMPL_ELSE -->; <!-- /TMPL_IF --><!-- /TMPL_LOOP --></span>
-    <!-- TMPL_ELSE -->
-        <!-- TMPL_IF name="normalized_isbn" -->
-            <span class="results_summary"><span class="label">ISBN: </span><!-- TMPL_VAR NAME="normalized_isbn" --></span>
-        <!-- /TMPL_IF -->
+    <!-- TMPL_IF name="normalized_isbn" -->
+        <span class="results_summary"><span class="label">ISBN: </span><!-- TMPL_VAR NAME="normalized_isbn" --></span>
     <!-- /TMPL_IF -->
     <!-- TMPL_IF name="issn" -->
     <span class="results_summary"><span class="label">ISSN:</span><!-- TMPL_VAR NAME="issn" --></span>
@@ -179,10 +187,10 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
     <!-- /TMPL_IF -->
 
     <!-- TMPL_IF name="copyrightdate" -->
-    <span class="results_summary"><span class="label">Year: </span><!-- TMPL_VAR NAME="copyrightdate" --></span>
+    <span class="results_summary"><span class="label">Year : </span><!-- TMPL_VAR NAME="copyrightdate" --></span>
     <!-- /TMPL_IF -->
     <!-- TMPL_UNLESS NAME="item-level_itypes" --><img src="<!-- TMPL_VAR NAME="imageurl" -->" alt="<!-- TMPL_VAR NAME="description" -->" title="<!-- TMPL_VAR NAME="description" -->" />
-    <span class="results_summary"><span class="label">Item type: </span>
+    <span class="results_summary"><span class="label">Item type : </span>
         <!-- TMPL_IF name="description" -->
         <!-- TMPL_VAR NAME="description" -->
         <!-- TMPL_ELSE -->
@@ -232,29 +240,23 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
 <!-- TMPL_IF NAME="GetShelves" -->
 	<span class="results_summary"><span class="label">List(s) this item appears in: </span>
 	<!-- TMPL_LOOP NAME="GetShelves" -->
-		<a href="/cgi-bin/koha/opac-shelves.pl?viewshelf=<!-- TMPL_VAR NAME="shelfnumber" -->"><!-- TMPL_VAR NAME="shelfname" --></a>
+		<a href="/cgi-bin/koha/opac-shelves.pl?viewshelf=<!-- TMPL_VAR NAME="shelfnumber" -->&sortfield=title"><!-- TMPL_VAR NAME="shelfname" --></a> 
 		<!-- TMPL_IF NAME="__LAST__" --><!-- TMPL_ELSE -->|<!-- /TMPL_IF -->
 	<!-- /TMPL_LOOP -->
 	</span>
 <!-- /TMPL_IF -->
 
-<!-- TMPL_IF NAME="TagsEnabled" -->
     <!-- TMPL_IF NAME="TagsShowOnDetail" -->
         <div class="results_summary">
         <!-- TMPL_IF NAME="TagLoop" -->
         <span class="label">Tags from this library:</span>
-            <ul id="tagslist"><!-- TMPL_LOOP NAME="TagLoop" -->
-            <li><a href="/cgi-bin/koha/opac-search.pl?tag=<!-- TMPL_VAR NAME="term" ESCAPE="URL" -->&amp;q=<!-- TMPL_VAR NAME="term" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="term" ESCAPE="HTML" --></a> <span class="weight">(<!-- TMPL_VAR NAME="weight_total" -->)</span><!-- TMPL_IF NAME="__LAST__" --><!-- TMPL_ELSE -->, <!-- /TMPL_IF --></li>
+            <ul><!-- TMPL_LOOP NAME="TagLoop" -->
+            <li><a href="/cgi-bin/koha/opac-search.pl?tag=<!-- TMPL_VAR NAME="term" ESCAPE="URL" -->&amp;q=<!-- TMPL_VAR NAME="term" ESCAPE="URL" -->"><!-- TMPL_VAR NAME="term" ESCAPE="HTML" --></a> <span class="weight">(<!-- TMPL_VAR NAME="weight_total" -->)</span></li>
             <!-- /TMPL_LOOP -->
             </ul><!-- TMPL_ELSE --><span class="label">Tags from this library:</span><div>No tags from this library for this title.</div> 
-    <!-- /TMPL_IF -->
-        </div>
-<!-- /TMPL_IF -->
-<!-- TMPL_IF NAME="opacuserlogin" -->
-  <!-- TMPL_IF NAME="loggedinusername" -->
-   <!-- TMPL_IF NAME="TagsEnabled" -->
-      <!-- TMPL_IF NAME="TagsInputOnDetail" -->
-      <div class="results_summary">
+        <!-- /TMPL_IF -->
+        <!-- TMPL_IF NAME="TagsInputOnDetail" -->
+            <!-- TMPL_IF NAME="loggedinusername" -->
         <span class="label" id="addtagl"><a href="#">Add</a></span>
          <form name="tagform<!-- TMPL_VAR NAME="biblionumber" -->" method="post" action="/cgi-bin/koha/opac-tags.pl" id="tagform">
                 <label for="newtag<!-- TMPL_VAR NAME="biblionumber" -->">New:</label><input name="newtag<!-- TMPL_VAR NAME="biblionumber" -->" id="newtag<!-- TMPL_VAR NAME="biblionumber" -->" maxlength="100" />
@@ -271,8 +273,6 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
         <!-- /TMPL_IF -->
         </div>
     <!-- /TMPL_IF -->
-   <!-- /TMPL_IF -->
-<!-- /TMPL_IF -->
 
         <!-- TMPL_IF NAME="SyndeticsEnabled" --><!-- TMPL_IF NAME="SyndeticsSeries" --><!-- TMPL_IF NAME="SyndeticsSERIES1Exists" -->
         <span class="results_summary">
@@ -391,7 +391,7 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
 <div id="holdings">
 <!-- TMPL_IF name="count" -->
     <!-- TMPL_IF name="lotsofitems" -->
-	<p>This record has many physical items. <a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;viewallitems=1#holdings">Click here to view them all.</a></p>
+	<p>This record has many physical items. <a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;viewallitems=1">Click here to view them all.</a></p>
     <!-- TMPL_ELSE -->
 	<table id="holdingst">
 	    <thead><tr>
@@ -405,19 +405,59 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
 		<th>Status</th>
 		<!-- TMPL_IF NAME="itemdata_itemnotes" --><th>Notes</th><!-- /TMPL_IF -->
 		<th>Date Due</th>
+        <th>Actions</th>
 	    </tr></thead>
 	    <tbody><!-- TMPL_LOOP NAME="ITEM_RESULTS" -->
-	    <tr><!-- TMPL_IF NAME="item-level_itypes" --><td><!-- TMPL_UNLESS NAME="noItemTypeImages" --><!-- TMPL_IF NAME="imageurl" --><img src="<!-- TMPL_VAR NAME="imageurl" -->" title="<!-- TMPL_VAR NAME="description" -->" alt="<!-- TMPL_VAR NAME="description" -->" /><!-- /TMPL_IF --><!-- /TMPL_UNLESS --> <!-- TMPL_VAR NAME="description" --></td><!-- /TMPL_IF -->
-		<td><!-- TMPL_UNLESS NAME="singleBranchMode" --><!-- TMPL_IF name="branchurl" --><a href="<!-- TMPL_VAR NAME="branchurl" -->"><!-- TMPL_VAR NAME="branchname" --></a><!-- TMPL_ELSE --><!-- TMPL_VAR NAME="branchname" --><!-- /TMPL_IF --><!-- /TMPL_UNLESS --> <span class="shelvingloc"><!-- TMPL_VAR NAME="location_description" --></span> </td>
+	    <tr><!-- TMPL_IF NAME="item-level_itypes" --><td><!-- TMPL_IF NAME="imageurl" --><img src="<!-- TMPL_VAR NAME="imageurl" -->" title="<!-- TMPL_VAR NAME="description" -->" alt="<!-- TMPL_VAR NAME="description" -->" /><!-- /TMPL_IF --> <!-- TMPL_VAR NAME="description" --></td><!-- /TMPL_IF -->
+		<td><!-- TMPL_UNLESS NAME="singleBranchMode" --><span class="branchref" ><!-- TMPL_VAR NAME="branchname" --></span><!-- PROGILONE - april 2010 - F21 --><!-- TMPL_INCLUDE NAME="pgl-branch-details-html.inc" --><!-- /TMPL_UNLESS -->, <!-- TMPL_VAR NAME="location_description" --> </td>
 		<!-- TMPL_IF NAME="itemdata_ccode" --><td><!-- TMPL_VAR NAME="ccode" --></td><!-- /TMPL_IF -->
-		<td><!-- TMPL_IF NAME="itemcallnumber" --> <!-- TMPL_VAR NAME="itemcallnumber" --><!-- TMPL_IF NAME="OPACShelfBrowser" --> (<a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;shelfbrowse_itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->#shelfbrowser">Browse Shelf</a>)<!-- /TMPL_IF --><!-- /TMPL_IF --></td>
+		<td><!-- TMPL_IF NAME="itemcallnumber" --> <!-- TMPL_VAR NAME="itemcallnumber" --><!-- /TMPL_IF --> <!-- TMPL_IF NAME="OPACShelfBrowser" -->(<a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->&amp;shelfbrowse_itemnumber=<!-- TMPL_VAR NAME="itemnumber" -->#shelfbrowser">Browse Shelf</a>)<!-- /TMPL_IF --></td>
 		<!-- TMPL_IF NAME="itemdata_enumchron" --><td><!-- TMPL_VAR NAME="enumchron" --></td><!-- /TMPL_IF -->
 		<!-- TMPL_IF NAME="itemdata_uri" --><td><a href="<!-- TMPL_VAR NAME="uri" -->"><!-- TMPL_VAR NAME="uri" --></a></td><!-- /TMPL_IF -->
 		<!-- TMPL_IF NAME="itemdata_copynumber" --><td><!-- TMPL_VAR NAME="copynumber" --></td><!-- /TMPL_IF -->
-		<td><!-- TMPL_INCLUDE NAME="item-status.inc" --></td>
+		<td><!-- TMPL_INCLUDE NAME="pgl-istate.inc" --></td>
 		<!-- TMPL_IF NAME="itemdata_itemnotes" --><td><!-- TMPL_VAR NAME="itemnotes" --></td><!-- /TMPL_IF -->
 		<td><!-- TMPL_VAR NAME="datedue" --></td>
-		<!-- TMPL_IF NAME="type" -->
+		<td>
+        <!-- B031 -->
+            <span class="itemaction itemstackrq">
+            <!-- TMPL_IF EXPR="UseStackrequest && allowstackreq" -->
+                <a title="Stack request" href="/cgi-bin/koha/opac-stack-request.pl?itemnumber=<!-- TMPL_VAR NAME='itemnumber' -->">
+                    <span></span>
+                </a>
+            <!-- TMPL_ELSE -->
+                &nbsp;
+            <!-- /TMPL_IF -->
+            </span>
+            <!-- B017 -->
+            <span class="itemaction itemhold">
+            <!-- TMPL_IF NAME="allowhold" -->
+                <a title="Place hold" href="/cgi-bin/koha/opac-reserve.pl?biblionumber=<!-- TMPL_VAR NAME='biblionumber' -->&onitemnumber=<!-- TMPL_VAR NAME='itemnumber' -->">
+                    <span></span>
+                </a>
+            <!-- TMPL_ELSE -->
+                &nbsp;
+            <!-- /TMPL_IF -->
+            </span>
+            <!-- END -->
+        <!-- END B031 -->
+		<!-- B041 -->
+            <span class="itemaction reproduction">
+            <!-- TMPL_IF NAME="UseDuplication" -->
+                <!-- TMPL_IF NAME="itemDuplicationAllowed" -->
+                    <a title="Duplication" href="/cgi-bin/koha/opac-repro-demande.pl?itemnumber=<!-- TMPL_VAR NAME='itemnumber' -->">
+                        <span></span>
+                    </a>
+                <!-- TMPL_ELSE -->
+                	&nbsp;
+                <!-- /TMPL_IF -->
+            <!-- TMPL_ELSE -->
+                &nbsp;
+            <!-- /TMPL_IF -->
+            </span>
+        <!-- END B041 -->        
+        </td>
+        <!-- TMPL_IF NAME="type" -->
 		<td><a href="/cgi-bin/koha/maint/catmaintain.pl?type=fixitemtype&amp;bi=<!-- TMPL_VAR NAME="biblioitemnumber" -->&amp;item=<!-- TMPL_VAR NAME="itemtype" -->">Fix Itemtype</a></td>
 		<!-- /TMPL_IF -->
 	    </tr>
@@ -586,8 +626,9 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
     <h2>This is a serial</h2>
     <p>There are <!-- TMPL_VAR NAME="subscriptionsnumber" --> subscription(s) associated with this title.</p>
     <!-- TMPL_LOOP Name="subscriptions" -->
-    <!-- TMPL_IF name="branchname" --><h3>At library: <!-- TMPL_VAR NAME="branchname" --></h3><!-- TMPL_ELSE -->
-    <!-- TMPL_IF name="branchcode" --><h3>At branch: <!-- TMPL_VAR NAME="branchcode" --></h3><!-- /TMPL_IF --><!-- /TMPL_IF -->
+    <!-- TMPL_IF name="branchname" --><h3>At library: <span class="branchref" ><!-- TMPL_VAR NAME="branchname" --></span></h3><!-- PROGILONE - april 2010 - F21 --><!-- TMPL_INCLUDE NAME="pgl-branch-details-html.inc" -->
+    <!-- TMPL_ELSE --><!-- TMPL_IF name="branchcode" --><h3>At branch: <span class="branchref" ><!-- TMPL_VAR NAME="branchcode" --></span></h3><!-- PROGILONE - april 2010 - F21 --><!-- TMPL_INCLUDE NAME="pgl-branch-details-html.inc" --><!-- /TMPL_IF -->
+    <!-- /TMPL_IF -->
     <!-- TMPL_IF NAME="subscriptionnotes" --><p><!--TMPL_VAR NAME="subscriptionnotes"--> </p><!-- /TMPL_IF -->
     <p>Issues between: <!--TMPL_VAR NAME="histstartdate"-->  and:<!-- TMPL_IF NAME="histenddate" --> <!--TMPL_VAR NAME="histenddate"--> <!-- TMPL_ELSE --> now (current)<!-- /TMPL_IF --></p>
     <!-- TMPL_IF NAME="missinglist" --><p>Missing issues: <!--TMPL_VAR NAME="missinglist"--> </p><!-- /TMPL_IF -->
@@ -728,12 +769,17 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
 <!-- TMPL_ELSE --><span class="no-image">No cover image available</span><!-- /TMPL_IF --><!-- /TMPL_IF --><!-- /TMPL_IF -->
 
 </td>
-<!-- TMPL_UNLESS NAME="item-level_itypes" --><td><!-- TMPL_VAR NAME="description" --></td><!-- /TMPL_UNLESS --><td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a><!-- TMPL_IF NAME="author" --> by <!-- TMPL_VAR NAME="author" ESCAPE="HTML" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="copyrightdate" --> &copy;<!-- TMPL_VAR NAME="copyrightdate" --><!-- /TMPL_IF --><!-- TMPL_IF name="publishercode" -->
+<td><!-- TMPL_VAR NAME="description" --></td><td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" escape="html" --></a><!-- TMPL_IF NAME="author" --> by <!-- TMPL_VAR NAME="author" ESCAPE="HTML" --><!-- /TMPL_IF --><!-- TMPL_IF NAME="copyrightdate" --> &copy;<!-- TMPL_VAR NAME="copyrightdate" --><!-- /TMPL_IF --><!-- TMPL_IF name="publishercode" -->
     <p><!-- TMPL_VAR NAME="publishercode" ESCAPE="HTML" --> 
        <!-- TMPL_IF name="place" -->(<!-- TMPL_VAR NAME="place"-->)<!--/TMPL_IF--> <!-- TMPL_IF NAME="publicationyear" -->, <!-- TMPL_VAR NAME="publicationyear" --><!-- /TMPL_IF -->
         <!-- TMPL_IF NAME="pages" --><!-- TMPL_VAR NAME="pages" --> <!-- TMPL_VAR NAME="illus" --> <!-- TMPL_VAR NAME="size" --></p><!-- /TMPL_IF -->
     <!-- /TMPL_IF --></td>
 </tr>
+
+    <!-- <!-- TMPL_LOOP NAME=items -->
+    <!-- TMPL_IF NAME="itype" --><img src="/opac-tmpl/prog/itemtypeimg/<!-- TMPL_VAR NAME="itype" -->.gif" title="<!-- TMPL_VAR NAME="itype" -->" alt="<!-- TMPL_VAR NAME="itype" -->" /><!-- /TMPL_IF -->
+    barcode:<!-- TMPL_VAR NAME="barcode" -->
+    <!-- /TMPL_LOOP --> -->
 <!-- /TMPL_LOOP -->
 </table>
 </div><!-- /TMPL_IF --><!-- /TMPL_IF -->
@@ -784,6 +830,7 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
 <!-- /TMPL_IF-->
 
 </div>
+<!-- PROGILONE - april 2010 - F12 --><!-- TMPL_INCLUDE NAME="pgl-results-navigation-html.inc" -->
 </div>
 </div>
 
@@ -812,6 +859,11 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
         </a></li>
     <!-- /TMPL_IF --><!-- /TMPL_IF -->
 <!-- /TMPL_IF -->
+        <!-- B031 -->
+            <!-- TMPL_IF EXPR="UseStackrequest && stackrequestonbiblio" -->
+                <li><a class="stackrq" title="Stack request" href="/cgi-bin/koha/opac-stack-request.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->">Stack request</a></li>
+            <!-- /TMPL_IF -->
+        <!-- END B031 -->
 		<li style="display:none;"><a href="#" id="furthersearches">More searches</a></li>
 </ul>
 
@@ -843,7 +895,7 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
 		</select><input type="hidden" name="op" value="export" /><input type="hidden" name="bib" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
 <input type="submit" name="save" value="Go" /></form>
         </div>
-
+        <!-- PROGILONE - april 2010 - F10 F11 --><!-- TMPL_INCLUDE NAME="pgl-new-search.inc" -->
 </div>
 </div>
 </div>

@@ -1,4 +1,4 @@
-<!-- TMPL_IF NAME="opacuserlogin" --><!-- TMPL_IF NAME="loggedinusername" -->
+<!-- TMPL_IF NAME="loggedinusername" -->
 <div id="menu">
 <ul>
   <!-- TMPL_IF NAME="userview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/opac-user.pl">my summary</a></li>
@@ -6,6 +6,9 @@
   <!-- TMPL_IF NAME="accountview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/opac-account.pl">my fines</a></li>
   <!-- /TMPL_IF -->
   <!-- TMPL_IF NAME="userupdateview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/opac-userupdate.pl">my personal details</a></li>
+  <!-- B012 -->
+  <!-- TMPL_IF NAME="userquotas" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/opac-userquotas.pl">my quotas</a></li>
+  <!-- END B012 -->
   <!-- TMPL_IF NAME="TagsEnabled" -->
     <!-- TMPL_IF NAME="tagsview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/opac-tags.pl?mine=1">my tags</a></li>
   <!-- /TMPL_IF -->
@@ -18,6 +21,11 @@
   <!-- TMPL_IF NAME="opacreadinghistory" -->
   <!-- TMPL_IF NAME="readingrecview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/opac-readingrecord.pl">my reading history</a></li>
   <!-- /TMPL_IF -->
+  <!-- B031 -->
+    <!-- TMPL_IF NAME="UseStackrequest" -->
+      <!-- TMPL_IF NAME="stackrecview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/opac-stackrecord.pl">my stack history</a></li>
+    <!-- /TMPL_IF -->
+  <!-- END B031 -->
   <!-- TMPL_IF name="suggestion" -->
     <!-- TMPL_UNLESS NAME="AnonSuggestions" -->
       <!-- TMPL_IF NAME="suggestionsview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/opac-suggestions.pl">my purchase suggestions</a></li>
@@ -29,8 +37,21 @@
   <!-- TMPL_IF NAME="virtualshelves" --> 
   <!-- TMPL_IF NAME="listsview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/opac-shelves.pl?display=privateshelves">my lists</a></li>
   <!-- /TMPL_IF -->
+  <!-- B041 -->
+  <!-- TMPL_IF NAME="UseDuplication" -->
+       <!-- TMPL_IF NAME="reproductionview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/opac-repro-liste.pl">my duplications</a></li>
+  <!-- /TMPL_IF -->
+  <!-- END -->
+  <!-- B05 -->
+  <!-- TMPL_IF NAME="UseSpaces" -->
+    <!-- TMPL_UNLESS NAME="PREINS" -->
+	  	<!-- TMPL_IF NAME="bookingview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/opac-spaces.pl?op=booking">my bookings</a></li>
+	  	<!-- TMPL_IF NAME="invitationview" --><li class="active"><!-- TMPL_ELSE --><li><!-- /TMPL_IF --><a href="/cgi-bin/koha/opac-spaces.pl?op=invitation">my invitations</a></li>
+  	<!-- /TMPL_UNLESS -->
+  <!-- /TMPL_IF -->
+  <!-- END -->
 
 </ul>
 </div>
-<!-- /TMPL_IF --><!-- TMPL_ELSE --><!-- /TMPL_IF -->
+<!-- /TMPL_IF -->
 

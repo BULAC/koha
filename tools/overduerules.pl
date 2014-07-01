@@ -61,6 +61,7 @@ sub blank_row {
 my $type=$input->param('type');
 my $branch = $input->param('branch');
 $branch ||= q{};
+my $overdue_type = $input->param('overdue_type') || 'issues';
 my $op = $input->param('op');
 $op ||= q{};
 
@@ -79,11 +80,11 @@ my %temphash;
 my $input_saved = 0;
 if ($op eq 'save') {
     my @names=$input->param();
-    my $sth_search = $dbh->prepare("SELECT count(*) AS total FROM overduerules WHERE branchcode=? AND categorycode=?");
+    my $sth_search = $dbh->prepare("SELECT count(*) AS total FROM overduerules WHERE branchcode=? AND categorycode=? AND overduetype=?");
 
-    my $sth_insert = $dbh->prepare("INSERT INTO overduerules (branchcode,categorycode, delay1,letter1,debarred1, delay2,letter2,debarred2, delay3,letter3,debarred3) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
-    my $sth_update=$dbh->prepare("UPDATE overduerules SET delay1=?, letter1=?, debarred1=?, delay2=?, letter2=?, debarred2=?, delay3=?, letter3=?, debarred3=? WHERE branchcode=? AND categorycode=?");
-    my $sth_delete=$dbh->prepare("DELETE FROM overduerules WHERE branchcode=? AND categorycode=?");
+    my $sth_insert = $dbh->prepare("INSERT INTO overduerules (branchcode, categorycode, overduetype, delay1, letter1, debarred1, delay2, letter2, debarred2, delay3, letter3, debarred3) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
+    my $sth_update=$dbh->prepare("UPDATE overduerules SET delay1=?, letter1=?, debarred1=?, delay2=?, letter2=?, debarred2=?, delay3=?, letter3=?, debarred3=? WHERE branchcode=? AND categorycode=? AND overduetype=?");
+    my $sth_delete=$dbh->prepare("DELETE FROM overduerules WHERE branchcode=? AND categorycode=? AND overduetype=?");
     foreach my $key (@names){
             # ISSUES
             if ($key =~ /(delay|letter|debarred)([1-3])-(.*)/) {
@@ -138,7 +139,7 @@ if ($op eq 'save') {
             if (($temphash{$bor}->{delay1} and ($temphash{$bor}->{"letter1"} or $temphash{$bor}->{"debarred1"}))
                 or ($temphash{$bor}->{delay2} and ($temphash{$bor}->{"letter2"} or $temphash{$bor}->{"debarred2"}))
                 or ($temphash{$bor}->{delay3} and ($temphash{$bor}->{"letter3"} or $temphash{$bor}->{"debarred3"}))) {
-                    $sth_search->execute($branch,$bor);
+                    $sth_search->execute($branch, $bor, $overdue_type);
                     my $res = $sth_search->fetchrow_hashref();
                     if ($res->{'total'}>0) {
                         $sth_update->execute(
@@ -151,10 +152,10 @@ if ($op eq 'save') {
                             ($temphash{$bor}->{"delay3"}?$temphash{$bor}->{"delay3"}:0),
                             ($temphash{$bor}->{"letter3"}?$temphash{$bor}->{"letter3"}:""),
                             ($temphash{$bor}->{"debarred3"}?$temphash{$bor}->{"debarred3"}:0),
-                            $branch ,$bor
+                            $branch, $bor, $overdue_type
                             );
                     } else {
-                        $sth_insert->execute($branch,$bor,
+                        $sth_insert->execute($branch, $bor, $overdue_type,
                             ($temphash{$bor}->{"delay1"}?$temphash{$bor}->{"delay1"}:0),
                             ($temphash{$bor}->{"letter1"}?$temphash{$bor}->{"letter1"}:""),
                             ($temphash{$bor}->{"debarred1"}?$temphash{$bor}->{"debarred1"}:0),
@@ -171,7 +172,7 @@ if ($op eq 'save') {
     }
     unless ($err) {
         for my $category_code (@rows_to_delete) {
-            $sth_delete->execute($branch, $category_code);
+            $sth_delete->execute($branch, $category_code, $overdue_type);
         }
         $template->param(datasaved => 1);
         $input_saved = 1;
@@ -220,8 +221,8 @@ for my $data (@categories) {
         }
     } else {
     #getting values from table
-        my $sth2=$dbh->prepare("SELECT * from overduerules WHERE branchcode=? AND categorycode=?");
-        $sth2->execute($branch,$data->{'categorycode'});
+        my $sth2=$dbh->prepare("SELECT * from overduerules WHERE branchcode=? AND categorycode=? AND overduetype=?");
+        $sth2->execute($branch, $data->{'categorycode'}, $overdue_type);
         my $dat=$sth2->fetchrow_hashref;
         for (my $i=1;$i<=3;$i++){
             if ($countletters){
@@ -249,7 +250,12 @@ for my $data (@categories) {
     push @line_loop,\%row;
 }
 
-$template->param(table=> \@line_loop,
-                branchloop => $branchloop,
-                branch => $branch);
+$template->param(
+	table                         => \@line_loop,
+    branchloop                    => $branchloop,
+    branch                        => $branch,
+    overdue_type                  => $overdue_type,
+    'overdue_type_'.$overdue_type => 1,
+);
+
 output_html_with_http_headers $input, $cookie, $template->output;

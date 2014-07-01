@@ -10,6 +10,44 @@
 
 <div id="doc" class="yui-t7">
    <div id="bd">
+   
+<!-- PROGILONE - A1 -->
+    <!-- TMPL_IF Name="reqmessage" -->
+    <div class="dialog message">
+        <ul>
+            <!-- TMPL_IF Name="cancelled" -->
+                <li>Reserve Cancelled</li>
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF Name="setwaiting" -->
+                <li>Item should now be waiting at library: <!-- TMPL_VAR Name="reqbrchname" --></li>
+            <!-- /TMPL_IF -->
+        </ul>
+    </div>
+    <!-- /TMPL_IF -->
+    <!-- TMPL_IF Name="errmsgloop" -->
+		<div class="dialog alert">
+			<ul>  
+	            <!-- TMPL_LOOP Name="errmsgloop" -->
+		            <!-- TMPL_IF Name="errbadcode" -->
+		                <li>No Item with barcode: <!-- TMPL_VAR Name="msg" --></li>
+		            <!-- /TMPL_IF -->
+		            <!-- TMPL_IF Name="errispermanent" -->
+		                <li>Please return item to home library: <!-- TMPL_VAR Name="msg" --></li>
+		            <!-- /TMPL_IF -->
+		            <!-- TMPL_IF Name="errnotallowed" -->
+		                <li>You cannot transfer items of <!--TMPL_VAR Name="codeType" --> <b><!-- TMPL_VAR Name="code" --></b> to <b><!-- TMPL_VAR Name="tbr" --></b></li>
+		            <!-- /TMPL_IF -->
+		            <!-- TMPL_IF Name="errdesteqholding" -->
+		                <li>Item is already at destination library.</li>
+		            <!-- /TMPL_IF -->
+		            <!-- TMPL_IF Name="errwasreturned" -->
+		                <li>Item was on loan to <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR Name="borrowernumber" -->"><!-- TMPL_VAR Name="firstname" --> <!-- TMPL_VAR NAME="surname" --> (<!--TMPL_VAR NAME="cardnumber" -->)</a> and has been returned.</li>
+		            <!-- /TMPL_IF -->
+	            <!-- /TMPL_LOOP -->
+	        </ul>
+	    </div>
+    <!-- /TMPL_IF -->
+<!-- END PROGILONE -->
 
 <!-- TMPL_IF Name="found" -->
    <div class="yui-g"> <h3>Reserve Found</h3>
@@ -96,13 +134,9 @@
                 <label for="tobranchcd">Destination library: </label>
                     <select name="tobranchcd" id="tobranchcd">
                         <!-- TMPL_LOOP Name="branchoptionloop" -->
-						<!-- TMPL_IF NAME="selected" -->
-                            <option value="<!-- TMPL_VAR Name="value" -->" selected="selected">
-						<!-- TMPL_ELSE -->
-                            <option value="<!-- TMPL_VAR Name="value" -->">
-						<!-- /TMPL_IF -->
-                                <!-- TMPL_VAR Name="branchname" -->
-                            </option>
+                        <!-- PROGILONE - A1 -->
+                        <option value="<!-- TMPL_VAR NAME="value" -->" title="<!-- TMPL_VAR NAME="value" -->"<!-- TMPL_IF NAME="selected" --> selected="selected"<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="branchname" --></option>
+                        <!-- END PROGILONE -->
                         <!-- /TMPL_LOOP -->
                     </select>
             </li>
@@ -119,44 +153,13 @@
             <input type="hidden" name="tb-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="tobrcd" -->" />
         <!-- /TMPL_LOOP -->
     </form></div>
- 
-	 <div class="yui-u"><h4>Messages</h4>
-		<ul>
-                <!-- TMPL_IF Name="reqmessage" -->
-                    <!-- TMPL_IF Name="cancelled" -->
-                        <li>Reserve Cancelled</li>
-                    <!-- /TMPL_IF -->
-                    <!-- TMPL_IF Name="setwaiting" -->
-                        <li>Item should now be waiting at library: <!-- TMPL_VAR Name="reqbrchname" --></li>
-                    <!-- /TMPL_IF -->
-                <!-- /TMPL_IF -->
-                <!-- TMPL_LOOP Name="errmsgloop" -->
-                    <!-- TMPL_IF Name="errbadcode" -->
-                        <li>No Item with barcode: <!-- TMPL_VAR Name="msg" --></li>
-                    <!-- /TMPL_IF -->
-                    <!-- TMPL_IF Name="errispermanent" -->
-                        <li>Please return item to home library: <!-- TMPL_VAR Name="msg" --></li>
-                    <!-- /TMPL_IF -->
-                    <!-- TMPL_IF Name="errnotallowed" -->
-                        <li>You cannot transfer items of <!--TMPL_VAR Name="codeType" --> <b><!-- TMPL_VAR Name="code" --></b> to <b><!-- TMPL_VAR Name="tbr" --></b></li>
-                    <!-- /TMPL_IF -->
-                    <!-- TMPL_IF Name="errdesteqholding" -->
-                        <li>Item is already at destination library.</li>
-                    <!-- /TMPL_IF -->
-                    <!-- TMPL_IF Name="errwasreturned" -->
-                        <li>Item was on loan to <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR Name="borrowernumber" -->">
-<!-- TMPL_VAR Name="firstname" --> <!-- TMPL_VAR NAME="surname" -->
-(<!--TMPL_VAR NAME="cardnumber" -->)</a> and has been returned.</li>
-                    <!-- /TMPL_IF -->
-                <!-- /TMPL_LOOP -->
-        </ul>
-    </div><!-- /yui-u -->
+    
 </div><!-- /yui-ge -->
 	 
     <!-- TMPL_IF Name="trsfitemloop" -->
         <div class="yui-g">
 		<table>
-            <caption>Transferred Items</caption>
+            <caption>Transfered Items</caption>
             <tr>
                 <th>Bar Code</th>
                 <th>Title</th>

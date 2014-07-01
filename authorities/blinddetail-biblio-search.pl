@@ -23,7 +23,6 @@ blinddetail-biblio-search.pl : script to show an authority in MARC format
 
 =head1 SYNOPSIS
 
-=cut
 
 =head1 DESCRIPTION
 
@@ -33,6 +32,8 @@ It shows the authority in a (nice) MARC format depending on authority MARC
 parameters tables.
 
 =head1 FUNCTIONS
+
+=over 2
 
 =cut
 
@@ -77,32 +78,60 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 # fill arrays
 my @loop_data = ();
 if ($authid) {
+	
+	# PROGILONE - july 2010 - C2
     foreach my $field ( $record->field( $auth_type->{auth_tag_to_report} ) ) {
-        my @subfields_data;
+        # parse subfields
+        my @subfields_loop;
         my @subf = $field->subfields;
 
-        # loop through each subfield
+        # same subfield code may exist several times
+        # tranform into a hash { subfield code => array of values } 
         my %result;
         for my $i ( 0 .. $#subf ) {
-            $subf[$i][0] = "@" unless $subf[$i][0];
-            $result{ $subf[$i][0] } .= $subf[$i][1] . "|";
+        	my $code = $subf[$i][0];
+        	unless (defined $code && $code ne '') {
+        	   $code = '@';
+        	}
+            unless (defined $result{ $code }) {
+            	# init array
+            	my @new_tab = ();
+            	$result{ $code } = \@new_tab;
+            }
+            my $tab = $result{ $code };
+            push( @$tab, $subf[$i][1] );
         }
-        foreach ( keys %result ) {
+        
+        # compose subfields loop
+        foreach my $key ( keys %result ) {
+            
+            # compose values of a subfield loop
+            my @subfield_values_loop;
+            my $values = $result{ $key };
+            foreach (@$values) {
+            	my %subfield_values_data;
+            	$subfield_values_data{value} = $_;
+            	push( @subfield_values_loop, \%subfield_values_data );
+            }
+            
             my %subfield_data;
-            chop $result{$_};
-            $subfield_data{marc_value}    = $result{$_};
-            $subfield_data{marc_subfield} = $_;
-
             # $subfield_data{marc_tag}=$field->tag();
-            push( @subfields_data, \%subfield_data );
+            $subfield_data{marc_subfield} = $key;
+            $subfield_data{marc_value}    = \@subfield_values_loop;
+
+            push( @subfields_loop, \%subfield_data );
         }
-        if ( $#subfields_data >= 0 ) {
+        
+        # compose fields loop
+        if ( $#subfields_loop >= 0 ) {
             my %tag_data;
             $tag_data{tag} = $field->tag() . ' -' . $tagslib->{ $field->tag() }->{lib};
-            $tag_data{subfield} = \@subfields_data;
+            $tag_data{subfield} = \@subfields_loop;
             push( @loop_data, \%tag_data );
-        }
+        }        
     }
+    # End PROGILONE
+    
 } else {
     # authid is empty => the user want to empty the entry.
     $template->param( "clear" => 1 );

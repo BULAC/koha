@@ -1,0 +1,238 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Circulation &rsaquo; Offline Circulation File Upload</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<!-- TMPL_INCLUDE NAME="file-upload.inc" -->
+<!-- TMPL_INCLUDE NAME="background-job.inc" -->
+<script type="text/javascript">
+//<![CDATA[
+$(document).ready(function(){
+	$("#processfile").hide();
+});
+function CheckUpload(f){
+	if(f.fileToUpload.value == ""){
+		alert("Please choose a file to upload");
+	} else {
+		return ajaxFileUpload()
+	}
+		return false;
+}
+function CheckForm(f) {
+    if (f.uploadedfileid.value == '') {
+        alert('Please upload a file first.');
+    } else {
+		$("#fileuploadstatus").hide();
+		$("#fileuploadform").slideUp();
+        return submitBackgroundJob(f);
+    }
+    return false;
+}
+
+//]]>
+</script>
+<style type="text/css">
+	#fileuploadstatus,#jobstatus { margin:.4em; }
+	#fileuploadprogress,#jobprogress{ width:200px;height:10px;border:1px solid #666;background:url('/intranet-tmpl/prog/img/progress.png') -300px 0px no-repeat; }
+	
+	/*Print*/
+	@media print {
+		body {
+			padding: 0;
+		}
+		h2 {
+			text-align: center;
+		}
+		a {
+			color: black;
+			text-decoration: none;
+		}
+		input[type="submit"] {
+			display: none;
+		}
+		
+		input[type="button"] {
+			display: none;
+		}
+		#summary, #processCsv {
+	    	display: none;
+		}
+	}
+</style>
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="circ-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a> &rsaquo; <!-- TMPL_IF NAME="transactions_loaded" --> <a href="/cgi-bin/koha/offline_circ/process_koc_spec.pl">Offline Circulation File Upload</a> &rsaquo; Results<!-- TMPL_ELSE --> Offline Circulation File Upload<!-- /TMPL_IF --></div>
+
+<div id="doc" class="yui-t7">
+
+   <div id="bd">
+
+<!-- TMPL_IF NAME="transactions_loaded" -->
+  <h2>Koha Offline Circulation</h2>
+  <p id="summary">Your data was processed. Here are the results:</p>
+  <!-- TMPL_IF NAME="errorfile" -->
+    <div class="dialog alert">
+        <!-- TMPL_IF NAME="ERROR_file_version" -->
+            <p>Warning: This file is version <!-- TMPL_VAR NAME="upload_version" -->, but I only know how to import version <!-- TMPL_VAR NAME="current_version" -->. I'll try my best.</p>
+        <!-- /TMPL_IF -->
+    </div>
+  <!-- TMPL_ELSE -->
+    <!--TMPL_IF Name="numberIssue" --><div class="dialog message"><!--TMPL_VAR Name="numberIssue"--> items issued</div><!-- /TMPL_IF -->
+    <!--TMPL_IF Name="numberRenew" --><div class="dialog message"><!--TMPL_VAR Name="numberRenew"--> items renewed</div><!-- /TMPL_IF -->
+    <!--TMPL_IF Name="numberReturn" --><div class="dialog message"><!--TMPL_VAR Name="numberReturn"--> items returned</div><!-- /TMPL_IF -->
+    <!--TMPL_IF Name="numberComm" --><div class="dialog message"><!--TMPL_VAR Name="numberComm"--> items communicated</div><!-- /TMPL_IF -->
+    <!--TMPL_IF Name="numberProlong" --><div class="dialog message"><!--TMPL_VAR Name="numberProlong"--> items prolongated</div><!-- /TMPL_IF -->
+	<input type="button" value="Print" id="print" onclick="window.print();return false;" />
+    <form action="process_koc_spec.pl" id="processCsv" method="post" enctype="multipart/form-data">
+        <!-- TMPL_LOOP NAME="messages" -->
+            <!-- L'indentation est étrange mais c'est voulu pour éviter les sauts de lignes et les espaces superflus dans le flux de sortie -->
+            <input type="hidden" name="messagesCsv" 
+                value="<!-- 
+                    TMPL_VAR NAME="date" 
+                    -->&#59;<!-- 
+                    TMPL_VAR NAME="time" 
+                    -->&#59;<!-- 
+                    TMPL_IF NAME="issue" 
+                    -->Prêt<!-- 
+                    /TMPL_IF 
+                    --><!-- 
+                    TMPL_IF NAME="renew" 
+                    -->Renouvellement<!-- 
+                    /TMPL_IF 
+                    --><!-- 
+                    TMPL_IF NAME="return" 
+                    -->Retour<!-- 
+                    /TMPL_IF 
+                    --><!-- 
+                    TMPL_IF NAME="comm" 
+                    -->Communication<!-- 
+                    /TMPL_IF 
+                    --><!-- 
+                    TMPL_IF NAME="prolong" 
+                    -->Prolongation<!-- 
+                    /TMPL_IF 
+                    -->&#59;<!-- 
+                    TMPL_VAR NAME="cardnumber" 
+                    -->&#59;<!-- 
+                    TMPL_VAR NAME="barcode" 
+                    -->&#59;<!-- 
+                    TMPL_IF name="ERROR_no_barcode_from_item" 
+                    -->Impossible de trouver l'exemplaire avec ce code à barres.<!-- 
+                    /TMPL_IF 
+                    --><!-- 
+                    TMPL_IF name="ERROR_no_borrower_from_item" 
+                    -->Impossible de trouver l'adhérent à partir du code à barres de l'exemplaire.<!-- 
+                    /TMPL_IF 
+                    --><!-- TMPL_IF name="ERROR_item_already_issued" 
+                    -->Exemplaire actuellement emprunté par un autre adhérent<!-- 
+                    /TMPL_IF 
+                    --><!-- 
+                    TMPL_IF name="ERROR_item_issued" 
+                    -->Exemplaire prêté à une personne différente<!-- 
+                    /TMPL_IF 
+                    --><!-- 
+                    TMPL_IF NAME="ERROR_item_issued_from_store" 
+                    -->Un exemplaire en magasin ne doit pas être prêté sans une demande de communication.<!-- 
+                    /TMPL_IF 
+                    --><!-- 
+                    TMPL_IF name="ERROR_no_comm_from_barcode" 
+                    -->Impossible de trouver la demande de communication depuis le code à barres<!-- 
+                    /TMPL_IF 
+                    -->" 
+            />
+        <!-- /TMPL_LOOP -->
+        <label for="CSVexport">Export to csv file</label>&nbsp;<input type="checkbox" name="CSVexport" id="CSVexport" />
+        <input type="submit" value="Submit" id="submitCsv" />
+    </form>
+    <table id="itemst">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Operation</th>
+            <th>Action</th>
+            <th>Problems</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- TMPL_LOOP NAME="messages" -->
+        <tr>
+            <td>
+                <!-- TMPL_VAR NAME="date" -->&nbsp;<!-- TMPL_VAR NAME="time" -->
+            </td>
+            <td>
+                <!-- TMPL_IF NAME="issue" -->Issue<!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="renew" -->Renew<!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="return" -->Return<!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="comm" -->Communication<!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="prolong" -->Prolongation<!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="error" -->
+                    <!-- TMPL_IF NAME="ERROR_parsing_line" -->Parsing error<!-- /TMPL_IF -->
+                <!-- /TMPL_IF -->
+            </td>
+            <td>
+                <!-- TMPL_IF NAME="issue" --><p>Check out <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" ESCAPE="html" --></a> (<!-- TMPL_VAR NAME="barcode" -->) to <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --></a> (<!-- TMPL_VAR NAME="cardnumber" -->)</p><!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="renew" --><p>Renewed <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" ESCAPE="html" --></a>  (<!-- TMPL_VAR NAME="barcode" -->) for <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --></a> (<!-- TMPL_VAR NAME="cardnumber" -->)</p><!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="return" --><p>Check in <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" ESCAPE="html" --></a> (<!-- TMPL_VAR NAME="barcode" -->) from <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --></a> (<!-- TMPL_VAR NAME="cardnumber" -->)</p><!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="comm" --><p>Communication <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" ESCAPE="html" --></a>  (<!-- TMPL_VAR NAME="barcode" -->) for <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --></a> (<!-- TMPL_VAR NAME="cardnumber" -->)</p><!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="prolong" --><p>Prolongation <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" ESCAPE="html" --></a>  (<!-- TMPL_VAR NAME="barcode" -->) for <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->"><!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --></a> (<!-- TMPL_VAR NAME="cardnumber" -->)</p><!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="error" -->
+                    <p>Error :
+                        <!-- TMPL_IF NAME="ERROR_parsing_line" -->Cannot parse line <!-- TMPL_VAR NAME="error_line" --> : <!-- TMPL_VAR NAME="error_content" --><!-- /TMPL_IF -->
+                    </p>
+                <!-- /TMPL_IF -->                
+            </td>
+            <td>
+                 <!-- TMPL_IF NAME="ERROR_no_barcode_from_item" -->
+                     <p style="background: red;">Unable to determine item from barcode</p>
+                 <!-- TMPL_ELSIF NAME="ERROR_no_borrower_from_item" -->
+                     <p style="background: red;">Unable to determine patron from item barcode</p>
+                 <!-- TMPL_ELSIF NAME="ERROR_item_already_issued" -->
+                     <p style="background: red;">Item already checked out to a different person</p>
+                 <!-- TMPL_ELSIF NAME="ERROR_item_issued" -->
+                     <p style="background: red;">Item checked out to a different person</p>
+                 <!-- TMPL_ELSIF NAME="ERROR_no_comm_from_barcode" -->
+                     <p style="background: red;">Unable to determine stack from barcode</p>
+                 <!-- TMPL_ELSIF NAME="ERROR_parsing_line" -->
+                     <p style="background: red;">Error while reading line <!-- TMPL_VAR name="error_line" --></p>
+                 <!-- TMPL_ELSIF NAME="ERROR_item_issued_from_store" -->
+                     <p style="background: red;">An item in store should not be issued without a stack request.</p>
+                 <!-- TMPL_ELSE -->
+                     <p style="background: green;">None</p>
+                 <!-- /TMPL_IF -->
+            </td>
+        </tr>
+        <!-- /TMPL_LOOP -->
+       </tbody>
+      </table>
+  <!-- /TMPL_IF -->      
+  
+<!-- TMPL_ELSE -->
+  <h2>Upload Offline Circulation Data</h2>
+   <div id="fileuploadform">
+     <form method="post" action="<!-- TMPL_VAR name="SCRIPT_NAME" -->" enctype="multipart/form-data">
+		<fieldset class="brief">
+            <ol><li><label for="fileToUpload">Choose .koc File: </label>
+                <input type="file" id="fileToUpload" size="50" name="fileToUpload" />
+            </li></ol>
+	        <fieldset class="action">
+	           <input type="button" class="submit" value="Upload file" onclick="CheckUpload(this.form);" />
+	        </fieldset>
+	   </fieldset>
+     </form>
+     <div id="fileuploadstatus" style="display:none">Upload progress: <div id="fileuploadprogress"></div> <span id="fileuploadpercent">0</span>%</div>
+     <div id="fileuploadfailed" style="display:none"></div>
+   </div>
+   <form action="process_koc_spec.pl" id="processfile" method="post" enctype="multipart/form-data">
+     <input type="hidden" name="uploadedfileid" id="uploadedfileid" value="" />
+     <input type="hidden" name="runinbackground" id="runinbackground" value="" />
+     <input type="hidden" name="completedJobID" id="completedJobID" value="" />
+     <input type="submit" value="Process offline circulation file" onclick="return CheckForm(this.form);" id="mainformsubmit" />
+     <div id="jobstatus" style="display:none">Job progress: <div id="jobprogress"></div> <span id="jobprogresspercent">0</span>%</div>
+     <div id="jobfailed" style="display:none"></div>
+   </form>
+<!-- /TMPL_IF -->
+
+
+</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

@@ -141,7 +141,6 @@ if ( $op eq "do_search" ) {
         to             => $to,
         numbers        => \@numbers,
         authtypecode   => $authtypecode,
-        authtypetext   => $authtypes->{$authtypecode}{'authtypetext'},
         isEDITORS      => $authtypecode eq 'EDITORS',
     );
 

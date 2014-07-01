@@ -20,6 +20,11 @@
 		<li><a href="/cgi-bin/koha/circ/circulation.pl">Check Out</a></li>
 		<li><a href="/cgi-bin/koha/circ/returns.pl">Check In</a></li>
 		<li><a href="/cgi-bin/koha/circ/branchtransfers.pl">Transfer</a></li>
+		<!-- B032 -->
+            <!-- TMPL_IF NAME="UseStackrequest" -->
+            <!-- TMPL_INCLUDE NAME="/stack/stacks-intranet-main.inc" -->
+            <!-- /TMPL_IF -->
+		<!-- END B032 -->
 	<!-- TMPL_IF NAME="AutoLocation" --><!-- TMPL_ELSE --><!-- TMPL_IF NAME="IndependantBranches" --><!-- TMPL_ELSE --><li><a href="/cgi-bin/koha/circ/selectbranchprinter.pl">Set library</a></li><!-- /TMPL_IF --><!-- /TMPL_IF -->
 	<!-- TMPL_IF NAME="fast_cataloging" -->
 	    <!-- TMPL_IF NAME="CAN_user_editcatalogue_fast_cataloging" -->
@@ -52,7 +57,7 @@
 	<div class="yui-u">
 		<h5>Offline Circulation</h5>
 		<ul>
-			<li><a href="/cgi-bin/koha/offline_circ/process_koc.pl">Offline Circulation File (.koc) Uploader</a></li>
+			<li><!-- B073 --><!-- TMPL_IF NAME="UseOfflineCircManagement" --><a href="/cgi-bin/koha/offline_circ/process_koc_spec.pl"><!-- TMPL_ELSE --><a href="/cgi-bin/koha/offline_circ/process_koc.pl"><!-- /TMPL_IF --><!-- END -->Offline Circulation File (.koc) Uploader</a></li>
 		</ul>
 	</div>
 </div>

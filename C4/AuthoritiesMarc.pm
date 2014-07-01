@@ -220,53 +220,50 @@ sub SearchAuthorities {
         my $dosearch;
         my $and=" \@and " ;
         my $q2;
-        for(my $i = 0 ; $i <= $#{$value} ; $i++)
-        {
+        for(my $i = 0 ; $i <= $#{$value} ; $i++) {
             if (@$value[$i]){
-            ##If mainentry search $a tag
                 if (@$tags[$i] eq "mainmainentry") {
-
-# FIXME: 'Heading-Main' index not yet defined in zebra
-#                $attr =" \@attr 1=Heading-Main "; 
-                $attr =" \@attr 1=Heading ";
-
-                }elsif (@$tags[$i] eq "mainentry") {
-                $attr =" \@attr 1=Heading ";
-                }else{
-                $attr =" \@attr 1=Any ";
+                    $attr =" \@attr 1=Heading-Main "; #search in subfield $a of main entry field
+                } elsif (@$tags[$i] eq "mainentry") {
+                    $attr =" \@attr 1=Heading "; #search in all subfields of main entry field
+                } else {
+                    $attr =" \@attr 1=Any "; #search in all fields
                 }
                 if (@$operator[$i] eq 'is') {
-                    $attr.=" \@attr 4=1  \@attr 5=100 ";##Phrase, No truncation,all of subfield field must match
-                }elsif (@$operator[$i] eq "="){
-                    $attr.=" \@attr 4=107 ";           #Number Exact match
-                }elsif (@$operator[$i] eq "start"){
-                    $attr.=" \@attr 3=2 \@attr 4=1 \@attr 5=1 ";#Firstinfield Phrase, Right truncated
+                    $attr.=" \@attr 4=1 \@attr 5=100 "; #Phrase, No truncation
+                } elsif (@$operator[$i] eq "="){
+                    $attr.=" \@attr 4=107 "; #Number Exact match
+                } elsif (@$operator[$i] eq "start"){
+                    $attr.=" \@attr 3=2 \@attr 4=1 \@attr 5=1 "; #First in subfield Phrase, Right truncated
                 } else {
-                    $attr .=" \@attr 5=1 \@attr 4=6 ";## Word list, right truncated, anywhere
+                    $attr .=" \@attr 5=3 \@attr 4=6 ";## Word list, right and left truncated, anywhere
                 }
                 $attr =$attr."\"".@$value[$i]."\"";
                 $q2 .=$attr;
-            $dosearch=1;
+                $dosearch=1;
             }#if value
         }
         ##Add how many queries generated
-        if ($query=~/\S+/){    
-          $query= $and.$query.$q2 
+        if ($query=~/\S+/) {    
+          $query= $and.$query.$q2;
         } else {
           $query=$q2;    
-        }         
-        ## Adding order
-        #$query=' @or  @attr 7=2 @attr 1=Heading 0 @or  @attr 7=1 @attr 1=Heading 1'.$query if ($sortby eq "HeadingDsc");
-        my $orderstring= ($sortby eq "HeadingAsc"?
-                           '@attr 7=1 @attr 1=Heading 0'
-                         :
-                           $sortby eq "HeadingDsc"?      
-                            '@attr 7=2 @attr 1=Heading 0'
-                           :''
-                        );            
-        $query=($query?$query:"\@attr 1=_ALLRECORDS \@attr 2=103 ''");
-        $query="\@or $orderstring $query" if $orderstring;
-
+        } 
+        
+        if ($sortby) {
+            ## Adding order
+            #$query=' @or  @attr 7=2 @attr 1=Heading 0 @or  @attr 7=1 @attr 1=Heading 1'.$query if ($sortby eq "HeadingDsc");
+            my $orderstring= ($sortby eq "HeadingAsc"?
+                               '@attr 7=1 @attr 1=Heading 0'
+                             :
+                               $sortby eq "HeadingDsc"?      
+                                '@attr 7=2 @attr 1=Heading 0'
+                               :''
+                            );            
+            $query=($query?"\@or $orderstring $query":"\@or \@attr 1=_ALLRECORDS \@attr 2=103 '' $orderstring ");
+        }
+        # End Progilone
+        
         $offset=0 unless $offset;
         my $counter = $offset;
         $length=10 unless $length;
@@ -611,16 +608,6 @@ sub AddAuthority {
         $format= 'MARC21';
     }
 
-    #update date/time to 005 for marc and unimarc
-    my $time=POSIX::strftime("%Y%m%d%H%M%S",localtime);
-    my $f5=$record->field('005');
-    if (!$f5) {
-      $record->insert_fields_ordered( MARC::Field->new('005',$time.".0") );
-    }
-    else {
-      $f5->update($time.".0");
-    }
-
 	if ($format eq "MARC21") {
 		if (!$record->leader) {
 			$record->leader($leader);
@@ -628,6 +615,12 @@ sub AddAuthority {
 		if (!$record->field('003')) {
 			$record->insert_fields_ordered(
 				MARC::Field->new('003',C4::Context->preference('MARCOrgCode'))
+			);
+		}
+		my $time=POSIX::strftime("%Y%m%d%H%M%S",localtime);
+		if (!$record->field('005')) {
+			$record->insert_fields_ordered(
+				MARC::Field->new('005',$time.".0")
 			);
 		}
 		my $date=POSIX::strftime("%y%m%d",localtime);
@@ -988,7 +981,7 @@ sub BuildSummary{
 	my $resultstring;
 	$resultstring = join(" -- ",@stringssummary);
     $resultstring =~ s/\[(.*?)\]//g;
-    $resultstring =~ s/\n/<br>/g;
+    $resultstring =~ s/\n/<br \/>/g;
 	$summary      =  $resultstring;
   } else {
     my $heading; 

@@ -55,16 +55,22 @@ if ( $reregistration eq 'y' ) {
 	$sth->finish;
 	}
 
-if($destination eq "circ"){
-	if($dateexpiry){
-		print $input->redirect("/cgi-bin/koha/circ/circulation.pl?findborrower=$cardnumber&dateexpiry=$dateexpiry");
-	} else {
-		print $input->redirect("/cgi-bin/koha/circ/circulation.pl?findborrower=$cardnumber");
-	}
+# PROGILONE - A2
+if ( $destination eq "circ" ) {
+    if ($dateexpiry) {
+        print $input->redirect("/cgi-bin/koha/circ/circulation.pl?findborrower=$cardnumber&dateexpiry=$dateexpiry");
+    } else {
+        if ($cardnumber) {
+            print $input->redirect("/cgi-bin/koha/circ/circulation.pl?findborrower=$cardnumber");
+        } else {
+            print $input->redirect("/cgi-bin/koha/circ/circulation.pl?borrowernumber=$borrowernumber");
+        }
+    }
 } else {
-	if($dateexpiry){
-		print $input->redirect("/cgi-bin/koha/members/moremember.pl?bornum=$borrowernumber&dateexpiry=$dateexpiry");
-	} else {
-		print $input->redirect("/cgi-bin/koha/members/moremember.pl?bornum=$borrowernumber");
-	}
+    if ($dateexpiry) {
+        print $input->redirect("/cgi-bin/koha/members/moremember.pl?borrowernumber=$borrowernumber&dateexpiry=$dateexpiry");
+    } else {
+        print $input->redirect("/cgi-bin/koha/members/moremember.pl?borrowernumber=$borrowernumber");
+    }
 }
+# END PROGILONE

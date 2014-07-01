@@ -233,7 +233,20 @@ sub GetBasketAsCSV {
     my $output; 
 
     # TODO: Translate headers
-    my @headers = qw(contractname ordernumber line entrydate isbn author title publishercode collectiontitle notes quantity rrp);
+    my @headers = qw(
+        contractname
+        ordernumber
+        line
+        entrydate
+        isbn
+        author
+        title
+        publishercode
+        collectiontitle
+        notes
+        quantity
+        rrp
+    );
 
     $csv->combine(@headers);                                                                                                        
     $output = $csv->string() . "\n";	
@@ -245,6 +258,7 @@ sub GetBasketAsCSV {
 	push(@cols,
 		$contract->{'contractname'},
 		$order->{'ordernumber'},
+		'', # FIXME line column
 		$order->{'entrydate'}, 
 		$order->{'isbn'},
 		$bd->{'author'},
@@ -1554,7 +1568,6 @@ sub GetHistory {
 
         if ( defined $title ) {
             $query .= " AND biblio.title LIKE ? ";
-            $title =~ s/\s+/%/g;
             push @query_params, "%$title%";
         }
 

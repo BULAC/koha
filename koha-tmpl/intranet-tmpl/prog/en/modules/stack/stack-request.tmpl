@@ -1,0 +1,610 @@
+<!-- B031 - Stack request form page -->
+
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Circulation &rsaquo; Stack request</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+
+<!-- TMPL_INCLUDE NAME="pgl-back-results-js.inc" -->
+<!-- TMPL_INCLUDE NAME="calendar.inc" -->
+<script language="JavaScript" type="text/javascript">
+    //<![CDATA[
+    var MANDATORY_CHAR = _('*');
+        
+    function begDateChanged() {
+        if ($('#begdate').val() == '<!-- TMPL_VAR NAME="today_date" -->') {
+            $("#instantrq").attr('checked', 'checked');
+        } else {
+            $("#instantrq").removeAttr('checked');
+        }
+    }
+    
+    $(document).ready(function() {
+        $('#stackrqform .noteditable').children('input,textarea,select').each(function() {
+            $(this).attr('readonly', 'readonly');
+            $(this).attr('disable', 'disable');
+        });
+        
+        $('#stackrqform .mandatory label, #mandatorytip').prepend('<span class="mandatorychar">' + MANDATORY_CHAR + ' </span>');
+        
+        $('#begdate').change(function() {
+            begDateChanged();
+        });
+        
+        $('#instantrq').change(function() {
+            if ($(this).is(':checked')) {
+                $('#begdate').val('<!-- TMPL_VAR NAME="today_date" -->');
+            }
+        });
+        
+    });
+    //]]>
+</script>
+<style type="text/css">
+    
+    /* missing in staff-global.css */
+    
+    fieldset.brief ol {
+        padding: 0;
+    }
+    
+    fieldset.brief input, 
+    fieldset.brief textarea,
+    fieldset.brief select {
+        background-color: #F3F3F3;
+        border-top : 1px solid #979797;
+        border-left : 1px solid #979797;
+        border-right : 1px solid #DDDDDD;
+        border-bottom : 1px solid #DDDDDD;
+        padding: .1em;
+    }
+    
+    fieldset.brief input,
+    fieldset.brief textarea,
+    fieldset.brief select {
+        background-color : #F3F3F3;
+    }
+    
+    fieldset.brief input:focus {
+        background-color : #FFFFCC;
+    }
+    
+    /* page specific */
+    
+    fieldset.brief .editable input,
+    fieldset.brief .editable textarea,
+    fieldset.brief .editable select {
+        background-color : #FDFDFD;
+    }
+    
+    /* input:focus already defined */
+    fieldset.brief textarea:focus {
+        background-color : #FFFFCC;
+    }
+    
+    fieldset.brief .noteditable label {
+        color : #000000;
+    }
+    
+    fieldset.brief .editable label {
+        color : #004060;
+    }      
+        
+    fieldset.brief .mandatorychar {
+        color : #CC0000;
+    }
+    
+    fieldset.brief .hint {
+        color : #666666;
+        font-size : 90%;
+        font-weight: normal;
+    }
+    
+    fieldset.brief input[type=text], fieldset.brief textarea {
+        width: 96%;
+    }
+    
+    fieldset.brief #begdate {
+        width: 6em;
+    }
+    
+    fieldset.brief li {
+        margin-bottom: .5em;
+    }
+    
+    fieldset.brief li.inline input {
+        vertical-align: middle;
+    }
+    
+    fieldset.brief li.inline label {
+        display : inline;
+    }
+    
+    fieldset.brief legend {
+        padding: 0 .5em;
+        font-size: 1.2em;
+    }
+    
+    fieldset.action, #mandatorytip {
+        margin-left: 1em;
+    }
+    
+    div.message{
+        text-align : center;
+    }
+    
+    .spacename, .deskname, .item_desc, .important {
+        font-weight : bold;
+    }
+    
+    span.circ-hlt {
+        color : #cc0000;
+        font-weight : bold;
+    }
+    
+</style>
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="circ-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a> &rsaquo; Stack request</div>
+
+<div id="doc" class="yui-t7">
+    <div id="bd">
+    <div id="yui-main">
+    <div class="yui-g">
+    
+    <!-- TMPL_IF NAME="cantrq_loop" -->
+    <div class="dialog alert">
+        <h3 class="important">Can't create the request:</h3>
+        <ul>
+        <!-- TMPL_LOOP NAME="cantrq_loop" -->
+            
+            <!-- TMPL_IF NAME="EXPIRED" -->
+                <li><span class="circ-hlt">Expiration:</span>
+                <span>Patron&apos;s card has expired on <!-- TMPL_VAR NAME="EXPIRED" -->.</span>
+            <!-- /TMPL_IF -->
+            
+            <!-- TMPL_IF NAME="GNA" -->
+                <li>Patron&apos;s address is in doubt.</li>
+            <!-- /TMPL_IF -->
+            
+            <!-- TMPL_IF NAME="LOST" -->
+                <li>Patron&apos;s card is declared has lost.</li>
+            <!-- /TMPL_IF -->
+            
+            <!-- TMPL_IF NAME="DOCS" -->
+                <li>Patron is restricted because he must provide his documents.</li>
+            <!-- /TMPL_IF -->
+            
+            <!-- TMPL_IF NAME="DEBARRED2" -->
+                <li>Patron debarred<!-- TMPL_IF NAME="userdebarred2date" --> until <!-- TMPL_VAR NAME="userdebarred2date" --><!--/TMPL_IF--> because of unreturned stack requests.<br/>
+                    <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<!-- TMPL_VAR NAME='sr_borrowernumber' -->#stacks">
+                        Patron <!-- TMPL_VAR Name="sr_surname" -->, <!-- TMPL_VAR Name="sr_firstname" --> details
+                    </a>
+                </li>
+            <!-- /TMPL_IF -->
+            
+            <!-- TMPL_IF NAME="NOT_AVAILABLE" -->
+                <li>Document not available for stack request.</li>
+            <!-- /TMPL_IF -->
+            
+            <!-- TMPL_IF NAME="WRONG_BRANCH" -->
+                <li>Patron's branch is different from item's holding branch.</li>
+            <!-- /TMPL_IF -->
+            
+        <!-- /TMPL_LOOP -->
+        </ul>
+    </div>
+    <!-- TMPL_ELSE -->
+        
+        <!-- TMPL_UNLESS NAME="sr_borrowernumber" -->
+            <!-- TMPL_IF NAME="NO_BORROWER" -->
+                <div class="dialog alert">
+                    <h3 class="important">Can't create a request:</h3>
+                    <div>No patron found with card number <strong><!-- TMPL_VAR NAME="sr_cardnumber" --></strong>.</div>
+                </div>
+            <!-- /TMPL_IF -->
+            
+            <h1>Item from stack request</h1>
+            
+            <div id="borr-search" class="yui-u first">
+                <div class="tip">Enter patron&apos;s card number:</div>
+                <form id="borrform" action="/cgi-bin/koha/stack/stack-request.pl" method="get">
+                    <input type="hidden" name="itemnumber"   value="<!-- TMPL_VAR NAME='itemnumber' -->" />
+                    <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME='biblionumber' -->" />
+                    <input class="focus" type="text" size="20" name="cardnumber" />
+                    <input type="submit" class="submit" name="doborr" value="Submit" />
+                </form>
+            </div>
+        <!-- TMPL_ELSE -->
+        
+          <!-- TMPL_IF NAME="post_ok" -->
+          
+            <!-- TMPL_IF NAME='must_choose_desk' -->
+            
+                <div class="dialog message">
+                    <h3>Please select the delivery desk:</h3>
+                    <br/>
+                    <form id="deskform" action="/cgi-bin/koha/stack/stack-request.pl" method="post">
+                        
+                        <input type="hidden" name="confirmed" value="<!-- TMPL_VAR NAME='confirmed' -->"/>
+                        <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME='sr_borrowernumber' -->"/>
+                        
+                        <input type="hidden" name="itemnumber" value="<!-- TMPL_VAR NAME='itemnumber' -->" />
+                        <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME='biblionumber' -->" />
+                        <input type="hidden" name="title"      value="<!-- TMPL_VAR NAME='title' -->" />
+                        <input type="hidden" name="author"     value="<!-- TMPL_VAR NAME='author' -->" />
+                        <input type="hidden" name="pubyear"    value="<!-- TMPL_VAR NAME='pubyear' -->" />
+                        <input type="hidden" name="callnumber" value="<!-- TMPL_VAR NAME='callnumber' -->" />
+                        <input type="hidden" name="years"      value="<!-- TMPL_VAR NAME='years' -->" />
+                        <input type="hidden" name="numbers"    value="<!-- TMPL_VAR NAME='numbers' -->" />
+                        <input type="hidden" name="begdate"    value="<!-- TMPL_VAR NAME='begdate' -->" />
+                        <input type="hidden" name="notes"      value="<!-- TMPL_VAR NAME='notes' -->" />
+                        
+                        <div>
+                            <select name="desk">
+                                <!-- TMPL_LOOP NAME="desks_loop" -->
+                                    <option value="<!-- TMPL_VAR NAME='deskcode' -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->>
+                                        <!-- TMPL_VAR NAME='deskname' -->
+                                    </option>
+                                <!-- /TMPL_LOOP -->
+                            </select>
+                            <input class="submit" type="submit" name="dodesk" value="Ok" />
+                        </div>
+                    </form>
+                </div>
+                
+            <!-- TMPL_ELSE -->
+                
+                <div class="dialog message">
+                    <h3 style="margin-bottom: 1em;">Stack request has been saved</h3>
+                    
+                    <div>
+                        <span>Item </span><span class="item_desc"><!-- TMPL_VAR NAME="item_desc" --></span>
+                    </div>
+                    <!-- TMPL_IF NAME='space_lib' -->
+                        <div>
+                            <span> will be delivered</span>
+                            <!-- TMPL_IF NAME="instantrq" -->
+                                <span> in <!-- TMPL_VAR NAME="instant_wait_min" --> minutes</span>
+                            <!-- TMPL_ELSE -->
+                                <span> the <!-- TMPL_VAR NAME="confirmed_begdate" --></span>
+                            <!-- /TMPL_IF -->
+                        </div>
+                        <div>
+                            <span> in patron&apos;s booked space</span>
+                            <span class="spacename"> &quot;<!-- TMPL_VAR NAME='space_lib' -->&quot;</span>
+                        </div>
+                    <!-- TMPL_ELSE -->
+                        <div>
+                            <span> may be checked out</span>
+                            <!-- TMPL_IF NAME="instantrq" -->
+                                <!-- TMPL_IF NAME="desk_not_open_yet" -->
+                                    <span> at <!-- TMPL_VAR NAME="desk_delivery_hour" -->:<!-- TMPL_VAR NAME="desk_delivery_min" --></span>
+                                <!-- TMPL_ELSE -->
+                                    <span> in <!-- TMPL_VAR NAME="instant_wait_min" --> minutes</span>
+                                <!-- /TMPL_IF -->
+                            <!-- TMPL_ELSE -->
+                                <span> the <!-- TMPL_VAR NAME="confirmed_begdate" --></span>
+                            <!-- /TMPL_IF -->
+                        </div>
+                        <div>
+                            <span> at</span>
+                            <span class="deskname"> &quot;<!-- TMPL_VAR NAME='desk_name' -->&quot;</span>
+                        </div>
+                    <!-- /TMPL_IF -->
+                    
+                    <div style="margin-top: 1em;">
+                        <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=<!-- TMPL_VAR NAME='sr_borrowernumber' -->#stacks">
+                            Patron <!-- TMPL_VAR Name="sr_surname" -->, <!-- TMPL_VAR Name="sr_firstname" --> details
+                        </a>
+                    </div>
+                    <!-- TMPL_INCLUDE NAME="pgl-back-results-html.inc" -->
+                </div>
+                
+            <!-- /TMPL_IF -->
+          
+          <!-- TMPL_ELSE -->
+          
+            <!-- TMPL_IF NAME="post_err_loop" -->
+            <div class="dialog alert">
+                <h3>Can't create stack request:</h3>
+                <ul>
+                <!-- TMPL_LOOP NAME="post_err_loop" -->
+                    
+                    <!-- TMPL_IF NAME="NO_TITLE" --><li>You must specify a Title</li><!-- /TMPL_IF -->
+                    <!-- TMPL_IF NAME="NO_CALLNUMBER" --><li>You must specify a Call Number</li><!-- /TMPL_IF -->
+                    <!-- TMPL_IF NAME="NO_YEARS" --><li>You must specify Year(s)</li><!-- /TMPL_IF -->
+                    <!-- TMPL_IF NAME="NO_NUMBERS" --><li>You must specify Volum(s) or Number(s)</li><!-- /TMPL_IF -->
+                    
+                    <!-- TMPL_IF NAME="INVALID_DATE_FORMAT" --><li>Date is not valid</li><!-- /TMPL_IF -->
+                    <!-- TMPL_IF NAME="INVALID_DATE_MIN" --><li>Date can&apos;t be in the past</li><!-- /TMPL_IF -->
+                    
+                    <!-- TMPL_IF NAME="SPACE_BLOCKING_SR" -->
+                        <li>A stack request linked to a booked space exists</li>
+                    <!-- /TMPL_IF -->
+                    <!-- TMPL_IF NAME="BLOCKING_SR" -->
+                        <li>A bloquing stack request exists</li>
+                    <!-- /TMPL_IF -->
+                    
+                    <!-- TMPL_IF NAME="DESK_DATE_ERR" -->
+                        <li>No delivery desk is available for stack request at this date</li>
+                    <!-- /TMPL_IF -->
+                    
+                    <!-- TMPL_IF NAME="CLOSED_LIB" -->
+                        <li>Library is closed at this date</li>
+                    <!-- /TMPL_IF -->
+                    
+                <!-- /TMPL_LOOP -->
+                </ul>
+            </div>
+            
+            <!-- TMPL_ELSE -->
+            
+                <!-- TMPL_LOOP NAME="alerts_loop" -->
+                <div class="dialog alert">
+                    <ul>
+                        <!-- TMPL_IF NAME="NO_DELIVERY" -->
+                            <li>No delivery can be provided for this item <small>(untill <!-- TMPL_VAR NAME="max_begdate" -->)</small>.</li>
+                        <!-- /TMPL_IF -->
+                        <!-- TMPL_IF NAME="QUOTA_ZERO" -->
+                            <li>Patron is normally not allowed to request items of this type <small>(quota 0)</small>.</li>
+                        <!-- /TMPL_IF -->
+                    </ul>
+                </div>
+                <!-- /TMPL_LOOP -->
+                
+                <!-- TMPL_IF NAME="needs_confirm_loop" -->
+                <div class="dialog alert">
+                    <ul>
+                        <!-- TMPL_LOOP NAME="needs_confirm_loop" -->
+                        
+                            <!-- TMPL_IF NAME="TOO_MANY_SR" -->
+                                <li>Too many stack requests: <!-- TMPL_VAR NAME="TOO_MANY_SR" --></li>
+                            <!-- /TMPL_IF -->
+                            <!-- TMPL_IF NAME="TOO_MANY_INST" -->
+                                <li>Too many instant stack requests: <!-- TMPL_VAR NAME="TOO_MANY_INST" --></li>
+                            <!-- /TMPL_IF -->
+                            <!-- TMPL_IF NAME="TOO_MANY_DELAY" -->
+                                <li>Too many delayed stack requests: <!-- TMPL_VAR NAME="TOO_MANY_DELAY" --></li>
+                            <!-- /TMPL_IF -->
+                            
+                            <!-- TMPL_IF NAME="INVALID_DATE_MAX" -->
+                                <li>Date exceeds the maximum : <!-- TMPL_VAR NAME="max_begdate" --></li>
+                            <!-- /TMPL_IF -->
+                            
+                        <!-- /TMPL_LOOP -->
+                    </ul>
+                    
+                    <!-- TMPL_UNLESS NAME="cant_confirm" -->
+                    <form action="/cgi-bin/koha/stack/stack-request.pl" method="post">
+                        <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME='sr_borrowernumber' -->" />
+                        <input type="hidden" name="itemnumber"     value="<!-- TMPL_VAR NAME='itemnumber' -->" />
+                        <input type="hidden" name="biblionumber"   value="<!-- TMPL_VAR NAME='biblionumber' -->" />
+                        <input type="hidden" name="title"      value="<!-- TMPL_VAR NAME='title' -->" />
+                        <input type="hidden" name="author"     value="<!-- TMPL_VAR NAME='author' -->" />
+                        <input type="hidden" name="pubyear"    value="<!-- TMPL_VAR NAME='pubyear' -->" />
+                        <input type="hidden" name="callnumber" value="<!-- TMPL_VAR NAME='callnumber' -->" />
+                        <input type="hidden" name="years"      value="<!-- TMPL_VAR NAME='years' -->" />
+                        <input type="hidden" name="numbers"    value="<!-- TMPL_VAR NAME='numbers' -->" />
+                        <input type="hidden" name="begdate"    value="<!-- TMPL_VAR NAME='begdate' -->" />
+                        <input type="hidden" name="notes"      value="<!-- TMPL_VAR NAME='notes' -->" />
+                        
+                        <input type="hidden" name="from_reserve" value="<!-- TMPL_VAR NAME='from_reserve' -->" />
+                        
+                        <input type="hidden" name="confirmed" value="1" />
+                        <input type="hidden" name="dorequest" value="1" />
+                        
+                        <input type="submit" class="approve" value="Yes, Create (Y)" accesskey="y" />
+                    </form>
+                    
+                    <form method="post" action="/cgi-bin/koha/circ/circulation-home.pl">
+                        <input type="submit" class="deny" value="No, Don't Create (N)" accesskey="n" />
+                    </form>
+                    <!-- /TMPL_UNLESS -->
+                    
+                </div>
+                <!-- /TMPL_IF -->
+                
+            <!-- /TMPL_IF -->
+            
+            <!-- TMPL_IF NAME="onempty" -->
+            <div class="dialog message">
+                <span class="important">Beware: </span>
+                <span>This form is only for items that are not in the digital catalog. </span>
+            </div>
+            <!-- /TMPL_IF -->
+
+            <h1>Item from stack request</h1>
+
+            <form id="stackrqform" action="/cgi-bin/koha/stack/stack-request.pl" method="post">
+            
+            <div class="yui-u first">
+            
+            <input type="hidden" name="borrowernumber" value="<!-- TMPL_VAR NAME='sr_borrowernumber' -->" />
+            <input type="hidden" name="itemnumber" value="<!-- TMPL_VAR NAME='itemnumber' -->" />
+            <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME='biblionumber' -->" />
+
+            <fieldset class="brief"><legend>Item</legend>
+            <ol>
+                <li class="<!-- TMPL_IF NAME='onempty' -->mandatory editable<!-- TMPL_ELSE -->noteditable<!-- /TMPL_IF -->">
+                    <label for="title">Title:</label>
+                    <input id="title" type="text" name="title" value="<!-- TMPL_VAR NAME='title' ESCAPE='HTML' -->" />
+                </li>
+                
+                <!-- TMPL_UNLESS NAME="onserial" -->
+                <li class="<!-- TMPL_IF NAME='onempty' -->editable<!-- TMPL_ELSE -->noteditable<!-- /TMPL_IF -->">
+                    <label for="author">Author:</label>
+                    <input id="author" type="text" name="author" value="<!-- TMPL_VAR NAME='author' ESCAPE='HTML' -->" />
+                </li>
+                <!-- /TMPL_UNLESS -->
+                
+                <!-- TMPL_UNLESS NAME="onserial" -->
+                <li class="<!-- TMPL_IF NAME='onempty' -->editable<!-- TMPL_ELSE -->noteditable<!-- /TMPL_IF -->">
+                    <label for="pubyear">Publication year:</label>
+                    <input id="pubyear" type="text" name="pubyear" value="<!-- TMPL_VAR NAME='pubyear' ESCAPE='HTML' -->" />
+                </li>
+                <!-- /TMPL_UNLESS -->
+                
+                <li class="mandatory <!-- TMPL_IF NAME='onempty' -->editable<!-- TMPL_ELSE -->noteditable<!-- /TMPL_IF -->">
+                    <label for="callnumber">Call number:</label>
+                    <input id="callnumber" type="text" name="callnumber" value="<!-- TMPL_VAR NAME='callnumber' ESCAPE='HTML' -->" />
+                </li>
+                
+                <li class="editable <!-- TMPL_IF NAME='onserial' -->mandatory<!-- /TMPL_IF -->">
+                    <label for="years">Year(s): <span class="hint">Separate with commas</span></label>
+                    <textarea id="years" rows="2" name="years"><!-- TMPL_VAR NAME='years' --></textarea>
+                </li>
+                
+                <li class="editable <!-- TMPL_IF NAME='onserial' -->mandatory<!-- /TMPL_IF -->">
+                    <label for="numbers">Volum(s), Number(s): <span class="hint">Separate with commas</span></label>
+                    <textarea id="numbers" rows="2" name="numbers"><!-- TMPL_VAR NAME='numbers' --></textarea>
+                </li>
+                
+                <!-- TMPL_IF NAME='onitem' -->
+                <li class="noteditable">
+                    <label for="barcode">Barcode:</label>
+                    <input id="barcode" type="text" name="barcode" value="<!-- TMPL_VAR NAME='barcode' ESCAPE='HTML' -->" />
+                </li>
+                <!-- /TMPL_IF -->
+                
+                <li class="noteditable">
+                    <label for="adress">Physical Adress:</label>
+                    <input id="address" type="text" name="address" value="<!-- TMPL_VAR NAME='physical_address' -->" />
+                </li>
+            </ol>
+            
+             </fieldset>
+              <fieldset class="brief"><legend>Borrower</legend>
+            <ol>
+                <li class="mandatory noteditable">
+                    <label for="name">First Name:</label>
+                    <input id="name" type="text" name="firstname" value="<!-- TMPL_VAR NAME='sr_firstname' ESCAPE='HTML' -->" />
+                </li>
+                <li class="mandatory noteditable">
+                    <label for="surname">Last Name:</label>
+                    <input id="surname" type="text" name="surname" value="<!-- TMPL_VAR NAME='sr_surname' ESCAPE='HTML' -->" />
+                </li>
+                <li class="mandatory noteditable">
+                    <label for="cardnumber">Card Number:</label>
+                    <input id="cardnumber" type="text" name="cardnumber" value="<!-- TMPL_VAR NAME='sr_cardnumber' ESCAPE='HTML' -->" />
+                </li>
+            </ol>
+            </fieldset>
+
+            </div><!-- yui-u first -->
+            <div class="yui-u">
+            
+            <!-- TMPL_UNLESS NAME='from_reserve' -->
+	            <!-- TMPL_IF NAME="spaces_count" -->
+	            <fieldset class="brief"><legend>Booked spaces</legend>
+	                <div class="hint">Patron's booked spaces:</div>
+	                <ul>
+	                    <!-- TMPL_LOOP NAME="spaces_loop" -->
+	                    <li><!-- TMPL_VAR NAME='space_lib' -->: <!-- TMPL_VAR NAME='begin_date_ui' --> - <!-- TMPL_VAR NAME='end_date_ui' --></li>
+	                    <!-- /TMPL_LOOP -->
+	                </ul>
+	            </fieldset>
+	            <!-- /TMPL_IF -->
+            <!-- /TMPL_UNLESS -->
+            
+            <fieldset class="brief"><legend>Request</legend>
+            <ol>
+                <!-- TMPL_IF NAME='from_reserve' -->
+                     <li class="noteditable">
+                <!-- TMPL_ELSE -->
+                    <li class="editable">
+                <!-- /TMPL_IF -->
+                    
+                    <label for="begdate">Request for:</label>
+                    
+                    <input id="begdate" name="begdate" value="<!-- TMPL_VAR NAME='begdate' ESCAPE='HTML' -->" />
+                    <!-- TMPL_UNLESS NAME='from_reserve' -->
+	                    <script language="JavaScript" type="text/javascript">
+	                        //<![CDATA[
+	                        
+	                        var cal_img = document.createElement('img');
+	                        cal_img.src = "<!-- TMPL_VAR NAME="themelang" -->/lib/calendar/cal.gif";
+	                        cal_img.alt = "Show Calendar";
+	                        cal_img.border = "0";
+	                        cal_img.id = "CalendarBeginDate";
+	                        cal_img.style.cursor = "pointer";
+	                        document.getElementById("begdate").parentNode.appendChild( cal_img );
+	                        
+	                        var min_date = Date_from_syspref('<!-- TMPL_VAR NAME="default_begdate" -->');
+	                        
+	                        function validateBeginDate(date) {
+	                            if (date > min_date ||
+	                                  ( date.getDate()     == min_date.getDate() &&
+	                                    date.getMonth()    == min_date.getMonth() &&
+	                                    date.getFullYear() == min_date.getFullYear() ) ) {
+	                                return false;
+	                            } else {
+	                                return true;
+	                            }
+	                        };
+	                        
+	                        function onBegDateUpdate(cal) {
+	                            begDateChanged();
+	                        };
+	                        
+	                        Calendar.setup(
+	                        {
+	                            inputField : "begdate",
+	                            ifFormat : "<!-- TMPL_VAR NAME='DHTMLcalendar_dateformat' -->",
+	                            button : "CalendarBeginDate",
+	                            disableFunc : validateBeginDate,
+	                            dateStatusFunc : validateBeginDate,
+	                            onUpdate : onBegDateUpdate,
+	                        }
+	                        );
+	                        
+	                        //]]>
+	                    </script>
+                    <!-- /TMPL_UNLESS -->
+                    <span class="hint"><!-- TMPL_INCLUDE NAME="date-format.inc" --></span>
+                </li>
+                
+                <!-- TMPL_IF NAME='allow_instantrq' -->
+                    <!-- TMPL_IF NAME='from_reserve' -->
+	                    <li class="noteditable inline">
+	                <!-- TMPL_ELSE -->
+	                    <li class="editable inline">
+	                <!-- /TMPL_IF -->
+                        <input id="instantrq" type="checkbox" name="instantrq" value="1" <!-- TMPL_IF NAME="instantrq" -->checked="checked"<!-- /TMPL_IF --> />
+                        <label for="instantrq">Instant</label>
+                    </li>
+                <!-- /TMPL_IF -->
+                
+                <li class="editable">
+                    <label for="notes">Notes:</label> 
+                    <textarea id="notes" rows="3" name="notes"><!-- TMPL_VAR NAME="notes" --></textarea>
+                </li>
+            </ol>
+            </fieldset>
+            
+            <div id="mandatorytip" class="tip">Mandatory field</div>
+            
+             <fieldset class="action">
+                <input class="submit" type="submit" name="dorequest" value="Request" />
+                <input type="hidden" name="from_reserve" value="<!-- TMPL_VAR NAME='from_reserve' -->" />
+                <input type="reset" value="Clear" />
+                <a class="cancel" href="/cgi-bin/koha/circ/circulation-home.pl">Cancel</a>
+             </fieldset>
+            
+            </div><!-- yui-u second -->
+            
+            </form>
+            
+          <!-- /TMPL_IF --><!-- post_ok -->
+         
+        <!-- /TMPL_UNLESS --><!-- sr_borrowernumber -->
+    
+    <!-- /TMPL_IF --><!-- cantrq_loop -->
+    
+    </div>
+    </div>
+    </div>
+    
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

@@ -8,7 +8,7 @@ if (d!="") {
       var ok=1;
       var msg;
       if ( (date.length < 2) && (ok==1) ) {
-        msg = MSG_SEPARATOR+field.name;
+        msg = _("Separator must be /"); 
     	alert(msg); ok=0; field.focus();
     	return;
       }
@@ -17,19 +17,19 @@ if (d!="") {
       var yyyy = date[2]; 
       // checking days
       if ( ((isNaN(dd))||(dd<1)||(dd>31)) && (ok==1) ) {
-        msg = MSG_INCORRECT_DAY+field.name;
+        msg = _("day not correct."); 
 	    alert(msg); ok=0; field.focus();
 	    return false;
       }
       // checking months
       if ( ((isNaN(mm))||(mm<1)||(mm>12)) && (ok==1) ) {
-        msg = MSG_INCORRECT_MONTH+field.name;
+        msg = _("month not correct.");
 	    alert(msg); ok=0; field.focus();
 	    return false;
       }
       // checking years
       if ( ((isNaN(yyyy))||(yyyy<amin)||(yyyy>amax)) && (ok==1) ) {
-        msg = MSG_INCORRECT_YEAR+field.name;
+        msg = _("years not correct."); 
 	    alert(msg); ok=0; field.focus();
 	    return false;
       }
@@ -43,13 +43,13 @@ var msg2;
 if (  document.form.check_member.value==1){
 	if (document.form.categorycode.value != "I"){
 		
-		msg1 += MSG_DUPLICATE_PATRON;
+		msg1 += ("Warning  !!!! Duplicate patron!!!!");
 		alert(msg1);
 	check_form_borrowers(0);
 	document.form.submit();
 	
 	}else{
-		msg2 += MSG_DUPLICATE_ORGANIZATION;
+		msg2 += ("Warning !!!! Duplicate organisation!!!!");
 		alert(msg2);
 	check_form_borrowers(0);
 	}
@@ -73,7 +73,7 @@ var myDate2=document.form.dateexpiry.value.split ('/');
 	
 		{ 
 		document.form.dateenrolled.focus();
-		var msg = MSG_LATE_EXPIRY;
+		var msg = ("Warning !!! check date expiry  >= date enrolment");
 		alert(msg);
 		}
 	}
@@ -101,8 +101,7 @@ function check_form_borrowers(nav){
 	else
 	{
 	    var champ_verif = document.form.BorrowerMandatoryField.value.split ('|');
-	    var message = MSG_MISSING_MANDATORY
-	    message += "\n";
+	    var message ="The following fields are mandatory :\n";
 	    var message_champ="";
 		for (var i=0; i<champ_verif.length; i++) {
 			if (document.getElementsByName(""+champ_verif[i]+"")[0]) {
@@ -132,7 +131,7 @@ function check_form_borrowers(nav){
  	if (statut!=1 && document.form.check_member.value > 0 ) {
 		if (!(document.form_double.answernodouble.checked)){
 			message ="";
-			message_champ+= MSG_DUPLICATE_SUSPICION;
+			message_champ+=("Please confirm suspicious duplicate patron !!! ");
 			statut=1;
 			document.form.nodouble.value=0;
 		} else {

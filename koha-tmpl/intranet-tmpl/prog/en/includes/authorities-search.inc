@@ -6,6 +6,7 @@
     <form action="/cgi-bin/koha/authorities/authorities-home.pl" method="get">
         <input type="hidden" name="op" value="do_search" />
         <input type="hidden" name="type" value="intranet" />
+        <input type="hidden" name="nbstatements" value="<!-- TMPL_VAR NAME="nbstatements" -->" />
         <select name="authtypecode">
         <!-- TMPL_LOOP NAME="authtypesloop" -->
             <!-- TMPL_IF name="selected" -->
@@ -35,6 +36,7 @@
     <form action="/cgi-bin/koha/authorities/authorities-home.pl" method="get">
         <input type="hidden" name="op" value="do_search" />
         <input type="hidden" name="type" value="intranet" />
+        <input type="hidden" name="nbstatements" value="<!-- TMPL_VAR NAME="nbstatements" -->" />
         <select  name="authtypecode">
         <!-- TMPL_LOOP NAME="authtypesloop" -->
             <!-- TMPL_IF name="selected" -->
@@ -66,6 +68,7 @@
     <form action="/cgi-bin/koha/authorities/authorities-home.pl" method="get">
         <input type="hidden" name="op" value="do_search" />
         <input type="hidden" name="type" value="intranet" />
+        <input type="hidden" name="nbstatements" value="<!-- TMPL_VAR NAME="nbstatements" -->" />
         <select name="authtypecode">
         <!-- TMPL_LOOP NAME="authtypesloop" -->
             <!-- TMPL_IF name="selected" -->

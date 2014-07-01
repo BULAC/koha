@@ -32,6 +32,8 @@ use C4::Serials;
 use C4::Letters;
 use Carp;
 
+use C4::Callnumber::Callnumber;
+
 #use Smart::Comments;
 
 my $query = CGI->new;
@@ -131,11 +133,17 @@ for my $thisbranch (sort { $branches->{$a}->{branchname} cmp $branches->{$b}->{b
     };
 }
 
-my $locations_loop = GetAuthorisedValues("LOC",$subs->{'location'});
+my $location = '';
+my $subscriptionid = $query->param('subscriptionid');
+if ( $subscriptionid ) {
+	$subs = GetSubscription($subscriptionid);
+	$location = $subs->{ 'location' };
+}
+my $locationloop = GetAuthorisedValues('BULAC_LA', $location);
 
 $template->param(branchloop => $branchloop,
+	locationloop => $locationloop,
     DHTMLcalendar_dateformat => C4::Dates->DHTMLcalendar(),
-    locations_loop=>$locations_loop,
 );
 # prepare template variables common to all $op conditions:
 $template->param(  'dateformat_' . C4::Context->preference('dateformat') => 1 );
@@ -251,6 +259,9 @@ sub redirect_add_subscription {
     my $missinglist = $query->param('missinglist');
     my $opacnote = $query->param('opacnote');
     my $librariannote = $query->param('librariannote');
+    
+    $callnumber = C4::Callnumber::Callnumber::UpdateSerialCallnumberRule( $callnumber ); #Progilone B10 : Manage serial callnumber
+    
 	my $subscriptionid = NewSubscription($auser,$branchcode,$aqbooksellerid,$cost,$aqbudgetid,$biblionumber,
 					$startdate,$periodicity,$dow,$numberlength,$weeklength,$monthlength,
 					$add1,$every1,$whenmorethan1,$setto1,$lastvalue1,$innerloop1,
@@ -308,6 +319,7 @@ sub redirect_mod_subscription {
     my $numberingmethod = $query->param('numberingmethod');
     my $status = 1;
     my $callnumber = $query->param('callnumber');
+    my $oldcallnumber = $query->param('oldcallnumber'); #Progilone B10 : Manage serial callnumber
     my $notes = $query->param('notes');
     my $internalnotes = $query->param('internalnotes');
     my $hemisphere = $query->param('hemisphere');
@@ -330,6 +342,11 @@ sub redirect_mod_subscription {
         ModNextExpected($subscriptionid,C4::Dates->new($nextacquidate,'iso'));
         # if we have not received any issues yet, then we also must change the firstacquidate for the subs.
         $firstissuedate = $nextacquidate if($nextexpected->{isfirstissue});
+    }
+    
+    #Progilone B10 : Manage serial callnumber
+    if ( $callnumber ne $oldcallnumber ) {
+	    $callnumber = C4::Callnumber::Callnumber::UpdateSerialCallnumberRule( $callnumber );
     }
 
         ModSubscription(

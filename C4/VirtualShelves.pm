@@ -116,7 +116,8 @@ sub GetShelves ($$$$) {
     $query .= ($mincategory == 1) ? "WHERE  owner=? AND category=?" : "WHERE category>=?";
 	$query .= qq(
         GROUP BY virtualshelves.shelfnumber
-        ORDER BY virtualshelves.shelfname
+        ORDER BY virtualshelves.category
+		DESC 
 		LIMIT ?, ?);
     my $sth2 = $dbh->prepare($query);
     $sth2->execute(@params);
@@ -125,7 +126,6 @@ sub GetShelves ($$$$) {
            	$firstname,   $category,  $sortfield, $count ) = $sth2->fetchrow ) {
         $shelflist{$shelfnumber}->{'shelfname'} = $shelfname;
         $shelflist{$shelfnumber}->{'count'}     = $count;
-        if($count eq 1){ $shelflist{$shelfnumber}->{'single'} = 1; }
         $shelflist{$shelfnumber}->{'sortfield'} = $sortfield;
         $shelflist{$shelfnumber}->{'category'}  = $category;
         $shelflist{$shelfnumber}->{'owner'}     = $owner;
@@ -266,7 +266,7 @@ sub GetShelfContents ($;$$$) {
 	}
     my $query =
        " SELECT vc.biblionumber, vc.shelfnumber, vc.dateadded, itemtypes.*,
-            biblio.*, biblioitems.itemtype, biblioitems.publicationyear, biblioitems.publishercode, biblioitems.place, biblioitems.size, biblioitems.pages
+	   			biblio.*, biblioitems.itemtype, biblioitems.publicationyear
          FROM   virtualshelfcontents vc
 		 LEFT JOIN biblio      ON      vc.biblionumber =      biblio.biblionumber
 		 LEFT JOIN biblioitems ON  biblio.biblionumber = biblioitems.biblionumber

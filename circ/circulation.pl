@@ -30,11 +30,21 @@ use C4::Dates qw/format_date/;
 use C4::Branch; # GetBranches
 use C4::Koha;   # GetPrinter
 use C4::Circulation;
+use C4::Overdues qw/CheckBorrowerDebarred/; # PROGILONE - A2
 use C4::Members;
 use C4::Biblio;
 use C4::Reserves;
 use C4::Context;
 use CGI::Session;
+# B032
+use C4::Items qw/GetItemnumberFromBarcode GetItem ModItem/;
+use C4::Stack::Search qw/GetStackById GetStacksByItemnumber GetStacksOfBorrower/;
+use C4::Stack::Rules qw/CanRenewRequestStack CanCancelRequestStack/;
+use C4::Stack::Manager qw/CancelStackRequest RetrieveStackRequest AddReturnStack/;
+use C4::Utils::Components;
+use C4::Utils::Constants;
+use C4::Utils::IState;
+# END B032
 
 use Date::Calc qw(
   Today
@@ -74,6 +84,16 @@ if (!C4::Context->userenv && !$branch){
         print $query->redirect("/cgi-bin/koha/circ/selectbranchprinter.pl");
         exit;
     }
+    my $parameters = '';
+    if ($session->param('desk') eq 'NO_DESK_SET'){
+        # no desk set
+        foreach ($query->param()) {
+            $_ or next; # disclude blanks
+            $parameters = $parameters.'&'.$_.'='.$query->param($_);
+        }
+        print $query->redirect('/cgi-bin/koha/desk/selectdesk.pl?oldreferer=/cgi-bin/koha/circ/circulation.pl'.$parameters);
+        exit;
+    }
 }
 
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user (
@@ -91,6 +111,14 @@ my $branches = GetBranches();
 my @failedrenews = $query->param('failedrenew');    # expected to be itemnumbers 
 my %renew_failed;
 for (@failedrenews) { $renew_failed{$_} = 1; }
+my @failedmaterialsinfo = $query->param('failedmaterialsinfo');
+my %failed_materials_info;
+for my $material (@failedmaterialsinfo) { $failed_materials_info{$material} = 1; }
+
+my $op_materials  = $query->param('op_materials') || 0;
+my $op_materials  = $query->param('op_materials') || 0;
+my $materialsinfo = $query->param('materialsinfo');
+my $missinginfo   = $query->param('missinginfo');
 
 my $findborrower = $query->param('findborrower');
 $findborrower =~ s|,| |g;
@@ -98,6 +126,7 @@ my $borrowernumber = $query->param('borrowernumber');
 
 $branch  = C4::Context->userenv->{'branch'};  
 $printer = C4::Context->userenv->{'branchprinter'};
+my $desk_code = C4::Context->userenv->{'desk'}; # B032
 
 
 # If AutoLocation is not activated, we show the Circulation Parameters to chage settings of librarian
@@ -107,10 +136,6 @@ if (C4::Context->preference("AutoLocation") != 1) {
 
 if (C4::Context->preference("DisplayClearScreenButton")) {
     $template->param(DisplayClearScreenButton => 1);
-}
-
-if (C4::Context->preference("UseTablesortForCirc")) {
-    $template->param(UseTablesortForCirc => 1);
 }
 
 my $barcode        = $query->param('barcode') || '';
@@ -146,13 +171,13 @@ if($duedatespec_allow){
     if ($duedatespec) {
         if ($duedatespec =~ C4::Dates->regexp('syspref')) {
             my $tempdate = C4::Dates->new($duedatespec);
-#           if ($tempdate and $tempdate->output('iso') gt C4::Dates->new()->output('iso')) {
-#               # i.e., it has to be later than today/now
+            if ($tempdate and $tempdate->output('iso') gt C4::Dates->new()->output('iso')) {
+                # i.e., it has to be later than today/now
                 $datedue = $tempdate;
-#           } else {
-#               $invalidduedate = 1;
-#               $template->param(IMPOSSIBLE=>1, INVALID_DATE=>$duedatespec);
-#           }
+            } else {
+                $invalidduedate = 1;
+                $template->param(IMPOSSIBLE=>1, INVALID_DATE=>$duedatespec);
+            }
         } else {
             $invalidduedate = 1;
             $template->param(IMPOSSIBLE=>1, INVALID_DATE=>$duedatespec);
@@ -243,13 +268,14 @@ if ($borrowernumber) {
     # if the expiry date is before today ie they have expired
     if ( $warning_year*$warning_month*$warning_day==0 
         || Date_to_Days($today_year,     $today_month, $today_day  ) 
-         > Date_to_Days($warning_year, $warning_month, $warning_day) )
+         >= Date_to_Days($warning_year, $warning_month, $warning_day) )
     {
         #borrowercard expired, no issues
         $template->param(
             flagged  => "1",
             noissues => "1",
             expired     => format_date($borrower->{dateexpiry}),
+            $borrower->{'categorycode'} => 1,
             renewaldate => format_date("$renew_year-$renew_month-$renew_day")
         );
     }
@@ -270,6 +296,24 @@ if ($borrowernumber) {
         issuecount   => $issue,
         finetotal    => $fines
     );
+    
+    # PROGILONE - A2
+    my $debar = CheckBorrowerDebarred($borrowernumber);
+    if ($debar) {
+        $template->param( userdebarred    => 1 );
+        if ( $debar ne "9999-12-31" ) {
+            $template->param( userdebarreddate => C4::Dates::format_date($debar) );
+        }
+    }
+    
+    my ($debar2, $nb_overdue) = CheckBorrowerDebarred2($borrowernumber);
+    if ($debar2) {
+        $template->param( userdebarred2    => 1 );
+        if ( $debar2 ne "9999-12-31" ) {
+            $template->param( userdebarred2date => C4::Dates::format_date($debar2) );
+        }
+    }
+    # END PROGILONE
 }
 
 #
@@ -284,11 +328,15 @@ if ($barcode) {
 
     delete $question->{'DEBT'} if ($debt_confirmed);
     foreach my $impossible ( keys %$error ) {
-        $template->param(
-            $impossible => $$error{$impossible},
-            IMPOSSIBLE  => 1
-        );
-        $blocker = 1;
+        # B017 - Confirmation if item hold and renewed
+        if (not $error->{'NO_MORE_RENEWALS'}) {
+           $template->param(
+               $impossible => $$error{$impossible},
+               IMPOSSIBLE  => 1
+           );
+           $blocker = 1;
+        }
+        # END
     }
     if( !$blocker ){
         my $confirm_required = 0;
@@ -302,18 +350,55 @@ if ($barcode) {
                 $template->param(
                     $needsconfirmation => $$question{$needsconfirmation},
                     getTitleMessageIteminfo => $getmessageiteminfo->{'title'},
-                    getBarcodeMessageIteminfo => $getmessageiteminfo->{'barcode'},
                     NEEDSCONFIRMATION  => 1
                 );
                 $confirm_required = 1;
             }
         }
         unless($confirm_required) {
-            AddIssue( $borrower, $barcode, $datedue, $cancelreserve );
-            $inprocess = 1;
-            if($globalduedate && ! $stickyduedate && $duedatespec_allow ){
-                $duedatespec = $globalduedate->output();
-                $stickyduedate = 1;
+            my $item = GetItem( '', $barcode );
+	        if ( $item->{'materials'} && $item->{'materials'} ne '' &&  !$op_materials ) {
+	            my $materialsinfo_loop = GetAuthorisedValues( 'ABS_MATER', $item->{'materialsinfo'} );
+	            
+	            $template->param( 
+	                              'barcode'        => $item->{'barcode'},
+	                              'materials'      => $item->{'materials'},
+	                              'materials_loop' => $materialsinfo_loop,
+	                              'missinginfo'    => $item->{'missinginfo'},
+	                              'IMPOSSIBLE'     => 1,
+	                            );
+            } else {
+	            # B032 MAN103 convert stack request into issue
+	            #if ($question->{'CONVERT_STACK'}) {
+	                my $itemnumber = GetItemnumberFromBarcode($barcode);
+	                my $stacks_on_item = GetStacksByItemnumber($itemnumber);
+	                my $stack_to_convert = $$stacks_on_item[0]; # there can be only one request, see CanBookBeIssued
+	                
+	                # Place cancel code, asked and edited request will be archived
+	                CancelStackRequest(undef, $stack_to_convert, $AV_SR_CANCEL_CHECKOUT);
+	                
+	                # Reload from database
+	                $stack_to_convert = GetStackById($stack_to_convert->{'request_number'}, undef);
+	                
+	                if ($stack_to_convert->{'state'} eq $STACK_STATE_RUNNING) {
+	                    
+	                    # Perform return of request, it will be archived
+	                    AddReturnStack($stack_to_convert, $desk_code);
+	                }
+	            #}
+	            # END B032
+	            
+	            if ( $op_materials ) {
+	            	my $itemnumber = GetItemnumberFromBarcode($barcode);
+	                ModItem( { materialsinfo => $materialsinfo, missinginfo => $materialsinfo eq 'A' ? '' : $missinginfo }, undef, $itemnumber );
+	            }
+            
+	            AddIssue( $borrower, $barcode, $datedue, $cancelreserve );
+	            $inprocess = 1;
+	            if($globalduedate && ! $stickyduedate && $duedatespec_allow ){
+	                $duedatespec = $globalduedate->output();
+	                $stickyduedate = 1;
+	            }
             }
         }
     }
@@ -399,7 +484,7 @@ if ($borrowernumber) {
 
 #         if we have a reserve waiting, initiate waitingreserveloop
         if ($getreserv{waiting} == 1) {
-        push (@WaitingReserveLoop, \%getWaitingReserveInfo)
+            push( @WaitingReserveLoop, \%getWaitingReserveInfo );
         }
       
     }
@@ -413,12 +498,75 @@ if ($borrowernumber) {
     $template->param( adultborrower => 1 ) if ( $borrower->{'category_type'} eq 'A' );
 }
 
+#
+# B032 - View stacks
+#
+my $stacks = GetStacksOfBorrower($borrowernumber);
+
+# Listbox of cancel codes (without id)
+my $CGIcancel = buildCGIcancelStack('sortCancel', undef, 1, '');
+$template->param( CGIcancel => $CGIcancel );
+
+# Add some details
+foreach my $stack (@$stacks) {
+    
+    # add item type image and description
+    my $itemtype = (C4::Context->preference('item-level_itypes')) ? $stack->{'itype'} : $stack->{'itemtype'};
+    if ($itemtype) {
+        my $itemtypeinfo = getitemtypeinfo($itemtype);
+        $stack->{'itemtype_code'}        = $itemtype;
+        $stack->{'itemtype_description'} = $itemtypeinfo->{'description'};
+        $stack->{'itemtype_image'}       = $itemtypeinfo->{'imageurl'};
+    }
+    
+    # add stack renewal infos
+    my ($date_renewal_iso, $renew_impossible, $renew_confirm) = CanRenewRequestStack( undef, $stack );
+    if (scalar keys %$renew_impossible) {
+        $stack->{'renew_impossible'} = [$renew_impossible];
+    }
+    else {
+        $stack->{'canRenew'} = 1;
+        if (scalar keys %$renew_confirm) {
+            $stack->{'renewMustConfirm'} = 1;
+            $stack->{'renew_confirm'} = [$renew_confirm];
+        }
+        $stack->{'end_date_renewal'}    = $date_renewal_iso;
+        $stack->{'end_date_renewal_ui'} = format_date($date_renewal_iso);
+    }
+    
+    # test if can cancel stack request
+    $stack->{'canCancel'} = CanCancelRequestStack( undef, $stack );
+    
+    $stack->{'failed_materials_info'} = $failed_materials_info{$stack->{'barcode'}} || ($stack->{'materials'} && $stack->{'materials'} ne '');
+    
+    # test if stack request is overdue
+    if ( $stack->{'end_date'} and $stack->{'end_date'} lt $todaysdate and $stack->{'istate'} eq $ISTATE_ON_STACK ) {
+        $stack->{'od'} = 1;
+    }
+    
+    my $itm = GetItem( $stack->{'itemnumber'} );
+    AddIStateInfos($itm);
+    $itm->{'istate_isme'} = 1;
+    my @items;
+    push @items, $itm;
+    $stack->{'items'} = \@items;
+}
+
+$template->param(
+    STACKS       => $stacks,
+    stacks_count => scalar @$stacks,
+    destination  => 'circ',
+);
+# END B032
+
 # make the issued books table.
 my $todaysissues = '';
 my $previssues   = '';
 my @todaysissues;
 my @previousissues;
-
+## ADDED BY JF: new itemtype issuingrules counter stuff
+my $issued_itemtypes_count;
+my @issued_itemtypes_count_loop;
 my $totalprice = 0;
 
 if ($borrower) {
@@ -452,6 +600,9 @@ if ($borrower) {
         $it->{'od'} = ( $it->{'date_due'} lt $todaysdate ) ? 1 : 0 ;
         ($it->{'author'} eq '') and $it->{'author'} = ' ';
         $it->{'renew_failed'} = $renew_failed{$it->{'itemnumber'}};
+        $it->{'failed_materials_info'} = $failed_materials_info{$it->{'barcode'}} || ($it->{'materials'} && $it->{'materials'} ne '');
+        # ADDED BY JF: NEW ITEMTYPE COUNT DISPLAY
+        $issued_itemtypes_count->{ $it->{'itemtype'} }++;
 
         if ( $todaysdate eq $it->{'issuedate'} or $todaysdate eq $it->{'lastreneweddate'} ) {
             push @todaysissues, $it;
@@ -473,6 +624,38 @@ if ($borrower) {
     }
 }
 
+#### ADDED BY JF FOR COUNTS BY ITEMTYPE RULES
+# FIXME: This should utilize all the issuingrules options rather than just the defaults
+# and it should be moved to a module
+my $dbh = C4::Context->dbh;
+
+# how many of each is allowed?
+my $issueqty_sth = $dbh->prepare(
+    'SELECT itemtypes.description AS description,issuingrules.itemtype,maxissueqty ' .
+    'FROM issuingrules LEFT JOIN itemtypes ON (itemtypes.itemtype=issuingrules.itemtype) ' .
+    'WHERE categorycode=?'
+);
+$issueqty_sth->execute(q{*}); # This is a literal asterisk, not a wildcard.
+
+while ( my $data = $issueqty_sth->fetchrow_hashref() ) {
+
+    # subtract how many of each this borrower has
+    $data->{'count'} = $issued_itemtypes_count->{ $data->{'description'} };  
+    $data->{'left'}  =
+      ( $data->{'maxissueqty'} -
+          $issued_itemtypes_count->{ $data->{'description'} } );
+
+    # can't have a negative number of remaining
+    if ( $data->{'left'} < 0 ) { $data->{'left'} = '0' }
+    if ( $data->{maxissueqty} <= $data->{count} ) {
+        $data->{flag} = 1;
+    }
+    if ( $data->{maxissueqty} > 0 && $data->{itemtype} !~m/^(\*|CIRC)$/ ) {
+        push @issued_itemtypes_count_loop, $data;
+    }
+}
+
+#### / JF
 
 my @values;
 my %labels;
@@ -493,6 +676,7 @@ if ($borrowerslist) {
         -id       => 'borrowernumber',
         -values   => \@values,
         -labels   => \%labels,
+	-onclick  => "window.location = '/cgi-bin/koha/circ/circulation.pl?borrowernumber=' + this.value;",
         -size     => 7,
         -tabindex => '',
         -multiple => 0
@@ -516,7 +700,11 @@ foreach my $flag ( sort keys %$flags ) {
             $template->param( lost => 'true' );
         }
         elsif ( $flag eq 'DBARRED' ) {
-            $template->param( dbarred => 'true' );
+            # PROGILONE - A2
+            $template->param( userdebarred => 'true', 
+                              userdebarreddate => format_date($flags->{DBARRED}->{dateend})
+            );
+            # END PROGILONE
         }
         elsif ( $flag eq 'CHARGES' ) {
             $template->param(
@@ -614,6 +802,7 @@ my (undef, $roadttype_hashref) = &GetRoadTypes();
 my $address = $borrower->{'streetnumber'}.' '.$roadttype_hashref->{$borrower->{'streettype'}}.' '.$borrower->{'address'};
 
 $template->param(
+    issued_itemtypes_count_loop => \@issued_itemtypes_count_loop,
     lib_messages_loop => $lib_messages_loop,
     bor_messages_loop => $bor_messages_loop,
     all_messages_del  => C4::Context->preference('AllowAllMessageDeletion'),
@@ -667,8 +856,15 @@ my ($picture, $dberror) = GetPatronImage($borrower->{'cardnumber'});
 $template->param( picture => 1 ) if $picture;
 
 # get authorised values with type of BOR_NOTES
-
-my $canned_notes = GetAuthorisedValues("BOR_NOTES");
+my @canned_notes;
+my $sth = $dbh->prepare('SELECT * FROM authorised_values WHERE category = "BOR_NOTES"');
+$sth->execute();
+while ( my $row = $sth->fetchrow_hashref() ) {
+  push @canned_notes, $row;
+}
+if ( scalar( @canned_notes ) ) {
+  $template->param( canned_bor_notes_loop => \@canned_notes );
+}
 
 $template->param(
     debt_confirmed            => $debt_confirmed,
@@ -677,6 +873,5 @@ $template->param(
 	AllowRenewalLimitOverride => C4::Context->preference("AllowRenewalLimitOverride"),
     dateformat                => C4::Context->preference("dateformat"),
     DHTMLcalendar_dateformat  => C4::Dates->DHTMLcalendar(),
-    canned_bor_notes_loop     => $canned_notes,
 );
 output_html_with_http_headers $query, $cookie, $template->output;

@@ -19,12 +19,28 @@
 use strict;
 #use warnings; FIXME - Bug 2505
 use CGI;
-use C4::Auth;
+use C4::Auth qw/:DEFAULT get_session/;
 use C4::Output;
 use C4::Context;
 use C4::Koha;
 
 my $query = new CGI;
+
+if (!C4::Context->userenv){
+    my $sessionID = $query->cookie("CGISESSID");
+    my $session = get_session($sessionID);
+    if ($session->param('branch') eq 'NO_LIBRARY_SET'){
+        # no branch set we can't return
+        print $query->redirect("/cgi-bin/koha/circ/selectbranchprinter.pl");
+        exit;
+    }
+    if ($session->param('desk') eq 'NO_DESK_SET'){
+        # no desk set
+        print $query->redirect("/cgi-bin/koha/desk/selectdesk.pl?oldreferer=/cgi-bin/koha/circ/circulation-home.pl");
+        exit;
+    }
+} 
+
 my ($template, $loggedinuser, $cookie)
 = get_template_and_user({template_name => "circ/circulation-home.tmpl",
 				query => $query,

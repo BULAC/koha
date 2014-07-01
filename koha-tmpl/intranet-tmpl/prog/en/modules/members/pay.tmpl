@@ -47,7 +47,11 @@
 	<select name="payfine<!-- TMPL_VAR name="i" -->">
 	<option value="no">Unpaid</option>
 	<option value="yes">Paid</option>
-	<option value="wo">Writeoff</option>
+	<!-- TMPL_IF NAME="CAN_user_circulate_cancel_fine" -->
+		<option value="wo">Writeoff</option>
+    	<option value="ex">Exempt</option><!-- B015 -->
+    	<option value="err">Error</option><!-- MAN076 -->
+    <!-- /TMPL_IF -->
 	</select>
 	<!-- /TMPL_IF -->
 	<input type="hidden" name="itemnumber<!-- TMPL_VAR name="i" -->" value="<!-- TMPL_VAR name="itemnumber" -->" />

@@ -32,3 +32,15 @@
 		<li><a href="/cgi-bin/koha/reports/manager.pl?report_name=itemtypes">Catalog by Item Type</a></li>
 		<li><a href="/cgi-bin/koha/reports/issues_avg_stats.pl">Average loan time</a></li>
 	</ul>
+	
+	<!-- B11 -->
+	<h5>Jasper</h2>
+	<ul>
+		<li><a href="/cgi-bin/koha/edition/circulation.pl">Circulation statistics</a></li>
+		<li><a href="/cgi-bin/koha/edition/recolement.pl">Recolement statistics</a></li>
+		<li><a href="/cgi-bin/koha/edition/expiredreserves.pl">Expired reserves</a></li>
+		<li><a href="/cgi-bin/koha/edition/expiredcommunications.pl">Expired stack requests</a></li>
+		<li><a href="/cgi-bin/koha/edition/nonreturnedstacks.pl">Non returned stack requests</a></li>
+		<li><a href="/cgi-bin/koha/edition/completedspacebookingofday.pl">Completed Spaces bookings of day which have to be clean</a></li>
+	</ul>
+	<!-- END B11 -->

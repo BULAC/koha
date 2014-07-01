@@ -31,7 +31,7 @@
 	 });
 
 /**
- * check if mandatory subfields are writed
+ * check if mandatory subfields are written
  */
 function AreMandatoriesNotOk(){
     var mandatories = new Array();
@@ -75,7 +75,6 @@ function AreMandatoriesNotOk(){
 	    	for(var j=0,len2=eleminputs.length; j<len2; j++){
 	
 	    		if(eleminputs[j].name.match(varegexp) && eleminputs[j].value){
-					/* tag_801_subfield_c_841304_545657 */
 					inputregexp = new RegExp("^tag_" + arr[0] + "_subfield_" + eleminputs[j].value + "_" + arr[2]);
 					
 					for( var k=0; k<len2; k++){
@@ -156,7 +155,7 @@ function openAuth(tagsubfieldid,authtype) {
 	newin=window.open("../authorities/auth_finder.pl?authtypecode="+  authtype+ "&index="+tagsubfieldid+"&value_mainstr="+encodeURI(mainmainstring)+"&value_main="+encodeURI(mainstring), "_blank",'width=700,height=550,toolbar=false,scrollbars=yes');
 }
 
-function AddField(field,cntrepeatfield) {
+function AddField(field,cntrepeatfield) { // TODO unused
     document.forms['f'].op.value = "addfield";
     document.forms['f'].addfield_field.value=field;
     document.forms['f'].repeat_field.value=cntrepeatfield;
@@ -179,7 +178,7 @@ function ExpandField(index) {
 }
 
 /**
- * To clone a field or a subfield by clickink on '+' button
+ * To clone a field or a subfield by clicking on '+' button
  */ 
 function CloneField(index) {
     var original = document.getElementById(index); //original <div>
@@ -245,12 +244,12 @@ function CloneField(index) {
             
             // setting its '+' and '-' buttons
             try {
-                var spans = divs[i].getElementsByTagName('span');
-                for (var j = 0; j < spans.length; j++) {
-                    if(spans[j].getAttribute('class') == 'buttonPlus'){
-                        spans[j].setAttribute('onclick',"CloneSubfield('" + divs[i].getAttribute('id') + "')");
-                    } else if (spans[j].getAttribute('class') == 'buttonMinus') {
-                        spans[j].setAttribute('onclick',"UnCloneField('" + divs[i].getAttribute('id') + "')");
+                var anchors = divs[i].getElementsByTagName('a');
+                for (var j = 0; j < anchors.length; j++) {
+                    if(anchors[j].getAttribute('class') == 'buttonPlus'){
+                        anchors[j].setAttribute('onclick',"CloneSubfield('" + divs[i].getAttribute('id') + "')");
+                    } else if (anchors[j].getAttribute('class') == 'buttonMinus') {
+                        anchors[j].setAttribute('onclick',"UnCloneField('" + divs[i].getAttribute('id') + "')");
                     }
                 }
             }
@@ -261,7 +260,7 @@ function CloneField(index) {
             // button ...
             var spans=0;
             try {
-                spans = divs[i].getElementsByTagName('span');
+                spans = divs[i].getElementsByTagName('a'); // PROGILONE - july 2010 - C2
             } catch(e) {
                 // no spans
             }
@@ -317,7 +316,7 @@ function CloneField(index) {
                 
                 var CloneButtonPlus;
                 try {
-                    var anchors = divs[i].getElementsByTagName('span');
+                    var anchors = divs[i].getElementsByTagName('a'); // PROGILONE - july 2010 - C2
                     for (var j = 0; j < anchors.length; j++) {
                         if (anchors[j].getAttribute('class') == 'buttonPlus') {
                             anchors[j].setAttribute('onclick',"CloneField('" + new_id + "')");
@@ -392,15 +391,15 @@ function CloneSubfield(index){
     clone.setAttribute('id',new_id);
     
     try {
-      var buttonUp = clone.getElementsByTagName('img')[0];
-      buttonUp.setAttribute('onclick',"upSubfield('" + new_id + "')");
-      var spans = clone.getElementsByTagName('span');
-      if(spans.length){
-          for(var i = 0 ,lenspans = spans.length ; i < lenspans ; i++){
-            if(spans[i].getAttribute('class') == 'buttonPlus'){
-                    spans[i].setAttribute('onclick',"CloneSubfield('" + new_id + "')");
-                } else if (spans[i].getAttribute('class') == 'buttonMinus') {
-                    spans[i].setAttribute('onclick',"UnCloneField('" + new_id + "')");
+        var buttonUp = clone.getElementsByTagName('img')[0];
+        buttonUp.setAttribute('onclick',"upSubfield('" + new_id + "')");
+    	var anchors = clone.getElementsByTagName('a');
+    	if(anchors.length){
+        	for(var i = 0 ; i < anchors.length ; i++){
+        		if(anchors[i].getAttribute('class') == 'buttonPlus'){
+                    anchors[i].setAttribute('onclick',"CloneSubfield('" + new_id + "')");
+                } else if (anchors[i].getAttribute('class') == 'buttonMinus') {
+                    anchors[i].setAttribute('onclick',"UnCloneField('" + new_id + "')");
                 }
             }
         }
@@ -537,7 +536,7 @@ function searchauthority() {
 <!-- TMPL_ELSE -->
 <h1>Adding authority <!-- TMPL_VAR name="authtypetext" --></h1>
 <!-- /TMPL_IF -->  
-<form method="post" name="f" action="/cgi-bin/koha/authorities/authorities.pl">
+<form method="post" name="f" id="f" action="/cgi-bin/koha/authorities/authorities.pl">
     <input type="hidden" name="op" value="add" />
     <input type="hidden" name="addfield_field" value="" />
     <input type="hidden" name="repeat_field" value="" />
@@ -657,15 +656,15 @@ function searchauthority() {
                     <!-- /TMPL_IF -->
                 <!-- /TMPL_UNLESS -->
     
+                <!-- PROGILONE - july 2010 - C2 -->
                 <!-- TMPL_UNLESS NAME="advancedMARCEditor" -->
-                    <a onclick="ExpandField('tag_<!-- TMPL_VAR name="tag"-->_<!-- TMPL_VAR NAME='index'--><!-- TMPL_VAR name="random" -->')"><!-- TMPL_VAR NAME="tag_lib" --></a>
+	            	<a href="#" tabindex="1" class="expandfield" onclick="ExpandField('tag_<!-- TMPL_VAR name="tag"-->_<!-- TMPL_VAR NAME='index'--><!-- TMPL_VAR name="random" -->'); return false;" title="Click to Expand this Tag"><!-- TMPL_VAR NAME="tag_lib" --></a>
                 <!-- /TMPL_UNLESS -->
                 <!-- TMPL_IF name="repeatable" -->
-                    <span class="buttonPlus" onclick="CloneField('tag_<!-- TMPL_VAR name="tag"-->_<!-- TMPL_VAR NAME='index'--><!-- TMPL_VAR name="random" -->')">+</span>
+                	<a href="#" tabindex="1" class="buttonPlus" onclick="CloneField('tag_<!-- TMPL_VAR name="tag"-->_<!-- TMPL_VAR NAME='index'--><!-- TMPL_VAR name="random" -->'); return false;" title="Repeat this Tag">+</a>
+                	<a href="#" tabindex="1" class="buttonMinus" onclick="UnCloneField('tag_<!-- TMPL_VAR name="tag"-->_<!-- TMPL_VAR NAME='index'--><!-- TMPL_VAR name="random" -->'); return false;" title="Delete this Tag">&#8722;</a>
                 <!-- /TMPL_IF -->
-                <!-- TMPL_UNLESS NAME="mandatory" -->
-                    <span class="buttonMinus" onclick="UnCloneField('tag_<!-- TMPL_VAR name="tag"-->_<!-- TMPL_VAR NAME='index'--><!-- TMPL_VAR name="random" -->')">&#8722;</span>
-                <!-- /TMPL_UNLESS -->
+                <!-- End PROGILONE -->
                 
             </div>
     
@@ -679,6 +678,7 @@ function searchauthority() {
                     <!-- /TMPL_UNLESS --> 
                     
                     <!-- TMPL_UNLESS name="hide_marc" -->
+                    <span class="subfieldcode"><!-- PROGILONE - july 2010 - C2 -->
                     <!-- TMPL_IF NAME="fixedfield" -->
                         <img class="buttonUp" style="display:none;" src="<!-- TMPL_VAR NAME="themelang" -->/../img/up.png" onclick="upSubfield('subfield<!-- TMPL_VAR NAME='tag' --><!-- TMPL_VAR NAME='subfield' -->')" alt="Move Up" title="Move Up" />
                     <!-- TMPL_ELSE -->
@@ -692,28 +692,36 @@ function searchauthority() {
                                 maxlength="1"
                                 class="flat"
                                 tabindex="0" />
+                    </span>
                     <!-- TMPL_ELSE -->
                         <input type="hidden"
                             name="tag_<!-- TMPL_VAR NAME='tag'-->_code_<!--  TMPL_VAR NAME='subfield'-->_<!-- TMPL_VAR NAME='index'-->_<!-- TMPL_VAR NAME='index_subfield'-->"
                             value="<!-- TMPL_VAR NAME="subfield" -->"/>
+                    </span>
                     <!-- /TMPL_UNLESS -->
                 
                     <!-- TMPL_UNLESS NAME="advancedMARCEditor" -->
-                        <!-- TMPL_IF name="mandatory" --><span class="subfield_mandatory"><!-- /TMPL_IF -->
-                            <!-- TMPL_VAR NAME="marc_lib" -->
-                        <!-- TMPL_IF name="mandatory" --></span><!-- /TMPL_IF -->
+                    <!-- PROGILONE - july 2010 - C2 -->
+                        <!-- TMPL_IF name="mandatory" --><span class="subfield subfield_mandatory"><!-- TMPL_ELSE --><span class="subfield"><!-- /TMPL_IF -->
+                        <!-- TMPL_VAR NAME="marc_lib_plain" -->
+                        <!-- TMPL_IF NAME="mandatory" --><span class="mandatory_marker" title="This field is mandatory">*</span><!-- /TMPL_IF -->
+                        </span>
+                    <!-- End PROGILONE -->
                         </label>
                     <!-- /TMPL_UNLESS -->
                     
                     <!-- TMPL_VAR NAME="marc_value" -->
                     
+                    <!-- PROGILONE - july 2010 - C2 -->
                     <!-- TMPL_IF NAME="repeatable" -->
-                        <a href="#" onclick="CloneSubfield('subfield<!-- TMPL_VAR NAME='tag' --><!-- TMPL_VAR NAME='subfield' -->'); return false;"><img src="/intranet-tmpl/prog/img/clone-subfield.png" alt="Clone" title="Clone this subfield" /></a>
+                        <a class="buttonPlus" href="#" onclick="CloneSubfield('subfield<!-- TMPL_VAR NAME='tag' --><!-- TMPL_VAR NAME='subfield' --><!-- TMPL_VAR name="random" -->'); return false;">
+                            <img src="/intranet-tmpl/prog/img/clone-subfield.png" alt="Clone" title="Clone this subfield" />
+                        </a>
+                        <a class="buttonMinus" href="#" onclick="UnCloneField('subfield<!-- TMPL_VAR NAME='tag' --><!-- TMPL_VAR NAME='subfield' --><!-- TMPL_VAR name="random" -->'); return false;">
+                            <img src="/intranet-tmpl/prog/img/delete-subfield.png" alt="Delete" title="Delete this subfield" />
+                        </a>
                     <!-- /TMPL_IF -->
-                    <!-- TMPL_UNLESS NAME="mandatory" -->
-                        <a href="#" onclick="UnCloneField('subfield<!-- TMPL_VAR NAME='tag' --><!-- TMPL_VAR NAME='subfield' --><!-- TMPL_VAR name="random" -->'); return false;"><img src="/intranet-tmpl/prog/img/delete-subfield.png" alt="Delete" title="Delete this subfield" /></a>
-                    <!-- /TMPL_UNLESS -->
-                    
+                    <!-- End PROGILONE -->
                 </div>
                 <!-- End of the line -->
                 
@@ -749,7 +757,7 @@ function searchauthority() {
     <input type="hidden" name="subfield" value="<!-- TMPL_VAR NAME="oldauthtypetagsubfield" -->" />
     <input type="hidden" name="field_value" value="<!-- TMPL_VAR NAME="authtypecode" -->" />
 <!-- /TMPL_IF -->
-<fieldset class="action">
+<fieldset class="action" id="action" >
         <input type="button" id="addauth2" value="Save" onclick="Check(this.form)" accesskey="w" />
 </fieldset>
 </form>

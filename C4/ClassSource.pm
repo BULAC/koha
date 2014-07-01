@@ -334,9 +334,12 @@ and the defined call number source.
 
 =cut
 
-sub GetClassSort {
+sub GetClassSort($$$;$) {
 
-    my ($cn_source, $cn_class, $cn_item) = @_;
+    my $cn_source = shift;
+    my $cn_item = shift;
+    my $cn_class = shift;
+    my $cn_itemnumber = shift || undef;
 
     my $source_ref = GetClassSource($cn_source);
     unless (defined $source_ref) {
@@ -350,7 +353,7 @@ sub GetClassSort {
         }
     } 
 
-    return GetClassSortKey($routine, $cn_class, $cn_item);
+    return GetClassSortKey($routine, $cn_class, $cn_item, $cn_itemnumber);
 
 }
 

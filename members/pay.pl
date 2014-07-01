@@ -70,10 +70,17 @@ my %inp;
 my $check = 0;
 for ( my $i = 0 ; $i < @names ; $i++ ) {
     my $temp = $input->param( $names[$i] );
-    if ( $temp eq 'wo' ) {
+    
+    # B014
+    if ( $temp eq 'wo'
+      || $temp eq 'ex'
+      || $temp eq 'err'
+    ) {
         $inp{ $names[$i] } = $temp;
         $check = 1;
     }
+    # END B014
+    
     if ( $temp eq 'yes' ) {
 
 # FIXME : using array +4, +5, +6 is dirty. Should use arrays for each accountline
@@ -170,16 +177,21 @@ $template->param( picture => 1 ) if $picture;
 }
 else {
 
+    # B014
     my %inp;
     my @name = $input->param;
     for ( my $i = 0 ; $i < @name ; $i++ ) {
         my $test = $input->param( $name[$i] );
-        if ( $test eq 'wo' ) {
+        if ( $test eq 'wo'
+          || $test eq 'ex'
+          || $test eq 'err'
+        ) {
             my $temp = $name[$i];
             $temp =~ s/payfine//;
-            $inp{ $name[$i] } = $temp;
+            $inp{"$test$temp"} = $temp;
         }
     }
+    
     my $borrowernumber;
     while ( my ( $key, $value ) = each %inp ) {
 
@@ -188,15 +200,41 @@ else {
         my $itemno    = $input->param("itemnumber$value");
         my $amount    = $input->param("amount$value");
         my $accountno = $input->param("accountno$value");
-        writeoff( $borrowernumber, $accountno, $itemno, $accounttype, $amount );
+        if ($key =~ m/^wo.*/) {
+            writeoff('wo', $borrowernumber, $accountno, $itemno, $accounttype, $amount );
+        } elsif ($key =~ m/^ex.*/) {
+            writeoff('ex', $borrowernumber, $accountno, $itemno, $accounttype, $amount );
+        } elsif ($key =~ m/^err.*/) {
+            writeoff('err', $borrowernumber, $accountno, $itemno, $accounttype, $amount );
+        }
     }
+    # END B014
     $borrowernumber = $input->param('borrowernumber');
     print $input->redirect(
         "/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber");
 }
 
+# B014
 sub writeoff {
-    my ( $borrowernumber, $accountnum, $itemnum, $accounttype, $amount ) = @_;
+    my ( $type, $borrowernumber, $accountnum, $itemnum, $accounttype, $amount ) = @_;
+    
+    my $description;
+    my $new_accounttype;
+    my $stat_type;
+    if ($type eq 'wo') {
+        $description     = 'Writeoff';
+        $new_accounttype = 'W';
+        $stat_type       = 'writeoff';
+    } elsif ($type eq 'ex') {
+        $description     = 'Exempt';
+        $new_accounttype = 'E';
+        $stat_type       = 'exempt';
+    } elsif ($type eq 'err') {
+        $description     = 'Error';
+        $new_accounttype = 'X';
+        $stat_type       = 'error';
+    }
+    
     my $user = $input->remote_user;
     my $dbh  = C4::Context->dbh;
     undef $itemnum unless $itemnum; # if no item is attached to fine, make sure to store it as a NULL
@@ -213,11 +251,14 @@ sub writeoff {
     $account->{'max(accountno)'}++;
     $sth = $dbh->prepare(
 "insert into accountlines (borrowernumber,accountno,itemnumber,date,amount,description,accounttype)
-						values (?,?,?,now(),?,'Writeoff','W')"
+                        values (?,?,?,now(),?,?,?)"
     );
     $sth->execute( $borrowernumber, $account->{'max(accountno)'},
-        $itemnum, $amount );
+        $itemnum, $amount,
+        $description, $accounttype
+        );
     $sth->finish;
-    UpdateStats( $branch, 'writeoff', $amount, '', '', '',
+    UpdateStats( $branch, $stat_type, $amount, '', '', '',
         $borrowernumber );
 }
+# END B014

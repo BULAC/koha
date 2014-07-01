@@ -23,7 +23,6 @@ MARCdetail.pl : script to show a biblio in MARC format
 
 =head1 SYNOPSIS
 
-=cut
 
 =head1 DESCRIPTION
 
@@ -43,7 +42,7 @@ the items attached to the biblio
 use strict;
 use warnings;
 
-use C4::Auth;
+use C4::Auth qw(:DEFAULT get_session); # PROGILONE - may 2010 - F10
 use C4::Context;
 use C4::Output;
 use CGI;
@@ -51,6 +50,7 @@ use MARC::Record;
 use C4::Biblio;
 use C4::Acquisition;
 use C4::Koha;
+use C4::Stack::Rules; # B031
 
 my $query = new CGI;
 
@@ -269,20 +269,25 @@ if(C4::Context->preference("ISBD")) {
 	$template->param(ISBD => 1);
 }
 
-#Search for title in links
-if (my $search_for_title = C4::Context->preference('OPACSearchForTitleIn')){
-    $biblio->{author} ? $search_for_title =~ s/{AUTHOR}/$biblio->{author}/g : $search_for_title =~ s/{AUTHOR}//g;
-    $biblio->{title} =~ s/\/+$//; # remove trailing slash
-    $biblio->{title} =~ s/\s+$//; # remove trailing space
-    $biblio->{title} ? $search_for_title =~ s/{TITLE}/$biblio->{title}/g : $search_for_title =~ s/{TITLE}//g;
-    $biblio->{isbn} ? $search_for_title =~ s/{ISBN}/$biblio->{isbn}/g : $search_for_title =~ s/{ISBN}//g;
- $template->param('OPACSearchForTitleIn' => $search_for_title);
-}
-
 $template->param(
     item_loop        => \@item_value_loop,
     item_header_loop => \@header_value_loop,
     biblionumber     => $biblionumber,
 );
+
+# PROGILONE - may 2010 - F10
+my $session = get_session($query->cookie("CGISESSID"));
+if ($session) {
+    # read session variables
+    foreach (qw(currentsearchquery currentsearchurl currentsearchisadvanced currentsearchisoneresult)) {        
+        $template->param( $_ => $session->param( $_ ) );
+    }
+}
+# End PROGILONE
+
+# B032
+# Stack request link for serial
+$template->param( stackrequestonbiblio => 1 ) if CanRequestStackOnBiblio($biblionumber);
+# END B032
 
 output_html_with_http_headers $query, $cookie, $template->output;

@@ -82,6 +82,11 @@ sub do_checkout {
                 $self->screen_msg("Item already checked out to another patron.  Please return item for check-in.");
                 $noerror = 0;
             } elsif ($confirmation eq 'DEBT') {     # don't do anything, it's the minor debt, and alarms fire elsewhere
+            # MAN103
+            } elsif ($confirmation eq 'CONVERT_STACK') {
+                $self->screen_msg('Item is on stack resquest.');
+                $noerror = 0;
+            # END MAN103
             } else {
                 $self->screen_msg($needsconfirmation->{$confirmation});
                 $noerror = 0;

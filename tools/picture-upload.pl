@@ -58,7 +58,7 @@ $debug and warn "Params are: filetype=$filetype, cardnumber=$cardnumber, borrowe
 
 =head1 NAME
 
-picture-upload.pl - Script for handling uploading of both single and bulk patronimages and importing them into the database.
+picture-upload.p. - Script for handling uploading of both single and bulk patronimages and importing them into the database.
 
 =head1 SYNOPSIS
 
@@ -295,6 +295,8 @@ sub handle_file {
     }
     return (%count);
 }
+
+=back
 
 =head1 AUTHORS
 

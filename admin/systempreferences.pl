@@ -129,6 +129,7 @@ $tabsysprefs{authoritysep}          = "Authorities";
 $tabsysprefs{AuthDisplayHierarchy}  = "Authorities";
 $tabsysprefs{dontmerge}             = "Authorities";
 $tabsysprefs{BiblioAddsAuthorities} = "Authorities";
+$tabsysprefs{AuthTypeToSubfieldMapping} = "Authorities"; # PROGILONE - july 2010 - C2
 
 # Cataloguing
 $tabsysprefs{advancedMARCeditor}          = "Cataloging";
@@ -264,6 +265,18 @@ $tabsysprefs{QueryAutoTruncate}       = "Searching";
 $tabsysprefs{QueryRemoveStopwords}    = "Searching";
 $tabsysprefs{AdvancedSearchTypes}     = "Searching";
 $tabsysprefs{DisplayMultiPlaceHold}   = "Searching";
+# PROGILONE - april 2010 - F22
+$tabsysprefs{OPACBranchTooltipDisplay}  = "Searching";
+# End PROGILONE
+# PROGILONE - may 2010 - F17
+$tabsysprefs{OPACrelevanceSortOrder}    = "Searching";
+$tabsysprefs{OPACpopularitySortOrder}   = "Searching";
+$tabsysprefs{OPACcallnumberSortOrder}   = "Searching";
+$tabsysprefs{OPACpubdateSortOrder}      = "Searching";
+$tabsysprefs{OPACacqdateSortOrder}      = "Searching";
+$tabsysprefs{OPACtitleSortOrder}        = "Searching";
+$tabsysprefs{OPACauthorSortOrder}       = "Searching";
+# End PROGILONE
 
 # EnhancedContent
 $tabsysprefs{AmazonEnabled}          = "EnhancedContent";

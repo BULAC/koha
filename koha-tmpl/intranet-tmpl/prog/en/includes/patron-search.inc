@@ -114,9 +114,8 @@ YAHOO.util.Event.onContentReady("header_search", function() {
 </div>
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function() {
-    <!-- TMPL_IF NAME="advsearch" -->$("#filteraction_on").toggle();
-    <!-- TMPL_ELSE -->$("#filters").toggle();
-    $("#filteraction_off").toggle();<!-- /TMPL_IF -->
+	$("#filters").toggle();
+	$("#filteraction_off").toggle();
 });
 //]]>
 </script>

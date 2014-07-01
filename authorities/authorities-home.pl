@@ -161,6 +161,8 @@ elsif ( $op eq "delete" ) {
         }
     );
 
+    # 	$template->param("statements" => \@statements,
+    # 						"nbstatements" => $nbstatements);
 }
 else {
     ( $template, $loggedinuser, $cookie ) = get_template_and_user(

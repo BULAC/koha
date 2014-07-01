@@ -142,7 +142,7 @@ if ( $run_report ) {
             GROUP_CONCAT(DISTINCT items.itemcallnumber 
                     ORDER BY items.itemnumber SEPARATOR '<br/>') l_itemcallnumber,
             items.itemnumber,
-            notes,
+            biblio.notes,
             notificationdate,
             reminderdate,
             max(priority) as priority,
@@ -156,13 +156,16 @@ if ( $run_report ) {
         LEFT JOIN biblio ON reserves.biblionumber=biblio.biblionumber
         LEFT JOIN branchtransfers ON items.itemnumber=branchtransfers.itemnumber
         LEFT JOIN issues ON items.itemnumber=issues.itemnumber
+        LEFT JOIN stack_requests ON items.itemnumber=stack_requests.itemnumber
     WHERE
     reserves.found IS NULL
     $sqldatewhere
     AND items.itemnumber NOT IN (SELECT itemnumber FROM branchtransfers where datearrived IS NULL)
     AND issues.itemnumber IS NULL
+    AND stack_requests.itemnumber IS NULL
     AND reserves.priority <> 0 
-    AND notforloan = 0 AND damaged = 0 AND itemlost = 0 AND wthdrawn = 0
+    AND notforloan in (0,99) 
+    AND damaged = 0 AND itemlost = 0 AND wthdrawn = 0
     ";
     # GROUP BY reserves.biblionumber allows only items that are not checked out, else multiples occur when 
     #    multiple patrons have a hold on an item

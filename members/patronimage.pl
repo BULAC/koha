@@ -76,6 +76,8 @@ if ($imagedata) {
 
 exit;
 
+=back
+
 =head1 AUTHOR
 
 Chris Nighswonger cnighswonger <at> foundations <dot> edu

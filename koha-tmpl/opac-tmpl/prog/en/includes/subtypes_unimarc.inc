@@ -1,3 +1,78 @@
+<!-- PROGILONE - 06/05/10 -->
+<script type="text/JavaScript" language="JavaScript">
+ 
+var arrOldValues;
+ 
+
+// Deselect all items 
+function DeselectAllList(CONTROL){
+	for(var i = 0;i < CONTROL.length;i++){
+	CONTROL.options[i].selected = false;
+	}
+}
+
+//Add new items which are selected 
+function FillListValues(CONTROL){
+	var arrNewValues;
+	var intNewPos;
+	var strTemp = GetSelectValues(CONTROL);
+	arrNewValues = strTemp.split(",");
+		for(var i=0;i<arrNewValues.length-1;i++){
+		if(arrNewValues[i]==1){
+		intNewPos = i;
+		}
+	}
+ 	
+ 	//Test if "All" is selected
+ 	if (intNewPos == 0){
+ 		DeselectAllList(CONTROL);
+ 		CONTROL.options[0].selected= true;
+  	}
+  	
+  	else {
+ 		for(var i=0;i<arrOldValues.length-1;i++){
+			if(arrOldValues[i]==1 && i != intNewPos){
+			CONTROL.options[i].selected= true;
+			}
+			else if(arrOldValues[i]==0 && i != intNewPos){
+			CONTROL.options[i].selected = false;
+			}
+	 
+			if(arrOldValues[intNewPos]== 1){
+			CONTROL.options[intNewPos].selected = false;
+			}
+			else{
+			CONTROL.options[intNewPos].selected = true;
+			}
+		//Deselected "All" if another item is selected	
+		CONTROL.options[0].selected= false;
+		}
+	}
+}
+ 
+//Get the current values selected 
+function GetSelectValues(CONTROL){
+	var strTemp = "";
+		for(var i = 0;i < CONTROL.length;i++){
+			if(CONTROL.options[i].selected == true){
+			strTemp += "1,";
+			}
+			else{
+			strTemp += "0,";
+			}
+		}
+	return strTemp;
+	} 
+
+//Get the current list 
+function GetCurrentListValues(CONTROL){
+	var strValues = "";
+	strValues = GetSelectValues(CONTROL);
+	arrOldValues = strValues.split(",")
+}
+</script> 
+<!-- PROGILONE - 06/05/10 -->
+    
     <fieldset>
     <legend>Coded Fields</legend>
     <p>
@@ -30,8 +105,10 @@
     </select>
     </p>
     <p>
+    <!-- PROGILONE - 06/05/10 -->
+	<!-- [F7]- Select multiple items listbox -->
     <label>Feschrift Ind.</label>
-    <select name="limit" class="subtype">
+    <select name="limit" class="subtype" multiple="multiple" size="5" onMouseDown="GetCurrentListValues(this);" onchange="FillListValues(this);">
       <option value="" selected="selected" >Any</option>
             <option value="Literature-Code:a">fiction</option>
             <option value="Literature-Code:b">drama</option>
@@ -46,9 +123,11 @@
     </select>
     </p>
         <p>
+    <!-- PROGILONE - 06/05/10 -->
+	<!-- [F7]- Select multiple items listbox -->
     <label>Biography</label>
-        <select name="limit" class="subtype" size="1">
-            <option value="">Any</option>
+        <select name="limit" class="subtype" multiple="multiple" size="5" onMouseDown="GetCurrentListValues(this);" onchange="FillListValues(this);">
+            <option value="" selected="selected" >Any</option>
             <option value="Biography-code:y">Not a biography</option>
             <option value="Biography-code:a">autobiography</option>
             <option value="Biography-code:b">individual biography</option>
@@ -57,9 +136,11 @@
     </select>
         </p>
         <p>
+    <!-- PROGILONE - 06/05/10 -->
+	<!-- [F7]- Select multiple items listbox -->
     <label>Illustration</label>
-        <select name="limit" class="subtype" size="1">
-            <option value="">Any</option>
+        <select name="limit" class="subtype" multiple="multiple" size="5" onMouseDown="GetCurrentListValues(this);" onchange="FillListValues(this);">
+            <option value="" selected="selected" >Any</option>
             <option value="Illustration-Code:a">illustrations</option>
             <option value="Illustration-Code:b">maps</option>
             <option value="Illustration-Code:c">portraits</option>
@@ -79,9 +160,11 @@
         </select>
         </p>
     <p>
+    <!-- PROGILONE - 06/05/10 -->
+	<!-- [F7]- Select multiple items listbox -->
     <label>Content</label>
-    <select name="limit" class="subtype">
-      <option value="" >Any</option>
+    <select name="limit" class="subtype" multiple="multiple" size="5" onMouseDown="GetCurrentListValues(this);" onchange="FillListValues(this);">
+      <option value="" selected="selected" >Any</option>
             <option value="ctype:a" >bibliography</option>
             <option value="ctype:b" >catalogue</option>
             <option value="ctype:c" >index</option>
@@ -128,9 +211,11 @@
     </select>
     </p>
     <p>
+    <!-- PROGILONE - 06/05/10 -->
+	<!-- [F7]- Select multiple items listbox -->
     <label>Periodicity</label>
-    <select name="limit" class="subtype">
-      <option value="">Any</option>
+    <select name="limit" class="subtype" multiple="multiple" size="5" onMouseDown="GetCurrentListValues(this);" onchange="FillListValues(this);">
+      <option value="" selected="selected" >Any</option>
         <option value="Frequency-code:a">Daily</option>
         <option value="Frequency-code:b">Semiweekly</option>
         <option value="Frequency-code:c">Weekly</option>
@@ -163,10 +248,12 @@
         </p>
 
         </fieldset>
+    <!-- PROGILONE - 06/05/10 -->
+	<!-- [F7]- Select multiple items listbox -->
     <fieldset>
     <legend>Picture</legend><p>
-    <select name="limit" class="subtype">
-        <option value="">Any</option>
+    <select name="limit" class="subtype" multiple="multiple" size="5" onMouseDown="GetCurrentListValues(this);" onchange="FillListValues(this);">
+        <option value="" selected="selected" >Any</option>
         <option value="Graphics-type:a">collage</option>
         <option value="Graphics-type:b">drawing</option>
         <option value="Graphics-type:c">painting</option>
@@ -178,8 +265,10 @@
         <option value="Graphics-type:k">technical drawing</option>
         <option value="Graphics-type:z">other non-projected graphic type</option>
     </select>
-    <select name="limit" class="subtype">
-            <option value="">any</option>
+    <!-- PROGILONE - 06/05/10 -->
+	<!-- [F7]- Select multiple items listbox -->
+    <select name="limit" class="subtype" multiple="multiple" size="5" onMouseDown="GetCurrentListValues(this);" onchange="FillListValues(this);">
+            <option value="" selected="selected" >Any</option>
             <option value="Graphics-support:a">canvas</option>
             <option value="Graphics-support:b">bristol board</option>
             <option value="Graphics-support:c">cardboard/illustration board</option>

@@ -20,13 +20,14 @@ package C4::ILSDI::Services;
 use strict;
 use warnings;
 
+use C4::Utils::Constants;
 use C4::Members;
 use C4::Items;
 use C4::Circulation;
 use C4::Branch;
 use C4::Accounts;
 use C4::Biblio;
-use C4::Reserves qw(AddReserve CancelReserve GetReservesFromBiblionumber GetReservesFromBorrowernumber);
+use C4::Reserves;
 use C4::Context;
 use C4::AuthoritiesMarc;
 use C4::ILSDI::Utility;
@@ -34,15 +35,21 @@ use XML::Simple;
 use HTML::Entities;
 use CGI;
 
+# B03 : Cancel and renew stack requests
+use C4::Stack::Manager;
+use C4::Stack::Search;
+use Date::Manip;
+# END
+
 =head1 NAME
 
 C4::ILS-DI::Services - ILS-DI Services
 
 =head1 DESCRIPTION
 
-Each function in this module represents an ILS-DI service.
-They all takes a CGI instance as argument and most of them return a 
-hashref that will be printed by XML::Simple in opac/ilsdi.pl
+	Each function in this module represents an ILS-DI service.
+	They all takes a CGI instance as argument and most of them return a 
+	hashref that will be printed by XML::Simple in opac/ilsdi.pl
 
 =head1 SYNOPSIS
 
@@ -65,39 +72,28 @@ hashref that will be printed by XML::Simple in opac/ilsdi.pl
 
 =cut
 
-=head1 FUNCTIONS
-
 =head2 GetAvailability
+    
+	Given a set of biblionumbers or itemnumbers, returns a list with 
+	availability of the items associated with the identifiers.
+	
+	Parameters :
 
-Given a set of biblionumbers or itemnumbers, returns a list with 
-availability of the items associated with the identifiers.
-
-Parameters:
-
-=head3 id (Required)
-
-list of either biblionumbers or itemnumbers
-
-=head3 id_type (Required)
-
-defines the type of record identifier being used in the request, 
-possible values:
-
-  - bib
-  - item
-
-=head3 return_type (Optional)
-
-requests a particular level of detail in reporting availability, 
-possible values:
-
-  - bib
-  - item
-
-=head3 return_fmt (Optional)
-
-requests a particular format or set of formats in reporting 
-availability 
+	- id (Required)
+		list of either biblionumbers or itemnumbers
+	- id_type (Required)
+		defines the type of record identifier being used in the request, 
+		possible values:
+			- bib
+			- item
+	- return_type (Optional)
+		requests a particular level of detail in reporting availability, 
+		possible values:
+			- bib
+			- item
+	- return_fmt (Optional)
+		requests a particular format or set of formats in reporting 
+		availability 
 
 =cut
 
@@ -154,26 +150,25 @@ sub GetAvailability {
 }
 
 =head2 GetRecords
+    
+	Given a list of biblionumbers, returns a list of record objects that 
+	contain bibliographic information, as well as associated holdings and item
+	information. The caller may request a specific metadata schema for the 
+	record objects to be returned.
+	This function behaves similarly to HarvestBibliographicRecords and 
+	HarvestExpandedRecords in Data Aggregation, but allows quick, real time 
+	lookup by bibliographic identifier.
 
-Given a list of biblionumbers, returns a list of record objects that 
-contain bibliographic information, as well as associated holdings and item
-information. The caller may request a specific metadata schema for the 
-record objects to be returned.
+	You can use OAI-PMH ListRecords instead of this service.
+	
+	Parameters:
 
-This function behaves similarly to HarvestBibliographicRecords and 
-HarvestExpandedRecords in Data Aggregation, but allows quick, real time 
-lookup by bibliographic identifier.
-
-You can use OAI-PMH ListRecords instead of this service.
-
-Parameters:
-
-  - id (Required)
-	list of system record identifiers
-  - id_type (Optional)
-	Defines the metadata schema in which the records are returned, 
-	possible values:
-  	  - MARCXML
+	- id (Required)
+		list of system record identifiers
+	- id_type (Optional)
+		Defines the metadata schema in which the records are returned, 
+		possible values:
+			- MARCXML
 
 =cut
 
@@ -233,18 +228,18 @@ sub GetRecords {
 }
 
 =head2 GetAuthorityRecords
+    
+	Given a list of authority record identifiers, returns a list of record 
+	objects that contain the authority records. The function user may request 
+	a specific metadata schema for the record objects.
 
-Given a list of authority record identifiers, returns a list of record 
-objects that contain the authority records. The function user may request 
-a specific metadata schema for the record objects.
+	Parameters:
 
-Parameters:
-
-  - id (Required)
-    list of authority record identifiers
-  - schema (Optional)
-    specifies the metadata schema of records to be returned, possible values:
-      - MARCXML
+	- id (Required)
+	    list of authority record identifiers
+	- schema (Optional)
+	    specifies the metadata schema of records to be returned, possible values:
+		  - MARCXML
 
 =cut
 
@@ -271,19 +266,19 @@ sub GetAuthorityRecords {
 }
 
 =head2 LookupPatron
+    
+	Looks up a patron in the ILS by an identifier, and returns the borrowernumber.
+	
+	Parameters:
 
-Looks up a patron in the ILS by an identifier, and returns the borrowernumber.
-
-Parameters:
-
-  - id (Required)
-	an identifier used to look up the patron in Koha
-  - id_type (Optional)
-	the type of the identifier, possible values:
-	- cardnumber
-	- firstname
-	- userid
-	- borrowernumber
+	- id (Required)
+		an identifier used to look up the patron in Koha
+	- id_type (Optional)
+		the type of the identifier, possible values:
+			- cardnumber
+			- firstname
+			- userid
+			- borrowernumber
 
 =cut
 
@@ -306,16 +301,16 @@ sub LookupPatron {
 
 =head2 AuthenticatePatron
 
-Authenticates a user's login credentials and returns the identifier for 
-the patron.
+	Authenticates a user's login credentials and returns the identifier for 
+	the patron.
+	
+	Parameters:
 
-Parameters:
-
-  - username (Required)
-	user's login identifier
-  - password (Required)
-	user's password
-
+	- username (Required)
+		user's login identifier
+	- password (Required)
+		user's password
+		
 =cut
 
 sub AuthenticatePatron {
@@ -338,23 +333,23 @@ sub AuthenticatePatron {
 
 =head2 GetPatronInfo
 
-Returns specified information about the patron, based on options in the 
-request. This function can optionally return patron's contact information, 
-fine information, hold request information, and loan information.
+	Returns specified information about the patron, based on options in the 
+	request. This function can optionally return patron's contact information, 
+	fine information, hold request information, and loan information.
+	
+	Parameters:
 
-Parameters:
-
-  - patron_id (Required)
-	the borrowernumber
-  - show_contact (Optional, default 1)
-	whether or not to return patron's contact information in the response
-  - show_fines (Optional, default 0)
-	whether or not to return fine information in the response
-  - show_holds (Optional, default 0)
-	whether or not to return hold request information in the response
-  - show_loans (Optional, default 0)
-	whether or not to return loan information request information in the response 
-
+	- patron_id (Required)
+		the borrowernumber
+	- show_contact (Optional, default 1)
+		whether or not to return patron's contact information in the response
+	- show_fines (Optional, default 0)
+		whether or not to return fine information in the response
+	- show_holds (Optional, default 0)
+		whether or not to return hold request information in the response
+	- show_loans (Optional, default 0)
+		whether or not to return loan information request information in the response 
+		
 =cut
 
 sub GetPatronInfo {
@@ -433,12 +428,12 @@ sub GetPatronInfo {
 
 =head2 GetPatronStatus
 
-Returns a patron's status information.
+	Returns a patron's status information.
+	
+	Parameters:
 
-Parameters:
-
-  - patron_id (Required)
-	the borrower ID
+	- patron_id (Required)
+		the borrower ID
 
 =cut
 
@@ -460,15 +455,15 @@ sub GetPatronStatus {
 
 =head2 GetServices
 
-Returns information about the services available on a particular item for 
-a particular patron.
+	Returns information about the services available on a particular item for 
+	a particular patron.
+	
+	Parameters:
 
-Parameters:
-
-  - patron_id (Required)
-	a borrowernumber
-  - item_id (Required)
-	an itemnumber
+	- patron_id (Required)
+		a borrowernumber
+	- item_id (Required)
+		an itemnumber
 =cut
 
 sub GetServices {
@@ -530,16 +525,16 @@ sub GetServices {
 
 =head2 RenewLoan
 
-Extends the due date for a borrower's existing issue.
+	Extends the due date for a borrower's existing issue.
+	
+	Parameters:
 
-Parameters:
-
-  - patron_id (Required)
-	a borrowernumber
-  - item_id (Required)
-	an itemnumber
-  - desired_due_date (Required)
-	the date the patron would like the item returned by 
+	- patron_id (Required)
+		a borrowernumber
+	- item_id (Required)
+		an itemnumber
+	- desired_due_date (Required)
+		the date the patron would like the item returned by 
 
 =cut
 
@@ -574,22 +569,22 @@ sub RenewLoan {
 
 =head2 HoldTitle
 
-Creates, for a borrower, a biblio-level hold reserve.
+	Creates, for a borrower, a biblio-level hold reserve.
+	
+	Parameters:
 
-Parameters:
-
-  - patron_id (Required)
-	a borrowernumber
-  - bib_id (Required)
-	a biblionumber
-  - request_location (Required)
-	IP address where the end user request is being placed
-  - pickup_location (Optional)
-	a branch code indicating the location to which to deliver the item for pickup
-  - needed_before_date (Optional)
-	date after which hold request is no longer needed
-  - pickup_expiry_date (Optional)
-	date after which item returned to shelf if item is not picked up 
+	- patron_id (Required)
+		a borrowernumber
+	- bib_id (Required)
+		a biblionumber
+	- request_location (Required)
+		IP address where the end user request is being placed
+	- pickup_location (Optional)
+		a branch code indicating the location to which to deliver the item for pickup
+	- needed_before_date (Optional)
+		date after which hold request is no longer needed
+	- pickup_expiry_date (Optional)
+		date after which item returned to shelf if item is not picked up 
 
 =cut
 
@@ -638,23 +633,23 @@ sub HoldTitle {
 
 =head2 HoldItem
 
-Creates, for a borrower, an item-level hold request on a specific item of 
-a bibliographic record in Koha.
+	Creates, for a borrower, an item-level hold request on a specific item of 
+	a bibliographic record in Koha.
 
-Parameters:
+	Parameters:
 
-  - patron_id (Required)
-	a borrowernumber
-  - bib_id (Required)
-	a biblionumber
-  - item_id (Required)
-	an itemnumber
-  - pickup_location (Optional)
-	a branch code indicating the location to which to deliver the item for pickup
-  - needed_before_date (Optional)
-	date after which hold request is no longer needed
-  - pickup_expiry_date (Optional)
-	date after which item returned to shelf if item is not picked up 
+	- patron_id (Required)
+		a borrowernumber
+	- bib_id (Required)
+		a biblionumber
+	- item_id (Required)
+		an itemnumber
+	- pickup_location (Optional)
+		a branch code indicating the location to which to deliver the item for pickup
+	- needed_before_date (Optional)
+		date after which hold request is no longer needed
+	- pickup_expiry_date (Optional)
+		date after which item returned to shelf if item is not picked up 
 
 =cut
 
@@ -721,14 +716,14 @@ sub HoldItem {
 
 =head2 CancelHold
 
-Cancels an active reserve request for the borrower.
+	Cancels an active reserve request for the borrower.
+	
+	Parameters:
 
-Parameters:
-
-  - patron_id (Required)
-	a borrowernumber
-  - item_id (Required)
-	an itemnumber 
+	- patron_id (Required)
+		a borrowernumber
+	- item_id (Required)
+		an itemnumber 
 
 =cut
 
@@ -762,5 +757,135 @@ sub CancelHold {
 
     return { code => 'Canceled' };
 }
+
+# B03 : Cancel and renew stack requests
+=head2 CancelStack 
+
+    Cancels an active stack request for the space_id.
+    
+    Parameters:
+
+    - space_id (Required)
+        a space booking
+
+=cut
+
+sub CancelStack {
+    my ($cgi) = @_;
+
+    # Get the stack or return an error code
+    my $spaceid = $cgi->param('space_id');
+    
+    my $stacksnb = CountStacksOfSpace( $spaceid );
+    unless ($stacksnb) {
+        return { code => 'StackNotFound' };
+    }
+    
+    # Cancel the stack
+    CancelStackRequestBySpace($spaceid);
+
+    return { code => 'Canceled' };
+}
+
+=head2 RenewStack
+
+    Renew an active stack request for the space_id.
+    
+    Parameters:
+
+    - space_id (Required)
+        a space booking
+    - end_date (Required)
+        the end date
+
+=cut
+
+sub RenewStack {
+    my ($cgi) = @_;
+
+    # Get the stack or return an error code
+    my $spaceid = $cgi->param('space_id');
+    my $enddate = $cgi->param('end_date');
+    
+    my $stacksnb = CountStacksOfSpace( $spaceid );
+    unless ($stacksnb) {
+        return { code => 'StackNotFound' };
+    }
+    
+    # Renew the stack
+    my ($updated, $partially_updated, $total) = RenewStackRequestBySpace($spaceid, $enddate);
+
+    if ($updated != $total || $partially_updated != 0) {
+        return { code => 'NotAllRenewed' };
+    } else {
+        return { code => 'Renewed' };
+    }
+    
+}
+
+=head2 EndStack
+
+    End an active stack request for the space_id and cancel the asked and edited stack.
+    
+    Parameters:
+
+    - space_id (Required)
+        a space booking
+    - end_date (Required)
+        the end date
+
+=cut
+
+sub EndStack {
+    my ($cgi) = @_;
+
+    # Get the stacks or return an error code
+    my $spaceid = $cgi->param('space_id');
+    
+    my $stacksnb = CountStacksOfSpace( $spaceid );
+    unless ($stacksnb) {
+        return { code => 'StackNotFound' };
+    }
+    
+    # End or cancel the stacks
+    my $numberOfOpenStacks = EndStackRequestBySpace($spaceid);
+
+    unless ($numberOfOpenStacks) {
+        return { code => 'AllCanceled' };
+    } else {
+        return { code => 'AllEndedAndCanceled' };
+    }
+}
+
+=head2 NbRetrievedStack
+
+    Retrieve the number of stack requests which have been retrieved for a borrower.
+    
+    Parameters:
+
+    - borrowernumber (Required)
+        a borrower id
+
+=cut
+
+sub NbRetrievedStack {
+    my ($cgi) = @_;
+
+    # Get the stack or return an error code
+    my $borrowernumber = $cgi->param('borrowernumber');
+    
+    my $stacks = GetStacksOfBorrower($borrowernumber);
+    my $result = 0;
+
+    # Add some details
+    foreach my $stack (@$stacks) {
+    	if ( $stack->{'state'} eq $STACK_STATE_RUNNING && ($stack->{'istate'} eq $ISTATE_WAIT_STACK || $stack->{'istate'} eq $ISTATE_WAIT_RENEW) ) {
+    		$result = $result + 1;
+    	}
+    }
+    
+    return { result => $result };
+}
+# END
 
 1;

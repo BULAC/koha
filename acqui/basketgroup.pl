@@ -4,7 +4,6 @@
 #written by john.soros@biblibre.com 01/10/2008
 
 # Copyright 2008 - 2009 BibLibre SARL
-# Parts Copyright Catalyst 2010
 #
 # This file is part of Koha.
 #
@@ -184,9 +183,8 @@ sub printbasketgrouppdf{
     my ($basketgroupid) = @_;
     
     my $pdfformat = C4::Context->preference("OrderPdfFormat");
-    eval "use $pdfformat";
-    # FIXME consider what would happen if $pdfformat does not
-    # contain the name of a valid Perl module.
+    eval "use $pdfformat" ;
+    eval "use C4::Branch";
     
     my $basketgroup = GetBasketgroup($basketgroupid);
     my $bookseller = GetBookSellerFromId($basketgroup->{'booksellerid'});
@@ -246,6 +244,7 @@ sub printbasketgrouppdf{
     );
     my $pdf = printpdf($basketgroup, $bookseller, $baskets, \%orders, $bookseller->{gstrate} || C4::Context->preference("gist")) || die "pdf generation failed";
     print $pdf;
+    exit;
 }
 
 my $op = $input->param('op');
@@ -301,6 +300,19 @@ if ( $op eq "add" ) {
         
         # Build the combobox to select the billing place
         my @billingplaceloop;
+
+        # PROGILONE - A6
+    	# In case there's no branch selected
+    	if ($billingplace eq "NO_LIBRARY_SET") {
+    	    my %row = (
+    		value => "",
+    		selected => 1,
+    		branchname => "--",
+    	    );
+    	    push @billingplaceloop, \%row;
+    	}
+    	# END PROGILONE
+
         for (sort keys %$branches) {
             my $selected = 1 if $_ eq $billingplace;
             my %row = (
@@ -314,6 +326,19 @@ if ( $op eq "add" ) {
         
         # Build the combobox to select the delivery place
         my @deliveryplaceloop;
+
+        # PROGILONE - A6
+    	# In case there's no branch selected
+    	if ($deliveryplace eq "NO_LIBRARY_SET") {
+    	    my %row = (
+    		value => "",
+    		selected => 1,
+    		branchname => "--",
+    	    );
+    	    push @deliveryplaceloop, \%row;
+    	}
+    	# END PROGILONE
+
         for (sort keys %$branches) {
             my $selected = 1 if $_ eq $deliveryplace;
             my %row = (
@@ -383,12 +408,10 @@ if ( $op eq "add" ) {
     CloseBasketgroup($basketgroupid);
     
     printbasketgrouppdf($basketgroupid);
-    exit;
 }elsif ($op eq 'print'){
     my $basketgroupid = $input->param('basketgroupid');
     
     printbasketgrouppdf($basketgroupid);
-    exit;
 }elsif( $op eq "delete"){
     my $basketgroupid = $input->param('basketgroupid');
     DelBasketgroup($basketgroupid);
@@ -434,6 +457,7 @@ if ( $op eq "add" ) {
             name            => $basketgroupname,
             booksellerid    => $booksellerid,
             basketlist      => \@baskets,
+            billingplace    => $billingplace, # PROGILONE - A6
             deliveryplace   => $deliveryplace,
             deliverycomment => $deliverycomment,
             closed          => $close,

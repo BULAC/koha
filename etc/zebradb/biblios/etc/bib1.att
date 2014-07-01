@@ -3,72 +3,70 @@
 name bib1
 reference Bib-1
 
-att 1    Personal-name
-att 2    Corporate-name
-att 3    Conference-name
-att 4    Title
-att 5    Title-series
-att 6    Title-uniform
-att 7    ISBN
-att 8    ISSN
-att 9    LC-card-number
-att 10    BNB-card-number
-att 11    BGF-number
-att 12    Local-number
-att 13    Dewey-classification
-att 14    UDC-classification
-att 15    Bliss-classification
-att 16    LC-call-number
-att 17    NLM-call-number
-att 18    NAL-call-number
-att 19    MOS-call-number
-att 20    Local-classification
-att 21    Subject
-att 22    Subject-Rameau
-att 23    BDI-index-subject
-att 24    INSPEC-subject
-att 25    MESH-subject
-att 26    PA-subject
-att 27    LC-subject-heading
-att 28    RVM-subject-heading
-att 29    Local-subject-index
-att 30    copydate
-att 31    pubdate
-att 32    Date-of-acquisition
-att 33    Title-key
-att 34    Title-collective
-att 35    Title-parallel
-att 36    Title-cover
-att 37    Title-added-title-page
-att 38    Title-caption
-att 39    Title-running
-att 40    Title-spine
-att 41    Title-other-variant
-att 42    Title-former
-att 43    Title-abbreviated
-att 44    Title-expanded
-att 45    Subject-precis
-att 46    Subject-rswk
-att 47    Subject-subdivision
-att 48    Number-natl-biblio
-att 49    Number-legal-deposit
-att 50    Number-govt-pub
-att 51    Number-music-publisher
-att 52    Number-db
-att 53    Number-local-call
-att 54    ln
-att 55    Code-geographic
-att 56    Code-institution
-att 57    Name-and-title
-att 58    Name-geographic
-# Place-publication, reduced to two chars because limited line length for leader indexing
-att 59    pl
-att 60    CODEN
-att 61    Microform-generation
-att 62    Abstract
-att 63    Note
+att 1       Personal-name
+att 2       Corporate-name
+att 3       Conference-name
+att 4       Title
+att 5       Title-series
+att 6       Title-uniform
+att 7       ISBN
+att 8       ISSN
+att 9       LC-card-number
+att 10      BNB-card-number
+att 11      BGF-number
+att 12      Local-number
+att 13      Dewey-classification
+att 14      UDC-classification
+att 15      Bliss-classification
+att 16      LC-call-number
+att 17      NLM-call-number
+att 18      NAL-call-number
+att 19      MOS-call-number
+att 20      Local-classification
+att 21      Subject
+att 22      Subject-Rameau
+att 23      BDI-index-subject
+att 24      INSPEC-subject
+att 25      MESH-subject
+att 26      PA-subject
+att 27      LC-subject-heading
+att 28      RVM-subject-heading
+att 29      Local-subject-index
+att 30      copydate
+att 31      pubdate
+att 32      Date-of-acquisition
+att 33      Title-key
+att 34      Title-collective
+att 35      Title-parallel
+att 36      Title-cover
+att 37      Title-added-title-page
+att 38      Title-caption
+att 39      Title-running
+att 40      Title-spine
+att 41      Title-other-variant
+att 42      Title-former
+att 43      Title-abbreviated
+att 44      Title-expanded
+att 45      Subject-precis
+att 46      Subject-rswk
+att 47      Subject-subdivision
+att 48      Number-natl-biblio
+att 49      Number-legal-deposit
+att 50      Number-govt-pub
+att 51      Number-music-publisher
+att 52      Number-db
+att 53      Number-local-call
+att 54      ln
+att 55      Code-geographic
+att 56      Code-institution
+att 57      Name-and-title
+att 58      Name-geographic
+att 59      pl
+att 60      CODEN
+att 61      Microform-generation
+att 62      Abstract
+att 63      Note
 att 1000    Author-title
-# Record-type, reduced in size because limited line length for leader indexing
 att 1001    rtype
 att 1002    Name
 att 1003    Author
@@ -101,27 +99,16 @@ att 1030    Thematic-number
 att 1031    Material-type
 att 1032    Doc-id
 att 1033    Host-item
-att 1034    ctype
+att 1034    Content-type
 att 1035    Anywhere
 att 1036    Author-Title-Subject
-att 1079    Subject-topical
 
+att 1214    EAN
 
-# Koha Local-Use Biblio Indexes
-att 9001    Control-number
-att 9002    biblioitemnumber
-att 9003    totalissues
-att 9004    cn-bib-source
-att 9005    cn-bib-sort
-att 9006    itemtype
-att 9007    cn-class
-att 9008    cn-item
-att 9009    cn-prefix
-att 9010    cn-suffix
-att 9011    Suppress
-att 9012    Identifier-other
+##################################
+###     Item Attributes
+##################################
 
-# Items Index
 att 8001    withdrawn
 att 8002    lost
 att 8003    classification-source
@@ -135,8 +122,7 @@ att 8010    itemnumber
 att 8011    homebranch
 att 8012    holdingbranch
 att 8013    location
-# handled in bib1 attr 1=32
-#att 8014    Date-of-acquisition
+
 att 8015    acqsource
 att 8016    coded-location-qualifier
 att 8017    price
@@ -144,7 +130,7 @@ att 8018    stack
 att 8019    issues
 att 8020    renewals
 att 8021    reserves
-att 8022    Local-classification
+
 att 8023    barcode
 att 8024    onloan
 att 8025    datelastseen
@@ -155,37 +141,82 @@ att 8029    replacementprice
 att 8030    replacementpricedate
 att 8031    itype
 
-## Fixed Fields and other special indexes
-att 9901    Extent
-att 8910    Koha-Auth-Number
-# record length according to the leader
-att 9905    llength
-att 9902    Summary 
-att 9990    Call-Number
-# Usually Target Audience 008/22
 att 8822    ta
-# Usually Form of item 008/23
-att 8823    ff8-23
-# Usually Nature of contents 008/24-27
-att 8824    ff8-24-27
-# Usually Content-type, also Form of item for maps 008/29
-att 8829    ff8-29
-# Usually Literary Form 008/33
-att 8833    lf
-#att 8833    ff8-33
-# Usually Biography, also Special format characteristics for maps 008/34
-att 8834    bio
-#att 8834    ff8-34
-att 8700    ff7-00
-att 8701    ff7-01
-att 8702    ff7-02
-att 8703    ff7-01-02
-# Author-personal-bibliography - lastname,firstname in 100$a
+
+att 8910    Koha-Auth-Number
+
+##########################################
+###     Local Attributes
+##########################################
+
+att 9001    Control-number
+att 9002    biblioitemnumber
+att 9003    totalissues
+att 9004    cn-bib-source
+att 9005    cn-bib-sort
+att 9006    itemtype
+att 9007    cn-class
+att 9008    cn-item
+att 9009    cn-prefix
+att 9010    cn-suffix
+att 9011    Suppress
+att 9012    Identifier-other
+att 9013    arp
+att 9014    item
+att 9015    inventory-number
+att 9016    note-catalog
+att 9017    Author-name-family
+att 9018    Family-name
+att 9019    Published
+att 9020    tpubdate
+att 9021    Modified-code
+att 9022    char-encoding
+att 9023    Title-script
+att 9024    Country-heading
+att 9025    Illustration-code
+
+att 9027    Conference-code
+att 9028    Festschrift-indicator
+att 9029    Index-indicator
+att 9030    Literature-code
+att 9031    Biography-code
+att 9032    Type-Of-Serial
+att 9033    Frequency-code
+att 9034    Regularity-code
+att 9035    Conference-publication-code
+att 9036    Title-page-availability-code
+att 9037    Index-availability-code
+att 9038    Cumulative-index-availability-code
+att 9039    Video-mt
+att 9040    Graphics-type
+att 9041    Graphics-support
+att 9042    Serials
+att 9043    Printed-music
+att 9044    Electronic-resource
+att 9045    Title-host
+att 9046    lcn
+att 9047    popularity
+att 9048    ISBN-ISSN-EAN
+att 9049    Author-role
+att 9050    Title-collection
+att 9051    Item-notes
+att 9052    Open-stacks-callnumber
+att 9053    BULAC-geographic-code
+att 9054    BULAC-thematic-code
+att 9055    item-state
+att 9056    order-data
+att 9057    national-thesis-number
+
+att 9100    relevance-second
+att 9101    items-available
+att 9102    BiblioTemp
+
 att 9900    Author-personal-bibliography
-# Author-in-order - firstname lastname in 245$c statement of responsibility
+att 9901    Extent
 att 9902    Author-in-order
-# Lexile number
 att 9903    lex
 att 9904    arl
-att 9013    arp
-att 9520    Item
+att 9905    llength
+
+att 9990    Call-Number
+

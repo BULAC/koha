@@ -29,10 +29,12 @@ use C4::Items;
 use C4::Search;
 use C4::Circulation;
 use C4::Accounts;
+use C4::Utils::Constants; #B017
+use C4::Jasper::JasperReport; # B011
 
 # for _koha_notify_reserve
 use C4::Members::Messaging;
-use C4::Members qw();
+use C4::Members;
 use C4::Letters;
 use C4::Branch qw( GetBranchDetail );
 use C4::Dates qw( format_date_in_iso );
@@ -194,9 +196,7 @@ sub AddReserve {
         my $borrower = C4::Members::GetMember(borrowernumber => $borrowernumber);
         my $biblio   = GetBiblioData($biblionumber);
         my $letter = C4::Letters::getletter( 'reserves', 'HOLDPLACED');
-	my $branchcode = $borrower->{branchcode};
-        my $branch_details = C4::Branch::GetBranchDetail($branchcode);
-        my $admin_email_address =$branch_details->{'branchemail'} || C4::Context->preference('KohaAdminEmailAddress');
+        my $admin_email_address = C4::Context->preference('KohaAdminEmailAddress');
 
         my %keys = (%$borrower, %$biblio);
         foreach my $key (keys %keys) {
@@ -381,12 +381,14 @@ sub GetReservesFromBorrowernumber {
 
 sub CanBookBeReserved{
     my ($borrowernumber, $biblionumber) = @_;
-
-    my @items = GetItemsInfo($biblionumber);
+    
+    # MAN211
+    my @items = C4::Items::GetItemsInfo($biblionumber);
     foreach my $item (@items){
         return 1 if CanItemBeReserved($borrowernumber, $item->{itemnumber});
     }
     return 0;
+    # END MAN211
 }
 
 =head2 CanItemBeReserved
@@ -431,15 +433,15 @@ sub CanItemBeReserved{
                             WHERE borrowernumber = ?
                                 ";
     
-    
     my $itemtype     = $item->{$itype};
     my $categorycode = $borrower->{categorycode};
     my $branchcode   = "";
     my $branchfield  = "reserves.branchcode";
     
     if( $controlbranch eq "ItemHomeLibrary" ){
-        $branchfield = "items.homebranch";
-        $branchcode = $item->{homebranch};
+        my $field=C4::Context->preference("HomeOrHoldingBranch")||"homebranch";
+        $branchfield = "items.$field";
+        $branchcode = $item->{$field};
     }elsif( $controlbranch eq "PatronLibrary" ){
         $branchfield = "borrowers.branchcode";
         $branchcode = $borrower->{branchcode};
@@ -786,7 +788,7 @@ sub CheckReserves {
 
     # if item is not for loan it cannot be reserved either.....
     #    execpt where items.notforloan < 0 :  This indicates the item is holdable. 
-    return ( 0, 0 ) if  ( $notforloan_per_item > 0 ) or $notforloan_per_itemtype;
+    return ( 0, 0 ) if  ( $notforloan_per_item > 0 && $notforloan_per_item < 99 ) or $notforloan_per_itemtype;
 
     # Find this item in the reserves
     my @reserves = _Findgroupreserve( $bibitem, $biblio, $itemnumber );
@@ -1348,18 +1350,37 @@ sub IsAvailableForItemLevelRequest {
         $notforloan_per_itemtype = 1 if $notforloan;
     }
 
+    # MAN250
     my $available_per_item = 1;
     $available_per_item = 0 if $item->{itemlost} or
-                               ( $item->{notforloan} > 0 ) or
                                ($item->{damaged} and not C4::Context->preference('AllowHoldsOnDamagedItems')) or
                                $item->{wthdrawn} or
                                $notforloan_per_itemtype;
-
+    
+    # notforloan that doesn't allow hold
+    if (C4::Context->preference('UseStackrequest')) {
+        $available_per_item = 0 if ( $item->{notforloan} != $AV_ETAT_LOAN && 
+                                     $item->{notforloan} != $AV_ETAT_GENERIC && 
+                                     $item->{notforloan} != $AV_ETAT_STACK );
+    } else {
+        $available_per_item = 0 if ( $item->{notforloan} > 0 );
+    }
+    # END MAN250
 
     if (C4::Context->preference('AllowOnShelfHolds')) {
         return $available_per_item;
     } else {
-        return ($available_per_item and ($item->{onloan} or GetReserveStatus($itemnumber) eq "W")); 
+        # B017 MAN101
+        my $is_on_circ = defined $item->{'istate'} 
+            && (
+                $item->{'istate'} eq $ISTATE_ON_LOAN
+             || $item->{'istate'} eq $ISTATE_ON_STACK
+             || $item->{'istate'} eq $ISTATE_WAIT_STACK
+             || $item->{'istate'} eq $ISTATE_WAIT_RENEW
+             || $item->{'istate'} eq $ISTATE_STACKREQ
+            );
+        return ($available_per_item and ($is_on_circ or GetReserveStatus($itemnumber) eq "W"));
+        # END B017
     }
 }
 
@@ -1614,7 +1635,6 @@ sub _Findgroupreserve {
         SELECT reserves.biblionumber               AS biblionumber,
                reserves.borrowernumber             AS borrowernumber,
                reserves.reservedate                AS reservedate,
-               reserves.waitingdate                AS waitingdate,
                reserves.branchcode                 AS branchcode,
                reserves.cancellationdate           AS cancellationdate,
                reserves.found                      AS found,
@@ -1658,12 +1678,21 @@ sub _koha_notify_reserve {
     my $borrower = C4::Members::GetMember(borrowernumber => $borrowernumber);
     my $letter_code;
     my $print_mode = 0;
+    my $send_email = 0; #B011
     my $messagingprefs;
     if ( $borrower->{'email'} || $borrower->{'smsalertnumber'} ) {
         $messagingprefs = C4::Members::Messaging::GetMessagingPreferences( { borrowernumber => $borrowernumber, message_name => 'Hold Filled' } );
 
-        return if ( !defined( $messagingprefs->{'letter_code'} ) );
-        $letter_code = $messagingprefs->{'letter_code'};
+    #B011
+        #return if ( !defined( $messagingprefs->{'letter_code'} ) );
+        if ( !defined( $messagingprefs->{'letter_code'} ) ) {
+        	$letter_code = 'HOLD';
+        	$send_email = 1;
+        } else {
+	        $letter_code = $messagingprefs->{'letter_code'};
+        }
+    # END B011
+    
     } else {
         $letter_code = 'HOLD_PRINT';
         $print_mode = 1;
@@ -1706,18 +1735,17 @@ sub _koha_notify_reserve {
         
         return;
     }
-
-    if ( grep { $_ eq 'email' } @{$messagingprefs->{transports}} ) {
+    
+    #B011
+    if ( $send_email || grep { $_ eq 'email' } @{$messagingprefs->{transports}} ) {
         # aka, 'email' in ->{'transports'}
-        C4::Letters::EnqueueLetter(
-            {   letter                 => $letter,
-                borrowernumber         => $borrowernumber,
-                message_transport_type => 'email',
-                from_address           => $admin_email_address,
-            }
-        );
-    }
 
+		my ( $report_directory, $report_name ) = ( 'exports', 'lettre_reservation' );
+		SendEmail( $report_directory, $report_name, { Item_Number => $itemnumber, borrower_number => $borrowernumber }, $letter, $borrowernumber, $admin_email_address, C4::Members::GetFirstValidEmailAddress( $borrowernumber ) );
+        
+    }
+    # END B011
+    
     if ( grep { $_ eq 'sms' } @{$messagingprefs->{transports}} ) {
         C4::Letters::EnqueueLetter(
             {   letter                 => $letter,

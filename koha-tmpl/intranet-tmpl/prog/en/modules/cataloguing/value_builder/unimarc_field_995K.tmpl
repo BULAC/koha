@@ -1,0 +1,364 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<!-- Progilone B10 -->
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>UNIMARC_Field 995K builder</title>
+    <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/js/pgl-callnumber.js"></script>
+    <script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/jquery.js"></script>
+    
+    <script type="text/javascript">//<![CDATA[
+		function load_function() {
+			updateDocumentTypePrefix();
+			updateAvailableFormatPrefix();
+		}
+
+		function upperCase(x) {
+			var y = document.getElementById(x).value;
+            y = accentsTidy(y).toUpperCase();
+            document.getElementById(x).value = y;
+		}
+
+		function accentsTidy(x) {
+            x = x.replace(/[àáâãäå]/g,"a");
+            x = x.replace(/æ/g,"ae");
+            x = x.replace(/ç/g,"c");
+            x = x.replace(/[èéêë]/g,"e");
+            x = x.replace(/[ìíîï]/g,"i");
+            x = x.replace(/ñ/g,"n");                
+            x = x.replace(/[òóôõö]/g,"o");
+            x = x.replace(/œ/g,"oe");
+            x = x.replace(/[ùúûü]/g,"u");
+            x = x.replace(/[ýÿ]/g,"y");
+            return x;
+        }
+		
+	//]]></script>
+</head>
+<body onload="load_function()">
+	<form name="f_pop" action="plugin_launcher.pl">
+		<input type="hidden" name="plugin_name" value="unimarc_field_995K.pl" />
+		<input type="hidden" name="index" value="<!-- TMPL_VAR name="index" -->" />
+		<input type="hidden" name="result" value="<!-- TMPL_VAR name="result" -->" />
+		
+		<!-- TMPL_IF NAME="op" -->
+			<input type="hidden" name="op" value="cancelOrCheck" />
+			<input type="hidden" name="branch" value="<!-- TMPL_VAR name="branch" -->" />
+			<input type="hidden" name="mention" value="<!-- TMPL_VAR name="mention" -->" />
+			<input type="hidden" name="type" value="<!-- TMPL_VAR name="type" -->" />
+			<input type="hidden" name="measures" value="<!-- TMPL_VAR name="measures" -->" />
+			<input type="hidden" name="format" value="<!-- TMPL_VAR name="format" -->" />
+			<input type="hidden" name="number" value="<!-- TMPL_VAR name="number" -->" />
+			
+			<input type="hidden" name="retro" value="<!-- TMPL_VAR name="retro" -->" />
+			<input type="hidden" name="retroCallnumber" value="<!-- TMPL_VAR name="retroCallnumber" -->" />
+			
+			<!-- TMPL_IF NAME="ruleError" -->
+				<div>
+				    <!-- TMPL_IF NAME="ruleNotActive"" -->
+					   This callnumber rule is not active.
+					<!-- /TMPL_IF -->
+					<!-- TMPL_IF NAME="ruleNotExist"" -->
+                        This callnumber rule does not exist.
+                    <!-- /TMPL_IF -->
+				</div>
+				
+				<div>
+					<input type="submit" name="cancel" value="Retour"/>
+				</div>
+			<!-- TMPL_ELSE -->
+			
+				<!-- TMPL_IF NAME="alreadyUsed" -->
+					<div>
+						There is already an item with this callnumber. Please choose another sequence number.
+					</div>
+				<!-- /TMPL_IF -->
+			
+				<table>
+					<tr>
+						<td>Store callnumber</td>
+						<td><input type="text" name="callnumber" value="<!-- TMPL_VAR name="callnumber" -->" readonly="readonly" size="40"/></td>
+					</tr>
+					<!-- TMPL_UNLESS NAME="computedNumber" -->
+						<tr>
+							<td>Choose sequence number</td>
+							<td>
+								<input type="text" name="choosenNumber" value="" maxlength="6" size="6"/>
+								<input type="hidden" name="mandatory" value="1" />
+							</td>
+						</tr>
+					<!-- /TMPL_UNLESS -->
+				</table>
+				
+				<div>
+					<!-- TMPL_IF NAME="computedNumber" -->
+						<input type="button" value="OK" onclick="if( checkMandatory() ){report();}"/>
+					<!-- TMPL_ELSE -->
+						<input type="submit" name="check" value="OK" onclick="return checkMandatory();"/>
+					<!-- /TMPL_IF -->
+					<input type="submit" name="cancel" value="Cancel"/>
+				</div>
+			<!-- /TMPL_IF -->
+		<!-- TMPL_ELSE -->
+			<input type="hidden" name="op" value="compute" />
+			<input type="hidden" maxlength="5" name="branch" value="<!-- TMPL_VAR name="branch" -->" />
+			<input type="hidden" maxlength="6" name="number" value="<!-- TMPL_VAR name="number" -->" />
+			
+			<div id="pluginCallnumber" name="pluginCallnumber" <!-- TMPL_IF NAME="retro" -->style="display: none;"<!-- /TMPL_IF --> >
+				<table>
+					<tr>
+						<td>Branch *</td>
+						<td>
+							<select name="branch" size="1">
+								<!-- TMPL_LOOP NAME="branch_values_hash" -->
+									<option value="<!-- TMPL_VAR name="value" -->" <!-- TMPL_VAR name="selected" --> ><!-- TMPL_VAR name="label" --></option>
+								<!-- /TMPL_LOOP -->
+							</select>
+							<input type="hidden" name="mandatory" value="1" />
+						</td>
+					</tr>
+					<tr>
+						<td>Additional mention</td>
+						<td><input id="mention" type="text" maxlength="3" name="mention" value="<!-- TMPL_VAR name="mention" -->" 
+						          onblur="javascript:updateAvailableFormatPrefix();" onkeyup="upperCase(this.id)"/></td>
+					</tr>
+					<tr>
+						<td>Document type prefix *</td>
+						<td>
+							<select name="type" size="1" onchange="javascript:updateAvailableFormatPrefix();">
+								<!-- TMPL_LOOP NAME="type_auth_values_hash" -->
+									<option value="<!-- TMPL_VAR name="value" -->" <!-- TMPL_VAR name="selected" --> ><!-- TMPL_VAR name="label" --></option>
+								<!-- /TMPL_LOOP -->
+							</select>
+							<input type="hidden" name="mandatory" value="1" />
+						</td>
+					</tr>
+					<tr>
+						<td>Format (accurate measurements)</td>
+						<td><input type="text" name="measures" value="<!-- TMPL_VAR name="measures" -->" onchange="javascript:updateFormatPrefix();"/></td>
+					</tr>
+					<tr>
+						<td>Format prefix</td>
+						<td>
+							<select name="format" size="1">
+								<option value = ""></option>
+								<!-- TMPL_LOOP NAME="format_auth_values_hash" -->
+									<option value="<!-- TMPL_VAR name="value" -->" <!-- TMPL_VAR name="selected" --> ><!-- TMPL_VAR name="label" --></option>
+								<!-- /TMPL_LOOP -->
+							</select>
+						</td>
+					</tr>
+					<!-- TMPL_UNLESS NAME="UseAdvancedCallNumberManagement" -->
+						<tr>
+							<td>Sequence number</td>
+							<td><input type="text" name="sequenceNumber" value="<!-- TMPL_VAR name="sequenceNumber" -->" /></td>
+						</tr>
+					<!-- /TMPL_UNLESS -->
+				</table>
+			</div>
+			
+			<br/>
+			<div>
+				<input type="checkbox" name="retro" id="retro" <!-- TMPL_IF NAME="retro" -->checked="checked"<!-- /TMPL_IF --> onclick="toggleVisibility(this, 'retroCallnumber', false);toggleDisplay(this, 'pluginCallnumber', true);toggleDisplay(this, 'disabledRetroCallnumber', true);" />
+                <label for="retroc">Retro</label>
+				<input type="text" name="disabledRetroCallnumber" size="67" maxlength="255" id="disabledRetroCallnumber" disabled="disabled" <!-- TMPL_IF NAME="retro" -->style="display: none;"<!--/TMPL_IF --> value="<!-- TMPL_VAR name="retroCallnumber" -->" />
+                <input type="text" name="retroCallnumber" size="67" maxlength="255" id="retroCallnumber" <!-- TMPL_UNLESS NAME="retro" -->style="visibility: hidden;"<!-- /TMPL_UNLESS --> value="<!-- TMPL_VAR name="retroCallnumber" -->" />
+			</div>
+			
+			<br/>
+			<div>
+				<input type="submit" value="OK" onclick="return checkMandatory();"/>
+			</div>
+		<!-- /TMPL_IF -->
+	</form>
+	
+	<script type="text/javascript">
+		function addOption(element, option, position) {
+			if (position != null && position < element.length) {
+				var optionAtPostion = element.options[position];  
+				try {
+					element.add(option, optionAtPostion); // standards compliant; doesn't work in IE
+				} catch(ex) {
+					element.add(option, position); // IE only
+				}
+			} else {
+				try {
+					element.add(option, null); // standards compliant; doesn't work in IE
+				} catch(ex) {
+					element.add(option); // IE only
+				}
+			}
+		}
+		
+		function removeOption(element, option) {
+			for (var i = 0; i < element.length; i++) {
+				if (element.children[i].value == option) {
+					optionElement = element.children[i];
+					element.remove(i);
+					return optionElement;
+				}
+			}
+		}
+		
+		function disableAllOptions(element) {
+			for (var i = 0; i < element.options.length; i++) {
+				element.options[i].style.display = 'none';
+			}
+		}
+
+		function enableOption(element, optionValue) {
+			for (var i = 0; i < element.options.length; i++) {
+                if (element.options[i].value == optionValue) {
+                    element.options[i].style.display = '';
+                }
+            }
+		}
+
+		function updateDocumentTypePrefix() {
+			var MON_option = removeOption(document.f_pop.type, 'MON   ');
+			var PER_option = removeOption(document.f_pop.type, 'PER   ');
+			addOption(document.f_pop.type, PER_option, 0);
+			addOption(document.f_pop.type, MON_option, 0);
+		}
+
+		function updateAvailableFormatPrefix() {
+			disableAllOptions(document.f_pop.format);
+
+			var mention = document.f_pop.mention;
+			var type = document.f_pop.type;
+			var measures = document.f_pop.measures;
+			var format = document.f_pop.format;
+			var old_value = document.f_pop.format.value;
+			
+			if (type.value == 'BR    ') {
+				measures.disabled = '';
+				format.disabled = '';
+				enableOption(format, '16   ');
+				enableOption(format, '8    ');
+				enableOption(format, '4    ');
+				enableOption(format, 'Fol  ');
+			} else if (type.value == 'MON   ') {
+				measures.disabled = '';
+				format.disabled = '';
+				enableOption(format, '16   ');
+				enableOption(format, '8    ');
+				enableOption(format, '4    ');
+				enableOption(format, 'Fol  ');
+				if (mention.value != 'RES') {
+					enableOption(format, 'GFol ');
+					enableOption(format, 'TIB  ');
+				}
+			} else if (type.value == 'PER   ') {
+				measures.disabled = '';
+				format.disabled = '';
+				enableOption(format, '8    ');
+				enableOption(format, '4    ');
+				enableOption(format, 'Fol  ');
+				if (mention.value != 'RES') {
+					enableOption(format, '16   ');
+					enableOption(format, 'GFol ');
+				}
+			} else if (type.value == 'ARC   ') {
+				measures.disabled = '';
+				format.disabled = '';
+				enableOption(format, 'HF   ');
+			} else if (type.value == 'MS    ') {
+				measures.disabled = '';
+				format.disabled = '';
+				enableOption(format, 'HF   ');
+			} else {
+				measures.value = '';
+				measures.disabled = 'disabled';
+				format.value = '';
+				format.disabled = 'disabled';
+			}
+
+			for (var i = 0; i < format.options.length; i++) {
+			    if (format.options[i].value == old_value) {
+			        if(format.options[i].style.display == "none") {
+			        	document.f_pop.format.value = "";
+			        } else {
+			        	document.f_pop.format.value = old_value;
+			        }
+			    }
+			}
+
+			updateFormatPrefix();
+		}
+
+		function updateFormatPrefix() {
+			if (document.f_pop.measures.value == '') {
+				return;
+			}
+
+			//if (document.f_pop.type.value == 'TIB') {
+			//	return;
+			//}
+			
+			var measures = parseInt(document.f_pop.measures.value);
+			if (isNaN(measures)) {
+				return;
+			}
+
+			var format = document.f_pop.format;
+			if (document.f_pop.mention.value == 'RES') {
+				if (measures <= 25) {
+					format.value = '16   ';
+				} else if (measures > 25 && measures <= 30) {
+					format.value = '4    ';
+				} else if (measures > 30) {
+					format.value = 'Fol  ';
+				}
+			} else {
+				if (measures <= 20) {
+					format.value = '16   ';
+				} else if (measures > 20 && measures <= 25) {
+					format.value = '8    ';
+				} else if (measures > 25 && measures <= 30) {
+					format.value = '4    ';
+				} else if (measures > 30 && measures <= 48) {
+					format.value = 'Fol  ';
+				} else if (measures > 48) {
+					format.value = 'GFol ';
+				}
+			}
+		}
+
+		function checkMandatory() {
+			var errors = 0;
+			var fields = findSubfieldsWithProperty("mandatory");
+
+			for (var i = 0; i < fields.length; i++) {
+				var el = getInputSubfield(fields[i]);
+				if (!el.value) {
+					errors++;
+					var label = fields[i].previousSibling.previousSibling;
+					label.style.backgroundColor="#FF0000";
+					label.style.fontWeight = "bold";
+				} else {
+					var label = fields[i].previousSibling.previousSibling;
+					label.style.backgroundColor="#FFFFFF";
+					label.style.fontWeight = "normal";
+				}
+			}
+
+			if (errors) {
+				return false;
+			}
+			return true;
+		}
+		
+		function report() {
+		    var doc   = opener.document; 
+	        var field = doc.getElementById("<!-- TMPL_VAR NAME="index" -->");
+	        
+	        field.value = document.f_pop.callnumber.value;
+	        reportToSubfield(doc, 'K', 'k', document.f_pop.callnumber.value);
+	        
+			window.close();
+			return false;
+		}
+	</script>
+</body>
+</html>

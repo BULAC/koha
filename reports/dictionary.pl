@@ -31,6 +31,9 @@ Script to control the guided report creation
 
 =head1 DESCRIPTION
 
+
+=over2
+
 =cut
 
 my $input = new CGI;

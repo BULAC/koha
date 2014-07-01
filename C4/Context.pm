@@ -942,7 +942,8 @@ set_userenv is called in Auth.pm
 
 #'
 sub set_userenv {
-    my ($usernum, $userid, $usercnum, $userfirstname, $usersurname, $userbranch, $branchname, $userflags, $emailaddress, $branchprinter)= @_;
+	# B032 add $desk $deskname
+    my ($usernum, $userid, $usercnum, $userfirstname, $usersurname, $desk, $deskname, $userbranch, $branchname, $userflags, $emailaddress, $branchprinter)= @_;
     my $var=$context->{"activeuser"};
     my $cell = {
         "number"     => $usernum,
@@ -950,6 +951,10 @@ sub set_userenv {
         "cardnumber" => $usercnum,
         "firstname"  => $userfirstname,
         "surname"    => $usersurname,
+        # B032
+        "desk"     => $desk,
+        "deskname" => $deskname,
+        # END B302
         #possibly a law problem
         "branch"     => $userbranch,
         "branchname" => $branchname,

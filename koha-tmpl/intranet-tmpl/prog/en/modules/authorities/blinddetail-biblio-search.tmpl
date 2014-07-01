@@ -4,37 +4,77 @@
 <script type="text/javascript">
 //<![CDATA[
     $(document).ready(function(){
-        var index_start = "<!-- TMPL_VAR NAME='index' -->";
-        var whichfield;
+
+        // PROGILONE - july 2010 - C2
         try {
-            whichfield = opener.opener.document.getElementById(index_start);
+            
+	        var index_start = "<!-- TMPL_VAR ESCAPE="JS" NAME='index' -->";
+	        var auth_id = "<!-- TMPL_VAR ESCAPE="JS" NAME="authid" -->";
+	
+	        var src = opener.opener;
+	        var whichfield = src.document.getElementById(index_start);
+	        
+	        var record_subfields = whichfield.parentNode.parentNode.getElementsByTagName('input');
+	        var re = /^tag_\d*_code_/;
+	
+	        <!-- TMPL_IF NAME="clear" -->
+		        for (var i=0, len = record_subfields.length ; i<len ; i++) {
+		            if (record_subfields[i].getAttribute('name').match(re)) {
+		                var record_subfield = record_subfields[i+1];
+		                if (record_subfield) {
+		                	record_subfield.value = "" ;
+		                }
+		            }
+		        }
+	        <!--TMPL_ELSE-->
+	            <!-- TMPL_LOOP NAME="0XX" -->
+		        <!-- TMPL_LOOP NAME="subfield" -->
+		        var auth_subfield_code = "<!-- TMPL_VAR ESCAPE="JS" NAME="marc_subfield" -->";
+		        var auth_value_index = 0;
+		        var record_subfield_auth_id = null;
+		        <!-- TMPL_LOOP NAME="marc_value" -->
+		        var record_value_index = 0;
+		        var dest_subfield = null;
+		        var last_subfield = null;
+		        for (var i=0, len = record_subfields.length ; i<len ; i++) {
+		            if (record_subfields[i].getAttribute('name').match(re)) {
+		                var record_code     = record_subfields[i];
+		                var record_subfield = record_subfields[i+1];
+		                if (record_code.value == '9' && record_subfield_auth_id == null) {
+	                        record_subfield_auth_id = record_subfield;
+		                }
+			            if (record_code.value == auth_subfield_code) {
+				            last_subfield = record_subfield;
+				            if (record_value_index == auth_value_index) {
+					            dest_subfield = record_subfield;
+					            break;
+				            }
+			            	record_value_index++;
+			            }
+		            }
+		        }
+		        if (last_subfield) {
+		        	var last_subf_id = last_subfield.parentNode.id;
+			        if (!dest_subfield && src.isRepeatableSubfield(last_subf_id)) {
+			        	var new_subf_id = src.CloneSubfield(last_subf_id);
+	                    var new_subf = src.document.getElementById(new_subf_id);
+	                    dest_subfield = new_subf.getElementsByTagName('input')[1] ;
+			        }
+			        dest_subfield.value = "<!-- TMPL_VAR ESCAPE="JS" NAME="value" -->";
+		        }
+		        auth_value_index++;
+		        <!-- /TMPL_LOOP -->
+	            if (record_subfield_auth_id) {
+		            record_subfield_auth_id.value = auth_id;
+	            }
+			    <!-- /TMPL_LOOP -->
+		        <!-- /TMPL_LOOP -->
+		    <!--/TMPL_IF-->
+
         } catch(e) {
-            return;
         }
+        // End PROGILONE
         
-        // browse all its subfields
-        var subfields = whichfield.parentNode.parentNode.getElementsByTagName('input');
-        var re = /^tag_\d*_code_/;
-        for(var i=0, len = subfields.length ; i< len ; i++) { // browse all subfields
-            if(subfields[i].getAttribute('name').match(re)){ // it s a subfield
-                var code     = subfields[i];   // code is the first input 
-                var subfield = subfields[i+1]; // subfield the second
-            <!-- TMPL_IF NAME="clear" -->
-                if (subfield){subfield.value="" ;}
-            <!--TMPL_ELSE-->      
-            <!-- TMPL_LOOP NAME="0XX" -->
-                <!-- TMPL_LOOP NAME="subfield" -->
-                    if (code.value == "<!-- TMPL_VAR ESCAPE="JS" NAME="marc_subfield" -->"){
-                        subfield.value = "<!-- TMPL_VAR ESCAPE="JS" NAME="marc_value" -->";
-                    }
-                <!-- /TMPL_LOOP -->
-            <!-- /TMPL_LOOP -->
-                if(code.value=='9'){
-                        subfield.value = "<!-- TMPL_VAR ESCAPE="JS" NAME="authid" -->";
-                }
-            <!--/TMPL_IF-->
-            }
-        }
       	opener.close();
        	window.close();
             

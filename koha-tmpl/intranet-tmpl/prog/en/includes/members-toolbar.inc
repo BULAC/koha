@@ -35,6 +35,11 @@ function update_child() {
 
 	 $(document).ready(function() {
 	    $("#printslip").parent().remove();
+	    // B11
+	    $("#printcard").parent().remove();
+	    $("#printissue").parent().remove();
+	    $("#printconfirmation").parent().remove();
+	    // END B11
 		$("#patronflags").parent().remove();
 		$("#deletepatron").parent().remove();
 		$("#moremenuc").empty();
@@ -51,8 +56,21 @@ function update_child() {
 	function yuiToolbar() {
 	    var printmenu = [
 	        { text: _("Print Page"), onclick: {fn: function(){printx_window("page")}} },
-	        { text: _("Print Slip"), onclick: {fn: function(){printx_window("slip")}} },
-	        { text: _("Quick Slip"), onclick: {fn: function(){printx_window("qslip")}} }
+	        { text: _("Print Slip"), onclick: {fn: function(){
+                window.location = "/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME='borrowernumber' -->&print=issue";
+            	}}
+        	},
+	        { text: _("Quick Slip"), onclick: {fn: function(){printx_window("qslip")}} },
+            // B11
+	        { text: _("Print Card"), onclick: {fn: function(){
+                    window.location = "/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME='borrowernumber' -->&print=card";
+                }}
+            },
+            { text: _("Print Confirmation"), onclick: {fn: function(){
+                    window.location = "/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME='borrowernumber' -->&print=confirmation";
+                }}
+            }
+            // END B11
 	    ];
 
 		var moremenu = [
@@ -88,6 +106,13 @@ function update_child() {
 		new YAHOO.widget.Button("patronflags");
 		new YAHOO.widget.Button("deletepatron");
 		new YAHOO.widget.Button("updatechild");
+		new YAHOO.widget.Button("quitus");
+		
+		// B11
+		new YAHOO.widget.Button("printcard");
+		new YAHOO.widget.Button("printissue");
+		new YAHOO.widget.Button("printconfirmation");
+		// END B11
 	}
 
 	//]]>
@@ -111,6 +136,15 @@ function update_child() {
 <!--	<li><a id="addnote" href="/cgi-bin/koha/members/addnotes.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Add Note</a></li> -->
 	<li><a id="changepassword" href="/cgi-bin/koha/members/member-password.pl?member=<!-- TMPL_VAR NAME="borrowernumber" -->">Change Password</a></li>
 	<li id="printmenuc"><a id="printpage" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;print=page">Print Page</a></li>
-	<li><a id="printslip" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->&amp;print=slip">Print Slip</a></li>
-	<li id="moremenuc"><a id="renewpatron" href="/cgi-bin/koha/members/moremember.pl?reregistration=y&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Renew Account</a></li><!-- TMPL_IF NAME="CAN_user_permissions" --><li><a id="patronflags" href="/cgi-bin/koha/members/member-flags.pl?member=<!-- TMPL_VAR NAME="borrowernumber" -->">Set Permissions</a></li><!-- /TMPL_IF --><li><a id="deletepatron" href="javascript:confirm_deletion();">Delete</a></li>
+	<!-- B11 -->
+    <li><a id="printcard" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME='borrowernumber' -->&print=card">Print Card</a></li>
+	<li><a id="printconfirmation" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME='borrowernumber' -->&print=confirmation">Print Confirmation</a></li>
+	<li><a id="printissue" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME='borrowernumber' -->&print=issue">Print Slip</a></li>
+    <!-- END B11 -->
+	<li id="moremenuc"><a id="renewpatron" href="/cgi-bin/koha/members/moremember.pl?reregistration=y&amp;borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">Renew Account</a></li>
+    <!-- TMPL_IF NAME="CAN_user_permissions" -->
+    <li><a id="patronflags" href="/cgi-bin/koha/members/member-flags.pl?member=<!-- TMPL_VAR NAME="borrowernumber" -->">Set Permissions</a></li>
+    <!-- /TMPL_IF -->
+    <li><a id="deletepatron" href="javascript:confirm_deletion();">Delete</a></li>
+    <li><a id="quitus" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME='borrowernumber' -->&print=quitus">Quitus</a></li><!-- B11 -->
 </ul></div>

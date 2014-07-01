@@ -26,7 +26,6 @@
 orderreceive.pl
 
 =head1 DESCRIPTION
-
 This script shows all order already receive and all pendings orders.
 It permit to write a new order as 'received'.
 
@@ -35,19 +34,16 @@ It permit to write a new order as 'received'.
 =over 4
 
 =item supplierid
-
 to know on what supplier this script has to display receive order.
 
 =item receive
 
 =item invoice
-
 the number of this invoice.
 
 =item freight
 
 =item biblio
-
 The biblionumber of this order.
 
 =item datereceived

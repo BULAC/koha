@@ -1,7 +1,6 @@
 package C4::Koha;
 
 # Copyright 2000-2002 Katipo Communications
-# Parts Copyright 2010 Nelsonville Public Library
 #
 # This file is part of Koha.
 #
@@ -35,6 +34,7 @@ BEGIN {
 	@ISA    = qw(Exporter);
 	@EXPORT = qw(
 		&slashifyDate
+		&DisplayISBN
 		&subfield_is_koha_internal_p
 		&GetPrinters &GetPrinter
 		&GetItemTypes &getitemtypeinfo
@@ -56,13 +56,12 @@ BEGIN {
 		&GetAuthorisedValueCategories
 		&GetKohaAuthorisedValues
 		&GetKohaAuthorisedValuesFromField
-    &GetKohaAuthorisedValueLib
 		&GetAuthValCode
 		&GetNormalizedUPC
 		&GetNormalizedISBN
 		&GetNormalizedEAN
 		&GetNormalizedOCLCNumber
-        &xml_escape
+		&GetAuthorisedValuesMap
 
 		$DEBUG
 	);
@@ -103,6 +102,106 @@ sub slashifyDate {
     # form xx/xx/xx[xx]
     my @dateOut = split( '-', shift );
     return ("$dateOut[2]/$dateOut[1]/$dateOut[0]");
+}
+
+
+=head2 DisplayISBN
+
+  my $string = DisplayISBN( $isbn );
+
+=cut
+
+sub DisplayISBN {
+    my ($isbn) = @_;
+    if (length ($isbn)<13){
+    my $seg1;
+    if ( substr( $isbn, 0, 1 ) <= 7 ) {
+        $seg1 = substr( $isbn, 0, 1 );
+    }
+    elsif ( substr( $isbn, 0, 2 ) <= 94 ) {
+        $seg1 = substr( $isbn, 0, 2 );
+    }
+    elsif ( substr( $isbn, 0, 3 ) <= 995 ) {
+        $seg1 = substr( $isbn, 0, 3 );
+    }
+    elsif ( substr( $isbn, 0, 4 ) <= 9989 ) {
+        $seg1 = substr( $isbn, 0, 4 );
+    }
+    else {
+        $seg1 = substr( $isbn, 0, 5 );
+    }
+    my $x = substr( $isbn, length($seg1) );
+    my $seg2;
+    if ( substr( $x, 0, 2 ) <= 19 ) {
+
+        # if(sTmp2 < 10) sTmp2 = "0" sTmp2;
+        $seg2 = substr( $x, 0, 2 );
+    }
+    elsif ( substr( $x, 0, 3 ) <= 699 ) {
+        $seg2 = substr( $x, 0, 3 );
+    }
+    elsif ( substr( $x, 0, 4 ) <= 8399 ) {
+        $seg2 = substr( $x, 0, 4 );
+    }
+    elsif ( substr( $x, 0, 5 ) <= 89999 ) {
+        $seg2 = substr( $x, 0, 5 );
+    }
+    elsif ( substr( $x, 0, 6 ) <= 9499999 ) {
+        $seg2 = substr( $x, 0, 6 );
+    }
+    else {
+        $seg2 = substr( $x, 0, 7 );
+    }
+    my $seg3 = substr( $x, length($seg2) );
+    $seg3 = substr( $seg3, 0, length($seg3) - 1 );
+    my $seg4 = substr( $x, -1, 1 );
+    return "$seg1-$seg2-$seg3-$seg4";
+    } else {
+      my $seg1;
+      $seg1 = substr( $isbn, 0, 3 );
+      my $seg2;
+      if ( substr( $isbn, 3, 1 ) <= 7 ) {
+          $seg2 = substr( $isbn, 3, 1 );
+      }
+      elsif ( substr( $isbn, 3, 2 ) <= 94 ) {
+          $seg2 = substr( $isbn, 3, 2 );
+      }
+      elsif ( substr( $isbn, 3, 3 ) <= 995 ) {
+          $seg2 = substr( $isbn, 3, 3 );
+      }
+      elsif ( substr( $isbn, 3, 4 ) <= 9989 ) {
+          $seg2 = substr( $isbn, 3, 4 );
+      }
+      else {
+          $seg2 = substr( $isbn, 3, 5 );
+      }
+      my $x = substr( $isbn, length($seg2) +3);
+      my $seg3;
+      if ( substr( $x, 0, 2 ) <= 19 ) {
+  
+          # if(sTmp2 < 10) sTmp2 = "0" sTmp2;
+          $seg3 = substr( $x, 0, 2 );
+      }
+      elsif ( substr( $x, 0, 3 ) <= 699 ) {
+          $seg3 = substr( $x, 0, 3 );
+      }
+      elsif ( substr( $x, 0, 4 ) <= 8399 ) {
+          $seg3 = substr( $x, 0, 4 );
+      }
+      elsif ( substr( $x, 0, 5 ) <= 89999 ) {
+          $seg3 = substr( $x, 0, 5 );
+      }
+      elsif ( substr( $x, 0, 6 ) <= 9499999 ) {
+          $seg3 = substr( $x, 0, 6 );
+      }
+      else {
+          $seg3 = substr( $x, 0, 7 );
+      }
+      my $seg4 = substr( $x, length($seg3) );
+      $seg4 = substr( $seg4, 0, length($seg4) - 1 );
+      my $seg5 = substr( $x, -1, 1 );
+      return "$seg1-$seg2-$seg3-$seg4-$seg5";       
+    }    
 }
 
 # FIXME.. this should be moved to a MARC-specific module
@@ -574,7 +673,6 @@ sub getImageSets {
     foreach my $imagesubdir ( @subdirectories ) {
         my @imagelist     = (); # hashrefs of image info
         my @imagenames = _getImagesFromDirectory( File::Spec->catfile( $paths->{'staff'}{'filesystem'}, $imagesubdir ) );
-        my $imagesetactive = 0;
         foreach my $thisimage ( @imagenames ) {
             push( @imagelist,
                   { KohaImage     => "$imagesubdir/$thisimage",
@@ -583,10 +681,8 @@ sub getImageSets {
                     checked       => "$imagesubdir/$thisimage" eq $checked ? 1 : 0,
                }
              );
-             $imagesetactive = 1 if "$imagesubdir/$thisimage" eq $checked;
         }
         push @imagesets, { imagesetname => $imagesubdir,
-                           imagesetactive => $imagesetactive,
                            images       => \@imagelist };
         
     }
@@ -680,7 +776,7 @@ sub getFacets {
                 link_value  => 'su-to',
                 label_value => 'Topics',
                 tags        =>
-                  [ '600', '601', '602', '603', '604', '605', '606', '610' ],
+                  [ '600', '601', '602', '603', '604', '605', '606', '607', '610' ],
                 subfield => 'a',
             },
             {
@@ -707,6 +803,14 @@ sub getFacets {
                 tags        => ['225'],
                 subfield    => 'a',
             },
+            # PROGILONE - april 2010 - F19
+            {
+                link_value  => 'ccode',
+                label_value => 'Types',
+                tags        => ['200'],
+                subfield    => '5',
+            },
+            # End PROGILONE
             ];
 
             my $library_facet;
@@ -759,6 +863,14 @@ sub getFacets {
                 tags        => [ '440', '490', ],
                 subfield    => 'a',
             },
+            # PROGILONE - april 2010 - F19
+            {
+                link_value  => 'ccode',
+                label_value => 'Types',
+                tags        => ['200'],
+                subfield    => '5',
+            },
+            # End PROGILONE
             ];
             my $library_facet;
             $library_facet = {
@@ -1014,6 +1126,29 @@ sub GetAuthorisedValues {
     return \@results; #$data;
 }
 
+# B03
+##
+# Gest a hash with authorised_value as key and lib as value
+#
+# param : category
+##
+sub GetAuthorisedValuesMap($) {
+    
+    my $category = shift;
+    my $ret;
+    
+    my $avs = GetAuthorisedValues($category);
+    foreach my $av (@$avs) {
+        my $code = $av->{'authorised_value'};
+        if (defined $code) {            
+            $ret->{"$code"} = $av->{'lib'};
+        }
+    }
+    
+    return $ret;
+}
+# END B03
+
 =head2 GetAuthorisedValueCategories
 
   $auth_categories = GetAuthorisedValueCategories();
@@ -1093,46 +1228,6 @@ sub GetKohaAuthorisedValuesFromField {
   } else {
   	return undef;
   }
-}
-
-=head2 xml_escape
-
-  my $escaped_string = C4::Koha::xml_escape($string);
-
-Convert &, <, >, ', and " in a string to XML entities
-
-=cut
-
-sub xml_escape {
-    my $str = shift;
-    return '' unless defined $str;
-    $str =~ s/&/&amp;/g;
-    $str =~ s/</&lt;/g;
-    $str =~ s/>/&gt;/g;
-    $str =~ s/'/&apos;/g;
-    $str =~ s/"/&quot;/g;
-    return $str;
-}
-
-=head2 GetKohaAuthorisedValueLib
-
-Takes $category, $authorised_value as parameters.
-
-If $opac parameter is set to a true value, displays OPAC descriptions rather than normal ones when they exist.
-
-Returns authorised value description
-
-=cut
-
-sub GetKohaAuthorisedValueLib {
-  my ($category,$authorised_value,$opac) = @_;
-  my $value;
-  my $dbh = C4::Context->dbh;
-  my $sth = $dbh->prepare("select lib, lib_opac from authorised_values where category=? and authorised_value=?");
-  $sth->execute($category,$authorised_value);
-  my $data = $sth->fetchrow_hashref;
-  $value = ($opac && $$data{'lib_opac'}) ? $$data{'lib_opac'} : $$data{'lib'};
-  return $value;
 }
 
 =head2 display_marc_indicators
@@ -1271,15 +1366,14 @@ sub _normalize_match_point {
     return $normalized_match_point;
 }
 
-sub _isbn_cleanup {
-    my $isbn = Business::ISBN->new( $_[0] );
-    if ( $isbn ) {
-        $isbn = $isbn->as_isbn10 if $isbn->type eq 'ISBN13';
-        if (defined $isbn) {
-            return $isbn->as_string([]);
-        }
-    }
-    return;
+sub _isbn_cleanup ($) {
+    my $isbn = Business::ISBN->new( shift );
+    return undef unless $isbn;
+    $isbn = $isbn->as_isbn10 if $isbn->type eq 'ISBN13';
+    return undef unless $isbn;
+    $isbn = $isbn->as_string;
+    $isbn =~ s/-//g;
+    return $isbn;
 }
 
 1;

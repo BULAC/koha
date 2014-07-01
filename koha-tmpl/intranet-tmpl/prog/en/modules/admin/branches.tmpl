@@ -117,6 +117,8 @@
         <li><label for="branchemail">Email</label><input type="text" name="branchemail" id="branchemail" value="<!-- TMPL_VAR name="branchemail" escape="HTML" -->" /></li>
         <li><label for="branchurl">URL</label><input type="text" name="branchurl" id="branchurl" value="<!-- TMPL_VAR name="branchurl" escape="HTML" -->" /></li>
         <li><label for="branchip">IP</label><input type="text" name="branchip" id="branchip" value="<!-- TMPL_VAR name="branchip" escape="HTML" -->" /> <span class="hint">Can be entered as a single IP, or a subnet such as 192.168.1.*</span></li>
+        <!-- TMPL_IF NAME="UseAdvancedCallNumberManagement" --><li><label for="branchcallnumberauto">Automatic generation of callnumbers</label><input type="checkbox" name="branchcallnumberauto" id="branchcallnumberauto" value="1" <!-- TMPL_IF name="branchcallnumberauto"-->checked="checked"<!-- /TMPL_IF --> /></li><!-- /TMPL_IF --><!-- Progilone B10: Manage callnumber -->
+        <li><label for="duplicationallowed">Allow duplication</label><input type="checkbox" name="duplicationallowed" id="duplicationallowed" value="1" <!-- TMPL_IF name="duplicationallowed"-->checked="checked"<!-- /TMPL_IF --> /></li><!-- Progilone B04: Allow duplication -->
 		<!--
         <li><label for="branchprinter">Library Printer</label>
             <select id="branchprinter" name="branchprinter">

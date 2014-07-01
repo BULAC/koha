@@ -29,22 +29,46 @@ use C4::SQLHelper qw(:all);
 use C4::Debug;
 use C4::Letters;
 use List::MoreUtils qw<any>;
-use C4::Dates qw(format_date_in_iso);
-use base qw(Exporter);
+use base 'Exporter';  # parent would be better there
 our $VERSION = 3.01;
 our @EXPORT  = qw<
-    ConnectSuggestionAndBiblio
-    CountSuggestion
-    DelSuggestion
-    GetSuggestion
-    GetSuggestionByStatus
-    GetSuggestionFromBiblionumber
-    ModStatus
-    ModSuggestion
-    NewSuggestion
-    SearchSuggestion
+    &ConnectSuggestionAndBiblio
+    &CountSuggestion
+    &DelSuggestion
+    &GetSuggestion
+    &GetSuggestionByStatus
+    &GetSuggestionFromBiblionumber
+    &ModStatus
+    &ModSuggestion
+    &NewSuggestion
+    &SearchSuggestion
 >;
+use C4::Dates qw(format_date_in_iso);
+use vars qw($VERSION @ISA @EXPORT);
 
+BEGIN {
+    # set the version for version checking
+    $VERSION = 3.01;
+    require Exporter;
+    @ISA = qw(Exporter);
+    @EXPORT = qw(
+        &NewSuggestion
+        &SearchSuggestion
+        &GetSuggestion
+        &GetSuggestionByStatus
+        &DelSuggestion
+        &CountSuggestion
+        &ModSuggestion
+        &ConnectSuggestionAndBiblio
+        &GetSuggestionFromBiblionumber
+        &ConnectSuggestionAndBiblio
+        &DelSuggestion
+        &GetSuggestion
+        &GetSuggestionByStatus
+        &GetSuggestionFromBiblionumber
+        &ModStatus
+    );
+}
 
 =head1 NAME
 
@@ -126,7 +150,7 @@ sub SearchSuggestion  {
             if ($userenv) {
                 if (($userenv->{flags} % 2) != 1 && !$suggestion->{branchcode}){
                 push @sql_params,$$userenv{branch};
-                push @query,q{ and (branchcode = ? or branchcode ='')};
+                push @query,q{ and (suggestions.branchcode = ? or suggestions.branchcode ='')};
                 }
             }
     }
@@ -147,6 +171,8 @@ sub SearchSuggestion  {
     }
 
     $debug && warn "@query";
+    warn "@query";
+    warn "@sql_params";
     my $sth=$dbh->prepare("@query");
     $sth->execute(@sql_params);
     my @results;
@@ -355,24 +381,18 @@ Note that there is no function to modify a suggestion.
 sub ModSuggestion {
     my ($suggestion)=@_;
     my $status_update_table=UpdateInTable("suggestions", $suggestion);
-
-    if ($suggestion->{STATUS}) {
-        # fetch the entire updated suggestion so that we can populate the letter
-        my $full_suggestion = GetSuggestion($suggestion->{suggestionid});
-        my $letter = C4::Letters::getletter('suggestions', $full_suggestion->{STATUS});
-        if ($letter) {
-            C4::Letters::parseletter($letter, 'branches',    $full_suggestion->{branchcode});
-            C4::Letters::parseletter($letter, 'borrowers',   $full_suggestion->{suggestedby});
-            C4::Letters::parseletter($letter, 'suggestions', $full_suggestion->{suggestionid});
-            C4::Letters::parseletter($letter, 'biblio',      $full_suggestion->{biblionumber});
-            my $enqueued = C4::Letters::EnqueueLetter({
-                letter                  => $letter,
-                borrowernumber          => $full_suggestion->{suggestedby},
-                suggestionid            => $full_suggestion->{suggestionid},
-                LibraryName             => C4::Context->preference("LibraryName"),
-                message_transport_type  => 'email',
+    # check mail sending.
+    if ($$suggestion{STATUS}){
+        my $letter=C4::Letters::getletter('suggestions',$suggestion->{STATUS});
+        if ($letter){
+        my $enqueued = C4::Letters::EnqueueLetter({
+            letter=>$letter,
+            borrowernumber=>$suggestion->{suggestedby},
+            suggestionid=>$suggestion->{suggestionid},
+            LibraryName => C4::Context->preference("LibraryName"),
+            msg_transport_type=>'email'
             });
-            if (!$enqueued){warn "can't enqueue letter $letter";}
+        if (!$enqueued){warn "can't enqueue letter $letter";}
         }
     }
     return $status_update_table;

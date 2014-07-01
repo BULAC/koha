@@ -201,8 +201,6 @@ __END__
 
 =head1 NOTES
 
-=cut
-
 =head1 AUTHOR
 
 Joshua Ferraro <jmf@liblime.com>

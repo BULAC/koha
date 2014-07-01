@@ -14,3 +14,10 @@ Authorities:
               yes: "Don't"
               no: Do
         - automatically update attached biblios when changing an authority record. If this is off, please ask your administrator to enable the merge_authorities.pl cronjob.
+    # PROGILONE - july 2010 - C2
+    -
+        - "Define authority code to biblio subfield mapping for sub-authority use. For example : SNC=&gt;x,SCHR=&gt;z."
+        - pref: AuthTypeToSubfieldMapping
+          type: textarea
+          class: code
+    # End PROGILONE

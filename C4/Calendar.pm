@@ -20,7 +20,7 @@ use warnings;
 use vars qw($VERSION @EXPORT);
 
 use Carp;
-use Date::Calc qw( Date_to_Days );
+use Date::Calc qw(Date_to_Days Day_of_Week);
 
 use C4::Context;
 
@@ -45,6 +45,7 @@ BEGIN {
         &isHoliday
         &addDate
         &daysBetween
+        &getOpeningTime
     );
 }
 
@@ -79,12 +80,19 @@ sub new {
     foreach my $optionName (keys %options) {
         $self->{lc($optionName)} = $options{$optionName};
     }
-    defined($self->{branchcode}) or croak "No branchcode argument to new.  Should be C4::Calendar->new(branchcode => \$branchcode)";
-    $self->_init($self->{branchcode});
+    # B03X
+    if ( defined($self->{branchcode}) ) {
+    	$self->_init_with_branch($self->{branchcode});	
+    } elsif ( defined($self->{deskcode}) ) {
+    	$self->_init_with_desk($self->{deskcode});
+    } else {
+    	croak "No branchcode or deskcode argument to new.  Should be C4::Calendar->new(branchcode => \$branchcode) or C4::Calendar->new(deskcode => \$deskcode)";
+    }
+    # END B03X
     return $self;
 }
 
-sub _init {
+sub _init_with_branch {
     my $self = shift @_;
     my $branch = shift;
     defined($branch) or die "No branchcode sent to _init";  # must test for defined here and above to allow ""
@@ -122,6 +130,9 @@ sub _init {
     while (my ($day, $month, $year, $title, $description) = $special->fetchrow) {
         $exception_holidays{"$year/$month/$day"}{title} = $title;
         $exception_holidays{"$year/$month/$day"}{description} = $description;
+        $exception_holidays{"$year/$month/$day"}{year} = sprintf("%04d", $year);
+        $exception_holidays{"$year/$month/$day"}{month} = sprintf("%02d", $month);
+        $exception_holidays{"$year/$month/$day"}{day} = sprintf("%02d", $day);
         $exception_holidays{"$year/$month/$day"}{date} = 
 		sprintf("%04d-%02d-%02d", $year, $month, $day);
     }
@@ -132,12 +143,97 @@ sub _init {
     while (my ($day, $month, $year, $title, $description) = $special->fetchrow) {
         $single_holidays{"$year/$month/$day"}{title} = $title;
         $single_holidays{"$year/$month/$day"}{description} = $description;
+        $single_holidays{"$year/$month/$day"}{year} = sprintf("%04d", $year);
+        $single_holidays{"$year/$month/$day"}{month} = sprintf("%02d", $month);
+        $single_holidays{"$year/$month/$day"}{day} = sprintf("%02d", $day);
         $single_holidays{"$year/$month/$day"}{date} = 
 		sprintf("%04d-%02d-%02d", $year, $month, $day);
     }
     $self->{'single_holidays'} = \%single_holidays;
     return $self;
 }
+
+# B03X
+sub _init_with_desk {
+    my $self = shift @_;
+    my $desk = shift;
+    defined($desk) or die "No deskcode sent to _init";  # must test for defined here and above to allow ""
+    my $dbh = C4::Context->dbh();
+    my $repeatable = $dbh->prepare( 'SELECT weekday, day, month, title, description, start_hour, start_minute, end_hour, end_minute
+                                       FROM desk_repeatable_holidays
+                                      WHERE ( deskcode = ? )
+                                        AND (ISNULL(weekday) = ?)' );
+    $repeatable->execute($desk, 0);
+    my %week_days_holidays;
+    while (my ($weekday, $day, $month, $title, $description, $start_hour, $start_minute, $end_hour, $end_minute) = $repeatable->fetchrow) {
+        my $key = "$weekday-$start_hour:$start_minute";
+        
+        $week_days_holidays{$key}{title}        = $title;
+        $week_days_holidays{$key}{description}  = $description;
+        $week_days_holidays{$key}{weekday}      = $weekday;
+        $week_days_holidays{$key}{start_hour}   = sprintf("%02d", $start_hour);
+        $week_days_holidays{$key}{start_minute} = sprintf("%02d", $start_minute);
+        $week_days_holidays{$key}{end_hour}     = sprintf("%02d", $end_hour);
+        $week_days_holidays{$key}{end_minute}   = sprintf("%02d", $end_minute);
+    }
+    $self->{'week_days_holidays'} = \%week_days_holidays;
+
+    $repeatable->execute($desk, 1);
+    my %day_month_holidays;
+    while (my ($weekday, $day, $month, $title, $description, $start_hour, $start_minute, $end_hour, $end_minute) = $repeatable->fetchrow) {
+    	my $key = "$month/$day-$start_hour:$start_minute";
+    	
+    	$day_month_holidays{$key}{title}        = $title;
+        $day_month_holidays{$key}{description}  = $description;
+        $day_month_holidays{$key}{day}          = sprintf("%02d", $day);
+        $day_month_holidays{$key}{month}        = sprintf("%02d", $month);
+        $day_month_holidays{$key}{start_hour}   = sprintf("%02d", $start_hour);
+        $day_month_holidays{$key}{start_minute} = sprintf("%02d", $start_minute);
+        $day_month_holidays{$key}{end_hour}     = sprintf("%02d", $end_hour);
+        $day_month_holidays{$key}{end_minute}   = sprintf("%02d", $end_minute);
+    }
+    $self->{'day_month_holidays'} = \%day_month_holidays;
+
+    my $special = $dbh->prepare( 'SELECT day, month, year, title, description, start_hour, start_minute, end_hour, end_minute
+                                    FROM desk_special_holidays
+                                   WHERE ( deskcode = ? )
+                                     AND (isexception = ?)' );
+    $special->execute($desk,1);
+    my %exception_holidays;
+    while (my ($day, $month, $year, $title, $description, $start_hour, $start_minute, $end_hour, $end_minute) = $special->fetchrow) {
+        my $key = "$year/$month/$day-$start_hour:$start_minute";
+        
+        $exception_holidays{$key}{title}        = $title;
+        $exception_holidays{$key}{description}  = $description;
+        $exception_holidays{$key}{year}         = sprintf("%04d", $year);
+        $exception_holidays{$key}{month}        = sprintf("%02d", $month);
+        $exception_holidays{$key}{day}          = sprintf("%02d", $day);
+        $exception_holidays{$key}{start_hour}   = sprintf("%02d", $start_hour);
+        $exception_holidays{$key}{start_minute} = sprintf("%02d", $start_minute);
+        $exception_holidays{$key}{end_hour}     = sprintf("%02d", $end_hour);
+        $exception_holidays{$key}{end_minute}   = sprintf("%02d", $end_minute);
+    }
+    $self->{'exception_holidays'} = \%exception_holidays;
+
+    $special->execute($desk,0);
+    my %single_holidays;
+    while (my ($day, $month, $year, $title, $description, $start_hour, $start_minute, $end_hour, $end_minute) = $special->fetchrow) {
+        my $key = "$year/$month/$day-$start_hour:$start_minute";
+        
+        $single_holidays{$key}{title}        = $title;
+        $single_holidays{$key}{description}  = $description;
+        $single_holidays{$key}{year}         = sprintf("%04d", $year);
+        $single_holidays{$key}{month}        = sprintf("%02d", $month);
+        $single_holidays{$key}{day}          = sprintf("%02d", $day);
+        $single_holidays{$key}{start_hour}   = sprintf("%02d", $start_hour);
+        $single_holidays{$key}{start_minute} = sprintf("%02d", $start_minute);
+        $single_holidays{$key}{end_hour}     = sprintf("%02d", $end_hour);
+        $single_holidays{$key}{end_minute}   = sprintf("%02d", $end_minute);
+    }
+    $self->{'single_holidays'} = \%single_holidays;
+    return $self;
+}
+# END B03X
 
 =head2 get_week_days_holidays
 
@@ -566,6 +662,153 @@ sub isHoliday {
     }
 
 }
+
+# B03X : stack desks (managed with open days unlike branch calendar)
+
+## 
+# Get an array of open gaps (begin and end time of day in minutes) of specified date,
+# ordered by begin time
+##
+sub _getOpenTimeGaps {
+    
+    my ($self, $day, $month, $year) = @_;
+    
+    my @gaps = ();
+    my $beg_minutes;
+    my $end_minutes;
+    
+    my $dayofweek  = &Date::Calc::Day_of_Week($year, $month, $day) % 7; 
+    my $weekDays   = $self->get_week_days_holidays();
+    my $dayMonths  = $self->get_day_month_holidays();
+    my $exceptions = $self->get_exception_holidays();
+    my $singles    = $self->get_single_holidays();
+    
+    # Single
+    foreach my $single (values %$singles) {
+        if ($single->{"year"} == $year && $single->{"month"} == $month && $single->{"day"} == $day) {
+            $beg_minutes = $single->{"start_hour"} * 60 + $single->{"start_minute"};
+            $end_minutes = $single->{"end_hour"}   * 60 + $single->{"end_minute"};
+            push @gaps, {
+                'beg' => $beg_minutes + 0,
+                'end' => $end_minutes + 0,
+            };
+        }
+    }
+    
+    if (scalar(@gaps) == 0) {
+        # DayMonths
+        foreach my $dayMonth (values %$dayMonths) {
+            if ($dayMonth->{"day"} == $day && $dayMonth->{"month"} == $month) {
+                $beg_minutes = $dayMonth->{"start_hour"} * 60 + $dayMonth->{"start_minute"};
+                $end_minutes = $dayMonth->{"end_hour"}   * 60 + $dayMonth->{"end_minute"};
+                push @gaps, {
+                    'beg' => $beg_minutes + 0,
+                    'end' => $end_minutes + 0,
+                };
+            }
+        }
+        
+        if (scalar(@gaps) == 0) {
+            # Weekday
+            foreach my $weekDay (values %$weekDays) {
+                if ($weekDay->{"weekday"} == $dayofweek) {
+                    $beg_minutes = $weekDay->{"start_hour"} * 60 + $weekDay->{"start_minute"};
+                    $end_minutes = $weekDay->{"end_hour"}   * 60 + $weekDay->{"end_minute"};
+                    push @gaps, {
+                        'beg' => $beg_minutes + 0,
+                        'end' => $end_minutes + 0,
+                    };
+                }
+            }
+        }
+    }
+
+    # Exceptions (indicates a closed period)
+    foreach my $exception (values %$exceptions) {
+        if ($exception->{"year"} == $year && $exception->{"month"} == $month && $exception->{"day"} == $day) {
+            $beg_minutes = $exception->{"start_hour"} * 60 + $exception->{"start_minute"};
+            $end_minutes = $exception->{"end_hour"}   * 60 + $exception->{"end_minute"};
+            
+            for my $gap (@gaps) {
+                # exception has always the same begin and end as a opening rule
+                if ($gap->{'beg'} == $beg_minutes && $gap->{'end'} == $end_minutes) {
+                    # set as an exception
+                    $gap->{'exception'} = 1;
+                }
+            }
+        }
+    }
+    
+    # order by begin
+    @gaps = sort { $a->{'beg'} <=> $b->{'beg'} } @gaps;
+    return \@gaps;
+}
+
+##
+# If hour and minute are not defined : returns if desk is open AT any time in specified day
+# If hour and minute are defined     : returns if desk is open AT specified time or LATER in specified day
+# 
+# return undef or 1
+##
+sub isDeskOpen {
+    my ($self, $day, $month, $year, $hour, $minute) = @_;
+    
+    my $ohour;
+    my $ominute;
+    ($ohour, $ominute) = $self->getOpeningTime($day, $month, $year, $hour, $minute);
+    if (defined $ohour && defined $ominute) {
+        return 1;
+    }
+    return undef;
+}
+
+#
+# If hour and minutes are defined : 
+#   - if desk is open at specified hour and minute, => returns specified hour and minute
+#   - else => returns next open hour and minute of date, undef if no one
+# If hour and minutes are not defined : => returns first opening hour and minute of date, undef if no one
+#
+sub getOpeningTime {
+    my ($self, $day, $month, $year, $hour, $minute) = @_;
+    
+    my $ret_minutes = undef;
+    my $ret_hour = undef;
+    my $ret_minute = undef;
+    
+    $day   = $day + 0;
+    $month = $month + 0;
+    $year  = $year + 0;
+    # if no hour and minute, look for open time begining with 00:00
+    $hour    = ($hour) ? $hour + 0 : 0;
+    $minute  = ($minute) ? $minute + 0 : 0;
+    my $minutes = $hour * 60 + $minute;
+    
+    my $gaps = $self->_getOpenTimeGaps($day, $month, $year);
+    
+    # look for open time
+    for my $gap ( @$gaps ) {
+        unless ($gap->{'exception'}) {
+            if ($gap->{'end'} < $minutes) {
+                next;
+            } elsif ($gap->{'beg'} <= $minutes && $minutes <= $gap->{'end'}) {
+                # desk is open at specified time
+                $ret_minutes = $minutes;
+                last;
+            } elsif ($gap->{'beg'} > $minutes) {
+                # open gap later in day
+                $ret_minutes = $gap->{'beg'};
+                last;
+            }
+        }
+    }
+    
+    if (defined $ret_minutes) {
+        $ret_minute = $ret_minutes % 60;
+        $ret_hour = ($ret_minutes - $ret_minute) / 60;
+    }
+    return ($ret_hour, $ret_minute);
+}
+# END B03X
 
 =head2 addDate
 

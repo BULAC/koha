@@ -9,6 +9,9 @@ $(document).ready(function() {
         $('#branch').change(function() {
                 $('#selectlibrary').submit();
         });
+        $('#overdue_type').change(function() {
+            $('#selectlibrary').submit();
+    });
 	    $('#rulestabs > ul').tabs();
 });
 //]]>
@@ -34,17 +37,32 @@ $(document).ready(function() {
             <p>Columns must be filled left to right: if the first column is blank, other columns will be ignored. </p>
         </div>
             <form method="post" action="/cgi-bin/koha/tools/overduerules.pl" id="selectlibrary">
-            <label for="branch">Select a library:</label>
-                <select id="branch" name="branch">
-                    <option value="">Default</option>
-                    <!-- TMPL_LOOP NAME="branchloop" -->
-                        <!-- TMPL_IF NAME="selected" -->
-                            <option value="<!-- TMPL_VAR NAME="value" -->" selected="selected"><!-- TMPL_VAR NAME="branchname" --></option>
-                        <!-- TMPL_ELSE -->
-                            <option value="<!-- TMPL_VAR NAME="value" -->"><!-- TMPL_VAR NAME="branchname" --></option>
-                        <!-- /TMPL_IF -->
-                    <!-- /TMPL_LOOP -->
-                </select>
+            	<ul>
+	            	<li>
+		            	<label for="branch">Select a library:</label>
+		                <select id="branch" name="branch">
+		                    <option value="">Default</option>
+		                    <!-- TMPL_LOOP NAME="branchloop" -->
+		                        <!-- TMPL_IF NAME="selected" -->
+		                            <option value="<!-- TMPL_VAR NAME="value" -->" selected="selected"><!-- TMPL_VAR NAME="branchname" --></option>
+		                        <!-- TMPL_ELSE -->
+		                            <option value="<!-- TMPL_VAR NAME="value" -->"><!-- TMPL_VAR NAME="branchname" --></option>
+		                        <!-- /TMPL_IF -->
+		                    <!-- /TMPL_LOOP -->
+		                </select>
+	                </li>
+	                <!-- TMPL_IF NAME="UseStackrequest" -->
+                    <li>
+		                <label for="overdue_type">Select overdue type:</label>
+		                <select id="overdue_type" name="overdue_type">
+		                	<option value="issues" <!-- TMPL_IF NAME="overdue_type_issues" -->selected="selected"<!-- /TMPL_IF -->>issues</option>
+		                	<option value="stackrequests" <!-- TMPL_IF NAME="overdue_type_stackrequests" -->selected="selected"<!-- /TMPL_IF -->>stack requests</option>
+		                </select>
+	                </li>
+                    <!-- TMPL_ELSE -->
+                        <input type="hidden" name="overdue_type" value="issues" />
+                    <!-- /TMPL_IF -->
+                </ul>
                 <input type="submit" value="Select" />
             </form>
             <!--TMPL_IF Name="ERROR"-->
@@ -68,6 +86,7 @@ $(document).ready(function() {
             <form method="post" action="/cgi-bin/koha/tools/overduerules.pl">
                 <input type="hidden" name="op" value="save" />
                 <input type="hidden" name="branch" value="<!-- TMPL_VAR NAME="branch" -->" />
+                <input type="hidden" name="overdue_type" value="<!-- TMPL_VAR NAME="overdue_type" -->" />
 				<h3>Rules for overdue actions: <!--TMPL_IF Name="branch"--><!-- TMPL_VAR NAME="branch" --><!--TMPL_ELSE--> default library <!--/TMPL_IF--></h3>
                     <!--TMPL_IF Name="datasaved"--><div class="dialog message">INPUT SAVED</div> <!--/TMPL_IF -->
 

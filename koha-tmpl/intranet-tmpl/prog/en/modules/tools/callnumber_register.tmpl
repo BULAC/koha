@@ -1,0 +1,256 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Tools &rsaquo; Callnumber Registerr</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<!-- TMPL_INCLUDE NAME="calendar.inc" -->
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="cat-search.inc" -->
+
+<script type="text/javascript">
+//<![CDATA[
+    $(document).ready(function() {
+        $("#register").tablesorter({<!-- TMPL_IF NAME="dateformat_metric" -->
+            dateFormat: 'uk',<!-- /TMPL_IF -->
+            headers: {}
+        });
+    })
+//]]>
+</script>
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/tools/tools-home.pl">Tools</a> &rsaquo; Callnumber Register</div>
+
+<div id="doc3" class="yui-t2">
+
+<div id="bd">
+<div id="yui-main">
+<div class="yui-b">
+
+	<!-- TMPL_INCLUDE NAME="jasper.inc" -->
+	
+   <form method="post" action="/cgi-bin/koha/tools/callnumber_register.pl">
+	  
+	   <fieldset class="rows">
+            <legend>Filter</legend>
+            <ol>
+                <li>
+                    <label for="location">Location</label>
+                    <select name="location" id="location" size="1">
+                        <option value="">All</option>
+                        <!-- TMPL_LOOP NAME="locationloop" -->
+                            <option value="<!-- TMPL_VAR NAME="authorised_value" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->>
+                                <!-- TMPL_VAR NAME="lib" -->
+                            </option>
+                        <!-- /TMPL_LOOP  -->
+                    </select>
+                </li>
+                <li>
+		            <label for="callnumber_type" style="color: red;">Items are located in : </label>
+		            <select name="callnumber_type" id="callnumber_type" size="1">
+		                <option value="store_callnumber" >Store</option>
+		                <option value="freeaccess_callnumber" >Free Access</option>
+		            </select>
+		        </li>
+		        <li>
+		            <label for="callnumber_prefix" style="color: red;">Item callnumber prefix: </label>
+		            <input type="text" name="callnumber_prefix" id="callnumber_prefix" value="<!-- TMPL_VAR NAME="callnumber_prefix" -->" />
+		        </li>
+		        <li>
+		            <label for="callnumber_min">begin: </label>
+		            <input type="text" name="callnumber_min" id="callnumber_min" value="<!-- TMPL_VAR NAME="callnumber_min" -->" />
+		        </li>
+		        <li>
+		            <label for="callnumber_max">end: </label>
+		            <input type="text" name="callnumber_max" id="callnumber_max" value="<!-- TMPL_VAR NAME="callnumber_max" -->" />
+		        </li>
+            </ol>
+            
+        </fieldset>
+
+        <fieldset class="rows">
+            <legend>Date</legend>
+            <ol>
+                <li>
+                    <label for="start_date">Acquisition between</label>
+                    <input type="text" size="10" id="start_date" name="start_date" value="<!-- TMPL_VAR NAME="start_date" -->" />
+                    <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" border="0" id="openCalendarStartDate" style="cursor: pointer;" />
+                    <script type="text/javascript">
+                        //<![CDATA[
+                            function validate1(date) {
+                                var day = date.getDate();
+                                var month = date.getMonth() + 1;
+                                var year = date.getFullYear();
+                                var weekDay = date.getDay();
+                                var dayMonth = month + '/' + day;
+                                var dateString = year + '/' + month + '/' + day;
+                                var dateTo = document.getElementById('end_date').value.split("/");
+                                var limitDate = new Date(dateTo[2], (dateTo[1] - 1), dateTo[0]);
+                                if (date > limitDate) {
+                                    return true;
+                                } else {
+                                    return false;
+                                }
+                            }
+
+                            Calendar.setup(
+                                {
+                                    inputField : "start_date",
+                                    ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
+                                    button : "openCalendarStartDate",
+                                    disableFunc : validate1,
+                                    dateStatusFunc : validate1
+                                }
+                            );
+                        //]]>
+                    </script>
+                    <span class="hint"><!-- TMPL_INCLUDE NAME="date-format.inc" --></span>
+                </li>
+                
+                <li>
+                    <label for="end_date">... and</label>
+                    <input type="text" size="10" id="end_date" name="end_date" value="<!-- TMPL_VAR NAME="end_date" -->" />
+                    <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" border="0" id="openCalendarEndDate" style="cursor: pointer;" />
+                    <script type="text/javascript">
+                        //<![CDATA[
+                            function validate2(date) {
+                                    var day = date.getDate();
+                                    var month = date.getMonth() + 1;
+                                    var year = date.getFullYear();
+                                    var weekDay = date.getDay();
+                                    var dayMonth = month + '-' + day;
+                                    var dateString = year + '-' + month + '-' + day;
+                                    var dateFrom = document.getElementById('start_date').value.split("/");
+                                    var limitDate = new Date(dateFrom[2], (dateFrom[1] - 1), dateFrom[0]);
+                                    if (limitDate > date) {
+                                        return true;
+                                    } else {
+                                        return false;
+                                    }
+                                }
+
+                            Calendar.setup(
+                                    {
+                                        inputField : "end_date",
+                                        ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
+                                        button : "openCalendarEndDate",
+                                        disableFunc : validate2,
+                                        dateStatusFunc : validate2
+                                    }
+                                );
+                        //]]>
+                    </script>
+                    <span class="hint"><!-- TMPL_INCLUDE NAME="date-format.inc" --></span>
+                </li>
+                
+            </ol>
+        </fieldset>
+
+		<fieldset class="rows">
+			<legend>Sort by</legend>
+			<ol>
+				<li>
+					<label for="first_criteria">First criteria</label>
+					<select name="first_criteria" id="first_criteria" size="1">
+						<option value=""></option>
+						<option value="title" <!-- TMPL_IF NAME="first_title" -->selected="selected"<!-- /TMPL_IF -->>Title</option>
+						<option value="callnumber" <!-- TMPL_IF NAME="first_callnumber" -->selected="selected"<!-- /TMPL_IF -->>Callnumber prefix</option>
+					</select>
+					<select name="first_direction" id="first_direction" size="1">
+						<option value="ASC" <!-- TMPL_IF NAME="first_ASC" -->selected="selected"<!-- /TMPL_IF -->>Ascending</option>
+						<option value="DESC" <!-- TMPL_IF NAME="first_DESC" -->selected="selected"<!-- /TMPL_IF -->>Descending</option>
+					</select>
+				</li>
+				<li>
+					<label for="second_criteria">Second criteria</label>
+					<select name="second_criteria" id="second_criteria" size="1">
+						<option value=""></option>
+						<option value="title" <!-- TMPL_IF NAME="second_title" -->selected="selected"<!-- /TMPL_IF -->>Title</option>
+                        <option value="callnumber" <!-- TMPL_IF NAME="second_callnumber" -->selected="selected"<!-- /TMPL_IF -->>Callnumber prefix</option>
+                        <!-- <option value="acquisition">Acquisition date</option> -->
+					</select>
+					<select name="second_direction" id="second_direction" size="1">
+						<option value="ASC" <!-- TMPL_IF NAME="second_ASC" -->selected="selected"<!-- /TMPL_IF -->>Ascending</option>
+						<option value="DESC" <!-- TMPL_IF NAME="second_DESC" -->selected="selected"<!-- /TMPL_IF -->>Descending</option>
+					</select>
+				</li>
+				<!-- 
+				<li>
+					<label for="third_criteria">Third criteria</label>
+					<select name="third_criteria" id="third_criteria" size="1">
+						<option value=""></option>
+						<option value="borrower">Title</option>
+                        <option value="callnumber">Callnumber prefix</option>
+                        <option value="acquisition">Acquisition date</option>
+					</select>
+					<select name="third_direction" id="third_direction" size="1">
+						<option value="ASC">Ascending</option>
+						<option value="DESC">Descending</option>
+					</select>
+				</li>
+				 -->
+			</ol>
+		</fieldset>
+
+		<fieldset class="rows">
+            <legend>Output</legend>
+            <ol>
+                <li>
+                    <label for="exporttype">To a file of type:</label>
+                    <select name="exporttype" id="exporttype" size="1">
+                        <!-- TMPL_LOOP NAME="exporttypeloop" -->
+                            <option value="<!-- TMPL_VAR NAME="value" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="label" --></option>
+                        <!-- /TMPL_LOOP  -->
+                    </select>
+                </li>
+            </ol>
+        </fieldset>
+		
+		<fieldset class="action">
+    		<input type="submit" name="export" value="Export" class="submit" />
+            <input type="submit" name="display" value="Display" class="submit" />
+		</fieldset>
+
+	</form>
+	
+    <!-- TMPL_IF NAME="results" -->
+
+        <table id="register">
+            <thead>
+                <th scope="col">Callnumber</th>
+                <th scope="col">Number of volumes</th>
+                <th scope="col">Author</th>
+                <th scope="col">Title</th>
+                <th scope="col">Publication year</th>
+                <th scope="col">Stocknumber</th>
+                <th scope="col">Notes</th>
+                <th scope="col">Date received</th>
+            </thead>
+            <tbody>
+				<!-- TMPL_LOOP NAME="results" -->
+		            <!--TMPL_IF NAME="__odd__" --><tr><!--TMPL_ELSE--><tr class="highlight"><!--/TMPL_IF-->
+		                <td><span style="display: none;"><!-- TMPL_VAR NAME="cn_sort" --></span><!-- TMPL_VAR NAME="itemcallnumber" --></td>
+		                <td><!-- TMPL_VAR NAME="pages" --></td>
+		                <td><!-- TMPL_VAR NAME="author" --></td>
+		                <td><!-- TMPL_VAR NAME="title" --></td>
+		                <td><!-- TMPL_VAR NAME="publicationyear" --></td>
+		                <td><!-- TMPL_VAR NAME="stocknumber" --></td>
+		                <td><!-- TMPL_VAR NAME="itemnotes" --></td>
+		                <td><!-- TMPL_VAR NAME="datereceived" --></td>
+		            </tr>
+				<!-- /TMPL_LOOP -->
+			</tbody>
+		</table>
+	<!-- TMPL_ELSIF NAME="display" -->
+	    <div class="dialog message">
+            No results for this filter.
+        </div> 
+	<!-- /TMPL_IF -->
+	
+</div>
+</div>
+<div class="yui-b noprint">
+<!-- TMPL_INCLUDE NAME="tools-menu.inc" -->
+</div>
+</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

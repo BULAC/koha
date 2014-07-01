@@ -6,12 +6,8 @@ I18N/L10N:
           choices:
               us: mm/dd/yyyy
               metric: dd/mm/yyyy
-              iso: yyyy/mm/dd
+              iso: yyyy-mm-dd
         - .
-    -
-        - "Enable the following languages on the staff interface:"
-        - pref: language
-          type: staff-languages
     -
         - pref: opaclanguagesdisplay
           default: 0
@@ -19,7 +15,3 @@ I18N/L10N:
               yes: Allow
               no: "Don't allow"
         - patrons to change the language they see on the OPAC.
-    -
-        - "Enable the following languages on the OPAC:"
-        - pref: opaclanguages
-          type: opac-languages

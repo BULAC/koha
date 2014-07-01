@@ -322,9 +322,17 @@ sub _build_languages_arrayref {
                 my $regex_enabled_language = regex_lang_subtags($enabled_language);
                 $enabled = 1 if $key eq $regex_enabled_language->{language};
             }
+            
+            my $rfc4646_subtag = '';
+            for my $language ( @$value ) {
+				if ($language->{rfc4646_subtag} eq $key) {
+					$rfc4646_subtag = $language->{rfc4646_subtag};
+				} 
+			}
+			
             push @languages_loop,  {
                             # this is only use if there is one
-                            rfc4646_subtag => @$value[0]->{rfc4646_subtag},
+                            rfc4646_subtag => $rfc4646_subtag ? $rfc4646_subtag : @$value[0]->{rfc4646_subtag},
                             native_description => language_get_description($key,$key,'language'),
                             language => $key,
                             sublanguages_loop => $value,
@@ -480,6 +488,7 @@ sub accept_language {
     }
     # Prepare the list of server-supported languages
     my %supportedLanguages = ();
+    my %subLanguages = ();
     my %secondaryLanguages = ();
     foreach my $language (@$supportedLanguages) {
         # warn "Language supported: " . $language->{language};
@@ -489,7 +498,15 @@ sub accept_language {
             $secondaryLanguages{lc($1)} = $subtag;
         }
     }
-
+    
+	foreach my $language ( @$supportedLanguages ) {
+		my $sub_languages = (%$language->{sublanguages_loop})[0];
+	    foreach my $sublanguage ( @$sub_languages ) {
+        	my $subtag = (%$sublanguage)->{rfc4646_subtag};
+        	$subLanguages{lc($subtag)} = $subtag;
+        }
+	}
+	
     # Reverse sort the list, making best quality at the front of the array
     @languages = sort { $b->{quality} <=> $a->{quality} } @languages;
     my $secondaryMatch = '';
@@ -498,6 +515,10 @@ sub accept_language {
             # Client en-us eq server en-us
             return $supportedLanguages{$tag->{language}} if exists($supportedLanguages{$tag->{language}});
             return $supportedLanguages{$tag->{lclanguage}};
+        } elsif (exists($subLanguages{$tag->{lclanguage}})) {
+        	# Client en-us eq server en-us
+            return $subLanguages{$tag->{language}} if exists($subLanguages{$tag->{language}});
+            return $subLanguages{$tag->{lclanguage}};
         } elsif (exists($secondaryLanguages{$tag->{lclanguage}})) {
             # Client en eq server en-us
             return $secondaryLanguages{$tag->{language}} if exists($secondaryLanguages{$tag->{language}});

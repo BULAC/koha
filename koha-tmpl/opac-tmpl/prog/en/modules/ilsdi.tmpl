@@ -683,6 +683,86 @@
   &lt;message&gt;Canceled&lt;/message&gt;
 &lt;/CancelHold&gt;</pre>
 
+<!-- B03 : Cancel and renew stack requests -->
+<!-- TMPL_ELSIF NAME="CancelStack" -->
+
+                <h2>CancelStack</h2>
+                <p>Cancels an active stack.</p>
+                <h4>Parameters</h4>
+                <dl>
+                    <dt><strong>space_id</strong> (Required)</dt>
+                    <dd>the unique space identifier</dd>
+                </dl>
+                <h4>Example Call</h4>
+                <a href="ilsdi.pl?service=CancelStack&space_id=1">
+                    ilsdi.pl?service=CancelStack&space_id=1
+                </a>
+                <h4>Example Response</h4>
+<pre>&lt;?xml version="1.0" encoding="ISO-8859-1" ?&gt;
+&lt;CancelStack&gt;
+  &lt;message&gt;Canceled&lt;/message&gt;
+&lt;/CancelStack&gt;</pre>
+
+<!-- TMPL_ELSIF NAME="RenewStack" -->
+                <h2>RenewStack</h2>
+                <p>Extends the end date for a space's existing stack.</p>
+                <h4>Parameters</h4>
+                <dl>
+                    <dt><strong>space_id</strong> (Required)</dt>
+                    <dd>the unique space identifier</dd>
+                    <dt><strong>end_date</strong> (Required)</dt>
+                    <dd>the new end date</dd>
+                </dl>
+                <h4>Example Call</h4>
+                <a href="ilsdi.pl?service=RenewStack&space_id=1&end_date=2011-01-01">
+                    ilsdi.pl?service=RenewStack&space_id=1&end_date=2011-01-01
+                </a>
+                <h4>Example Response</h4>
+<pre>&lt;?xml version="1.0" encoding="ISO-8859-1" ?&gt;
+&lt;RenewStack&gt;
+  &lt;message&gt;Renewed&lt;/message&gt;
+&lt;/RenewStack&gt;</pre>
+
+<!-- TMPL_ELSIF NAME="EndStack" -->
+                <h2>EndStack</h2>
+                <p>Cancel and end the existing stacks for a space.</p>
+                <h4>Parameters</h4>
+                <dl>
+                    <dt><strong>space_id</strong> (Required)</dt>
+                    <dd>the unique space identifier</dd>
+                    <dt><strong>end_date</strong> (Required)</dt>
+                    <dd>the new end date</dd>
+                </dl>
+                <h4>Example Call</h4>
+                <a href="ilsdi.pl?service=EndStack&space_id=1">
+                    ilsdi.pl?service=EndStack&space_id=1
+                </a>
+                <h4>Example Response</h4>
+<pre>&lt;?xml version="1.0" encoding="ISO-8859-1" ?&gt;
+&lt;EndStack&gt;
+  &lt;message&gt;Ended&lt;/message&gt;
+&lt;/RenewStack&gt;</pre>
+
+<!-- TMPL_ELSIF NAME="NbRetrievedStack" -->
+ilsdi.pl?service=NbRetrievedStack&borrowernumber=1
+                <h2>NbRetrievedStack</h2>
+                <p>Return the number of retrieved stack requests for the borrower.</p>
+                <h4>Parameters</h4>
+                <dl>
+                    <dt><strong>borrowernumber</strong> (Required)</dt>
+                    <dd>the borrower identifier</dd>
+                </dl>
+                <h4>Example Call</h4>
+                <a href="ilsdi.pl?service=NbRetrievedStack&borrowernumber=1">
+                    ilsdi.pl?service=NbRetrievedStack&borrowernumber=1
+                </a>
+                <h4>Example Response</h4>
+<pre>&lt;?xml version="1.0" encoding="ISO-8859-1" ?&gt;
+&lt;NbRetrievedStack&gt;
+  &lt;result&gt;2&lt;/result&gt;
+&lt;/NbRetrievedStack&gt;</pre>
+<!-- END -->
+
 <!-- TMPL_ELSE -->
 
                 <h2>Level 1: Basic Discovery Interfaces</h2>
@@ -722,6 +802,15 @@
                     <li>SearchCourseReserves <em>(Not supported yet)</em></li>
                     <li>Explain <em>(Not supported yet)</em></li>
                 </ul>
+                <!-- B03 : Cancel and renew stack requests -->
+                <h2>Level 5: Circulation</h2>
+                <ul>
+                    <li><a href="ilsdi.pl?service=Describe&verb=CancelStack">CancelStack</a></li>
+                    <li><a href="ilsdi.pl?service=Describe&verb=RenewStack">RenewStack</a></li>
+                    <li><a href="ilsdi.pl?service=Describe&verb=EndStack">EndStack</a></li>
+                    <li><a href="ilsdi.pl?service=Describe&verb=NbRetrievedStack">NbRetrievedStack</a></li>
+                </ul>
+                <!-- END -->
 
 <!-- /TMPL_IF -->
 

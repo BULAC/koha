@@ -23,7 +23,7 @@ use C4::Auth;
 use CGI;
 use C4::Context;
 
-=head1 DESCRIPTION
+=head1
 
 This plugin is specific to AM123 but could be used as a base for similar operations.
 It is used for stocknumber computation.

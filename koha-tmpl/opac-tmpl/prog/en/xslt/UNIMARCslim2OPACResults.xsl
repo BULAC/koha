@@ -4,7 +4,7 @@
 
 <xsl:stylesheet version="1.0"
   xmlns:marc="http://www.loc.gov/MARC21/slim"
-  xmlns:items="http://www.koha-community.org/items"
+  xmlns:items="http://www.koha.org/items"
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   exclude-result-prefixes="marc items">
 
@@ -22,9 +22,10 @@
   <xsl:variable name="leader6" select="substring($leader,7,1)"/>
   <xsl:variable name="leader7" select="substring($leader,8,1)"/>
   <xsl:variable name="biblionumber"
-   select="marc:datafield[@tag=090]/marc:subfield[@code='a']"/>
+   select="marc:controlfield[@tag=001]"/>
   <xsl:variable name="isbn"
    select="marc:datafield[@tag=010]/marc:subfield[@code='a']"/>
+  <!-- PROGILONE - april 2010 - F21 --><xsl:variable name="OPACBranchTooltipDisplay" select="marc:sysprefs/marc:syspref[@name='OPACBranchTooltipDisplay']"/>
 
   <xsl:if test="marc:datafield[@tag=200]">
     <xsl:for-each select="marc:datafield[@tag=200]">
@@ -70,7 +71,7 @@
   <xsl:call-template name="tag_215" />
 
   <span class="results_summary">
-    <span class="label">Availability: </span>
+    <span class="label">Disponibilité: </span>
     <xsl:choose>
       <xsl:when test="marc:datafield[@tag=856]">
         <xsl:for-each select="marc:datafield[@tag=856]">
@@ -100,14 +101,14 @@
         </xsl:for-each>
       </xsl:when>
       <xsl:when test="count(key('item-by-status', 'available'))=0 and count(key('item-by-status', 'reference'))=0">
-        No copies available
+        Pas de copie disponible
       </xsl:when>
       <xsl:when test="count(key('item-by-status', 'available'))>0">
         <span class="available">
-          <b><xsl:text>Copies available for loan: </xsl:text></b>
+          <b><xsl:text>Available: </xsl:text></b>
           <xsl:variable name="available_items" select="key('item-by-status', 'available')"/>
           <xsl:for-each select="$available_items[generate-id() = generate-id(key('item-by-status-and-branch', concat(items:status, ' ', items:homebranch))[1])]">
-            <xsl:value-of select="items:homebranch"/>
+            <!-- PROGILONE - april 2010 - F21 --><span class="branchref" ><xsl:value-of select="items:homebranch"/></span>
   			    <xsl:if test="items:itemcallnumber != '' and items:itemcallnumber">[<xsl:value-of select="items:itemcallnumber"/>]
   			    </xsl:if>
             <xsl:text> (</xsl:text>
@@ -121,41 +122,46 @@
                 <xsl:text>, </xsl:text>
               </xsl:otherwise>
             </xsl:choose>
+            <!-- PROGILONE - april 2010 - F21 -->
+            <xsl:if test="$OPACBranchTooltipDisplay!='0'">
+                <span class="branchdetails" >
+                    <xsl:if test="items:branchaddress1 != '' and items:branchaddress1">
+                        <span class="branchaddress" ><xsl:value-of select="items:branchaddress1"/></span>
+                    </xsl:if>
+                    <xsl:if test="items:branchaddress2 != '' and items:branchaddress2">
+                        <span class="branchaddress" ><xsl:value-of select="items:branchaddress2"/></span>
+                    </xsl:if>
+                    <xsl:if test="items:branchaddress3 != '' and items:branchaddress3">
+                        <span class="branchaddress" ><xsl:value-of select="items:branchaddress3"/></span>
+                    </xsl:if>
+                    <xsl:if test="(items:branchzip != '' and items:branchzip) or (items:branchcity != '' and items:branchcity)">
+                        <span class="branchaddress" ><xsl:value-of select="items:branchzip"/><xsl:text> </xsl:text><xsl:value-of select="items:branchcity"/></span>
+                    </xsl:if>
+                    <xsl:if test="items:branchcountry != '' and items:branchcountry">
+                        <span class="branchaddress" ><xsl:value-of select="items:branchcountry"/></span>
+                    </xsl:if>
+                    <xsl:if test="items:branchphone != '' and items:branchphone">
+                        <span class="branchphone" ><xsl:value-of select="items:branchphone"/></span>
+                    </xsl:if>
+                    <xsl:if test="items:branchnotes != '' and items:branchnotes">
+                        <span class="branchnotes" ><xsl:value-of select="items:branchnotes"/></span>
+                    </xsl:if>
+                </span>
+            </xsl:if>
+            <!-- End PROGILONE -->
           </xsl:for-each>
         </span>
       </xsl:when>
     </xsl:choose>
-    <xsl:choose>
-      <xsl:when test="count(key('item-by-status', 'reference'))>0">
-        <span class="available">
-          <b><xsl:text>Copies available for reference: </xsl:text></b>
-          <xsl:variable name="reference_items"
-                        select="key('item-by-status', 'reference')"/>
-          <xsl:for-each select="$reference_items[generate-id() = generate-id(key('item-by-status-and-branch', concat(items:status, ' ', items:homebranch))[1])]">
-            <xsl:value-of select="items:homebranch"/>
-            <xsl:if test="items:itemcallnumber != '' and items:itemcallnumber">[<xsl:value-of select="items:itemcallnumber"/>]</xsl:if>
-            <xsl:text> (</xsl:text>
-            <xsl:value-of select="count(key('item-by-status-and-branch', concat(items:status, ' ', items:homebranch)))"/>
-            <xsl:text>)</xsl:text>
-            <xsl:choose>
-              <xsl:when test="position()=last()">
-                <xsl:text>. </xsl:text>
-              </xsl:when>
-              <xsl:otherwise>
-                <xsl:text>, </xsl:text>
-              </xsl:otherwise>
-            </xsl:choose>
-          </xsl:for-each>
-        </span>
-      </xsl:when>
-    </xsl:choose>
-    <xsl:if test="count(key('item-by-status', 'Checked out'))>0">
+    <!-- MAN340 -->
+    <xsl:if test="count(key('item-by-status', 'unavailable'))>0">
       <span class="unavailable">
-        <xsl:text>Checked out (</xsl:text>
-        <xsl:value-of select="count(key('item-by-status', 'Checked out'))"/>
+        <xsl:text>Not available (</xsl:text>
+        <xsl:value-of select="count(key('item-by-status', 'unavailable'))"/>
         <xsl:text>). </xsl:text>
       </span>
     </xsl:if>
+    <!-- END MAN340 -->
     <xsl:if test="count(key('item-by-status', 'Withdrawn'))>0">
       <span class="unavailable">
         <xsl:text>Withdrawn (</xsl:text>

@@ -179,9 +179,6 @@ if ($merge) {
 output_html_with_http_headers $input, $cookie, $template->output;
 exit;
 
-=head1 FUNCTIONS
-
-=cut
 
 # ------------------------
 # Functions
@@ -241,9 +238,9 @@ sub _createMarcHash {
 
 }
 
-=head2 CreateKey
+=item CreateKey
 
-Create a random value to set it into the input name
+    Create a random value to set it into the input name
 
 =cut
 

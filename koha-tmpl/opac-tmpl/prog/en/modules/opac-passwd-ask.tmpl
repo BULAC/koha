@@ -1,0 +1,219 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<!-- TMPL_IF NAME="LibraryNameTitle" --><!-- TMPL_VAR NAME="LibraryNameTitle" --><!-- TMPL_ELSE -->Koha Online<!-- /TMPL_IF --> Catalog
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<!-- TMPL_INCLUDE NAME="calendar.inc" -->
+<script type="text/JavaScript" language="JavaScript">
+//<![CDATA[
+    // this function checks id date is like DD/MM/YYYY
+    function CheckDate(field) {
+       var d = field.value;
+       if (d!="") {
+          var amin = 1900; 
+          var amax = 2100; 
+          var date = d.split("/");
+          var ok=1;
+          var msg = _("Invalid date: ");
+          if ( (date.length < 2) && (ok==1) ) {
+            msg += _("separator must be /."); 
+            alert(msg); ok=0; field.focus();
+            return false;
+          }
+          var dd   = date[0];
+          var mm   = date[1];
+          var yyyy = date[2]; 
+          // checking days
+          if ( ((isNaN(dd))||(dd<1)||(dd>31)) && (ok==1) ) {
+            msg += _("day not correct."); 
+            alert(msg); ok=0; field.focus();
+            return false;
+          }
+          // checking months
+          if ( ((isNaN(mm))||(mm<1)||(mm>12)) && (ok==1) ) {
+            msg += _("month not correct.");
+            alert(msg); ok=0; field.focus();
+            return false;
+          }
+          // checking years
+          if ( ((isNaN(yyyy))||(yyyy<amin)||(yyyy>amax)) && (ok==1) ) {
+            msg += _("year not correct."); 
+            alert(msg); ok=0; field.focus();
+            return false;
+          }
+       }
+       return true;
+    }
+    
+    
+    // function to test all fields in forms and nav in different forms(1 ,2 or 3)
+    function check_form_borrowers(nav){
+        var statut=0;
+        var message="";
+        var e = document.form.elements;
+        
+        var bmf_pref = '<!-- TMPL_VAR NAME="BorrowerMandatoryField" -->';
+        if (bmf_pref == '') {
+            // should not be
+        } else {
+            var champ_verif = bmf_pref.split ('|');
+            var nok;
+            for (var i=0; i<champ_verif.length; i++) {
+                if (document.getElementsByName(""+champ_verif[i]+"")[0]) {
+                    var val_champ=eval("document.form."+champ_verif[i]+".value");
+                    var ref_champ=eval("document.form."+champ_verif[i]);
+                    //check if it's a select
+                    if (ref_champ.type=='select-one'){
+                        // check to see if first option is selected and is blank
+                        if (ref_champ.options[0].selected &&
+                            ref_champ.options[0].text == ''){
+                            nok = 1;
+                        }
+                    } else {
+                        if ( val_champ == '' ) {
+                        	nok = 1;
+                        }   
+                    }
+                }
+            }
+            if (nok) {
+            	message += _("A mandatory field is not filled.") +"\n";
+                //test to know if you must show a message with error
+                statut=1;
+            }
+        }
+        
+        if (statut==1){
+            //alert if at least 1 error
+            alert(message);
+            return false;
+        } else {
+            document.form.submit();
+        }
+        return true;
+    }
+    
+//]]>
+</script>
+</head>
+<body id="opac-user">
+<!-- B014 -->
+
+<div id="doc3" class="yui-t1">
+   <div id="bd">
+<!-- TMPL_INCLUDE NAME="masthead.inc" -->
+
+    <div id="yui-main">
+    <div class="yui-b"><div class="yui-g">
+    <div id="userdetails" class="container">
+    
+<!-- TMPL_IF NAME="post_ok" -->
+
+    <form id="form_ok" name="form_ok" action="/cgi-bin/koha/opac-main.pl" method="get">
+        <div class="dialog message">
+            <div style="margin-bottom:1em">
+                <h3>A mail containing your new password has been sent to the email address : <!-- TMPL_VAR NAME="email" --></h3>
+            </div>
+            <div>
+                <h3><button class="submit" onclick="$('#form_ok').submit()" >OK</button></h3>
+            </div>
+         </div>
+    </form>
+
+<!-- TMPL_ELSE -->
+    
+    <h1>To reset your password, fill the following fields.</h1>
+    <h1>A new password will be sent to the email address you used to sign in.</h1>
+    
+        <!-- TMPL_IF NAME="post_err" -->
+            <div class="dialog alert">
+                <h3>Error:</h3>
+                <ul>
+                <!-- TMPL_IF NAME="ERROR_borrower" -->
+                    <li id="ERROR_borrower">Member not found. Please contact your Koha Administrator.</li>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="ERROR_email" -->
+                    <li id="ERROR_email">You have no email address registered. Please contact your Koha Administrator.</li>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="ERROR_dateofbirth" -->
+                    <li id="ERROR_dateofbirth">Date of birth is invalid.</li>
+                <!-- /TMPL_IF -->
+                <!-- TMPL_IF NAME="ERROR_mandatory" -->
+                    <li id="ERROR_mandatory">A mandatory field is not filled.</li>
+                <!-- /TMPL_IF -->
+                </ul>
+            </div>
+        <!-- /TMPL_IF -->
+    
+    <form name="form" id="entryform" action="/cgi-bin/koha/opac-passwd-ask.pl" method="post">
+    
+        <input type="hidden" name="op" value="insert" />
+        
+        <fieldset class="rows" id="memberentry_identity">
+        <ol>
+        <li>
+            <!-- TMPL_IF NAME="mandatorysurname" -->
+            <label for="surname" class="required">
+            <!-- TMPL_ELSE -->
+            <label for="surname">
+            <!-- /TMPL_IF-->
+            Surname: </label>
+            <!-- TMPL_IF NAME="uppercasesurnames" -->
+            <input style="text-transform:uppercase;" type="text" id="surname" name="surname" size="20"  value="<!-- TMPL_VAR NAME="surname" -->" />
+            <!-- TMPL_ELSE -->
+            <input type="text" id="surname" name="surname" size="20"  value="<!-- TMPL_VAR NAME="surname" -->" />
+            <!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="mandatorysurname" --><span class="required">Required</span><!-- /TMPL_IF -->
+        </li>
+                   
+        <li>
+            <!-- TMPL_IF NAME="mandatoryfirstname" -->
+            <label for="firstname" class="required">
+            <!-- TMPL_ELSE -->
+            <label for="firstname">
+            <!-- /TMPL_IF-->
+            First name: </label>
+            <input type="text" id="firstname" name="firstname" size="20"  value="<!-- TMPL_VAR NAME="firstname" -->" />
+            <!-- TMPL_IF NAME="mandatoryfirstname" --><span class="required">Required</span><!-- /TMPL_IF -->
+        </li>
+        
+        <li>
+            <!-- TMPL_IF NAME="mandatorydateofbirth" -->
+            <label for="dateofbirth" class="required">
+            <!-- TMPL_ELSE -->
+            <label for="dateofbirth">
+            <!-- /TMPL_IF-->
+            Date of birth: </label>
+            <!-- TMPL_IF NAME="dateformat_metric" -->
+            <input type="text" id="dateofbirth" name="dateofbirth" size="20" onblur="CheckDate(this);" value="<!-- TMPL_VAR NAME="dateofbirth" -->" />
+            <!-- TMPL_ELSE -->
+            <input type="text" id="dateofbirth" name="dateofbirth" size="20" value="<!-- TMPL_VAR NAME="dateofbirth" -->" />
+            <!-- /TMPL_IF -->
+            <img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" id="dateofbirth_button" alt="Show Calendar" />
+            <script language="JavaScript" type="text/javascript">
+            Calendar.setup(
+                {
+                inputField : "dateofbirth",
+                ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
+                button : "dateofbirth_button"
+                }
+            );
+            </script>
+            <!-- TMPL_IF NAME="mandatorydateofbirth" --><span class="required">Required</span><!-- /TMPL_IF -->
+            <!-- TMPL_IF NAME="ERROR_dateofbirth" --><span class="required">(Error)</span><!-- /TMPL_IF -->
+            <div class="hint"><!-- TMPL_INCLUDE NAME="date-format.inc" --></div>
+        </li>
+           
+        </ol>
+        </fieldset>
+
+        <fieldset class="action">
+            <input type="submit" class="submit" name="save" onclick="return check_form_borrowers();" value="Send" />
+            <a class="cancel" href="/cgi-bin/koha/opac-main.pl">Cancel</a>
+        </fieldset>
+    </form>
+    
+<!-- /TMPL_IF -->
+
+    </div>
+    </div>
+</div>
+<!-- TMPL_INCLUDE NAME="opac-bottom.inc" -->

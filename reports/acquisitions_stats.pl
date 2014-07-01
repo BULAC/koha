@@ -432,7 +432,7 @@ sub calculate {
         }
     }
     $strsth .= " GROUP BY $linefield";
-    $strsth .= " ORDER BY $line";
+    $strsth .= " ORDER BY $linefield";
 
     #warn "377:strsth= $strsth";
 
@@ -549,7 +549,7 @@ sub calculate {
 
 
     $strsth2 .= " GROUP BY $colfield";
-    $strsth2 .= " ORDER BY $column";
+    $strsth2 .= " ORDER BY $colfield";
 
     my $sth2 = $dbh->prepare($strsth2);
 

@@ -1,7 +1,6 @@
 package C4::Items;
 
 # Copyright 2007 LibLime, Inc.
-# Parts Copyright Biblibre 2010
 #
 # This file is part of Koha.
 #
@@ -33,6 +32,12 @@ use C4::Branch;
 require C4::Reserves;
 use C4::Charset;
 use C4::Acquisition;
+# B011
+use C4::Utils::Constants;
+use C4::Stack::Search;
+use C4::Jasper::JasperReport qw/GeneratePDF_Old/;
+use C4::Stack::Search;
+# END B011
 
 use vars qw($VERSION @ISA @EXPORT);
 
@@ -73,6 +78,23 @@ BEGIN {
 		MoveItemFromBiblio 
 		GetLatestAcquisitions
         CartToShelf
+        
+        &CheckItemAvailability
+        
+        &UpdateItemLocation
+        
+        &IsItemAvailable
+        
+        &setItemOnLoan
+        &setItemOnStack
+        &setItemWaitStack
+        &setItemWaitRenew
+        &setItemOnStackRequest
+        &setItemWaitReserve
+        &setItemAvailable
+        &setItemNotAvailable
+        
+        &setItemWaitStack
     );
 }
 
@@ -265,6 +287,8 @@ sub AddItem {
    
     logaction("CATALOGUING", "ADD", $itemnumber, "item") if C4::Context->preference("CataloguingLog");
     
+    CheckItemAvailability($itemnumber, undef); # B011
+    
     return ($item->{biblionumber}, $item->{biblioitemnumber}, $itemnumber);
 }
 
@@ -359,6 +383,8 @@ sub AddItemBatchFromMarc {
 
         my $new_item_marc = _marc_from_item_hash($item, $frameworkcode, $unlinked_item_subfields);
         $item_field->replace_with($new_item_marc->field($itemtag));
+        
+        CheckItemAvailability($itemnumber, undef); # B011
     }
 
     # remove any MARC item fields for rejected items
@@ -403,7 +429,7 @@ my %default_values_for_mod_from_marc = (
     'items.cn_source'    => undef, 
     copynumber           => undef, 
     damaged              => 0,
-#    dateaccessioned      => undef,
+    dateaccessioned      => undef, 
     enumchron            => undef, 
     holdingbranch        => undef, 
     homebranch           => undef, 
@@ -414,7 +440,8 @@ my %default_values_for_mod_from_marc = (
     location             => undef, 
     materials            => undef, 
     notforloan           => 0,
-    paidfor              => undef, 
+    paidfor              => undef,
+    physical_address     => '', 
     price                => undef, 
     replacementprice     => undef, 
     replacementpricedate => undef, 
@@ -430,18 +457,18 @@ sub ModItemFromMarc {
     my $biblionumber = shift;
     my $itemnumber = shift;
 
-    my $dbh           = C4::Context->dbh;
-    my $frameworkcode = GetFrameworkCode($biblionumber);
-    my ( $itemtag, $itemsubfield ) = GetMarcFromKohaField( "items.itemnumber", $frameworkcode );
-
-    my $localitemmarc = MARC::Record->new;
-    $localitemmarc->append_fields( $item_marc->field($itemtag) );
-    my $item = &TransformMarcToKoha( $dbh, $localitemmarc, $frameworkcode, 'items' );
-    foreach my $item_field ( keys %default_values_for_mod_from_marc ) {
-        $item->{$item_field} = $default_values_for_mod_from_marc{$item_field} unless (exists $item->{$item_field});
+    my $dbh = C4::Context->dbh;
+    my $frameworkcode = GetFrameworkCode( $biblionumber );
+	my ($itemtag,$itemsubfield)=GetMarcFromKohaField("items.itemnumber",$frameworkcode);
+	
+	my $localitemmarc=MARC::Record->new;
+	$localitemmarc->append_fields($item_marc->field($itemtag));
+    my $item = &TransformMarcToKoha( $dbh, $localitemmarc, $frameworkcode, 'items');
+    foreach my $item_field (keys %default_values_for_mod_from_marc) {
+        $item->{$item_field} = $default_values_for_mod_from_marc{$item_field} unless exists $item->{$item_field};
     }
-    my $unlinked_item_subfields = _get_unlinked_item_subfields( $localitemmarc, $frameworkcode );
-
+    my $unlinked_item_subfields = _get_unlinked_item_subfields($localitemmarc, $frameworkcode);
+   
     return ModItem($item, $biblionumber, $itemnumber, $dbh, $frameworkcode, $unlinked_item_subfields); 
 }
 
@@ -515,6 +542,15 @@ sub ModItem {
     _replace_item_field_in_biblio($new_item_marc, $biblionumber, $itemnumber, $frameworkcode);
 	($new_item_marc       eq '0') and die "$new_item_marc is '0', not hashref";  # logaction line would crash anyway
     logaction("CATALOGUING", "MODIFY", $itemnumber, $new_item_marc->as_formatted) if C4::Context->preference("CataloguingLog");
+    
+    # B011
+    # Recompute istate with notforloan only if it was available or not available
+    if ( defined $item->{'notforloan'} 
+      && (!$whole_item->{'istate'} || $whole_item->{'istate'} eq $ISTATE_NOT_AVAIL))
+    {
+        CheckItemAvailability(undef, $whole_item);
+    }
+    # END B011
 }
 
 =head2 ModItemTransfer
@@ -955,7 +991,7 @@ $statushash requires a hashref that has the authorized values fieldname (intems.
 =cut
 
 sub GetItemsForInventory {
-    my ( $minlocation, $maxlocation,$location, $itemtype, $ignoreissued, $datelastseen, $branchcode, $branch, $offset, $size, $statushash ) = @_;
+    my ( $minlocation, $maxlocation,$location, $itemtype, $ignoreissued, $datelastseen, $branch, $offset, $size, $statushash ) = @_;
     my $dbh = C4::Context->dbh;
     my ( @bind_params, @where_strings );
 
@@ -994,14 +1030,10 @@ END_SQL
         push @where_strings, 'items.location = ?';
         push @bind_params, $location;
     }
-
-    if ( $branchcode ) {
-        if($branch eq "homebranch"){
+    
+    if ( $branch ) {
         push @where_strings, 'items.homebranch = ?';
-        }else{
-            push @where_strings, 'items.holdingbranch = ?';
-        }
-        push @bind_params, $branchcode;
+        push @bind_params, $branch;
     }
     
     if ( $itemtype ) {
@@ -1198,7 +1230,14 @@ sub GetItemsInfo {
      LEFT JOIN biblioitems ON biblioitems.biblioitemnumber = items.biblioitemnumber
      LEFT JOIN itemtypes   ON   itemtypes.itemtype         = "
      . (C4::Context->preference('item-level_itypes') ? 'items.itype' : 'biblioitems.itemtype');
-    $query .= " WHERE items.biblionumber = ? ORDER BY branches.branchname,items.dateaccessioned desc" ;
+    $query .= " WHERE items.biblionumber = ? ";
+    # B06 : hide temporary items in opac      
+    if (C4::Context->preference('UseStackrequest') and $type eq 'opac' ) {
+        $query .= " AND itemnumber not in (SELECT itemnumber FROM stack_items_temp) "; # TODO LEFT JOIN
+    }
+    # END 
+    $query .= "ORDER BY branches.branchname,items.dateaccessioned desc" ;
+    
     my $sth = $dbh->prepare($query);
     $sth->execute($biblionumber);
     my $i = 0;
@@ -1249,6 +1288,16 @@ sub GetItemsInfo {
         $bsth->execute( $data->{'holdingbranch'} );
         if ( my $bdata = $bsth->fetchrow_hashref ) {
             $data->{'branchname'} = $bdata->{'branchname'};
+            # PROGILONE - may 2010 - F21 : attach banch infos
+            $data->{'branchaddress1'} = $bdata->{'branchaddress1'};
+            $data->{'branchaddress2'} = $bdata->{'branchaddress2'};
+            $data->{'branchaddress3'} = $bdata->{'branchaddress3'};
+            $data->{'branchzip'} = $bdata->{'branchzip'};
+            $data->{'branchcity'} = $bdata->{'branchcity'};
+            $data->{'branchcountry'} = $bdata->{'branchcountry'};
+            $data->{'branchphone'} = $bdata->{'branchphone'};
+            $data->{'branchnotes'} = $bdata->{'branchnotes'};
+            # End PROGILONE
         }
         $data->{'datedue'}        = $datedue;
         $data->{'count_reserves'} = $count_reserves;
@@ -1273,31 +1322,6 @@ sub GetItemsInfo {
                 $data->{itemnotforloan} );
             my ($lib) = $sthnflstatus->fetchrow;
             $data->{notforloanvalue} = $lib;
-        }
-
-        # get restricted status and description if applicable
-        my $restrictedstatus = $dbh->prepare(
-            'SELECT authorised_value
-            FROM   marc_subfield_structure
-            WHERE  kohafield="items.restricted"
-        '
-        );
-
-        $restrictedstatus->execute;
-        ($authorised_valuecode) = $restrictedstatus->fetchrow;
-        if ($authorised_valuecode) {
-            $restrictedstatus = $dbh->prepare(
-                "SELECT lib,lib_opac FROM authorised_values
-                 WHERE  category=?
-                 AND authorised_value=?"
-            );
-            $restrictedstatus->execute( $authorised_valuecode,
-                $data->{restricted} );
-
-            if ( my $rstdata = $restrictedstatus->fetchrow_hashref ) {
-                $data->{restricted} = $rstdata->{'lib'};
-                $data->{restrictedopac} = $rstdata->{'lib_opac'};
-            }
         }
 
         # my stack procedures
@@ -1606,10 +1630,45 @@ sub GetMarcItem {
     # Tack on 'items.' prefix to column names so that TransformKohaToMarc will work.
     # Also, don't emit a subfield if the underlying field is blank.
 
+    my $marc_item = Item2Marc($itemrecord,$biblionumber);
     
-    return Item2Marc($itemrecord,$biblionumber);
-
+    return $marc_item;
 }
+
+#Progilone B10 : Retrieve physical address and location from OLIMP
+sub UpdateItemLocation {
+	my ( $itemnumber ) = @_;
+	
+    my $useOLIMP = C4::Context->preference('UseOlimpLocation') || '';
+    if ( $useOLIMP ) {
+    	my $biblionumber = GetBiblionumberFromItemnumber($itemnumber);
+    	my $marc_item = GetMarcItem( $biblionumber, $itemnumber );
+   	    
+        if ( $marc_item->field("995") ) {
+        	
+	        my $field = $marc_item->field("995");
+	        my $location = $field->subfield( 'e' ) || '';
+	        my $address  = $field->subfield( 'd' ) || '';
+	        
+	        my $callnumber           = $field->subfield( 'k' ) || '';
+	        my $freeAccessCallnumber = $field->subfield( 'B' ) || '';
+	        my $storeCallnumber      = $field->subfield( 'K' ) || '';
+	            
+	        if ( $callnumber ne '' && $callnumber eq $storeCallnumber && ( $location eq '' || $address eq '' ) ) {
+	            
+	            use C4::Callnumber::OlimpWS;
+	            ( $location, $address ) = C4::Callnumber::OlimpWS::FindLocationAndAddress( $callnumber, $freeAccessCallnumber, $storeCallnumber );
+	            if ( $location ) {
+	                $field->update( 'e' => $location );
+	                $field->update( 'd' => $address );
+	                ModItemFromMarc($marc_item, $biblionumber, $itemnumber);
+	            }
+	        }
+        }
+    }
+}
+#End Progilone
+
 sub Item2Marc {
 	my ($itemrecord,$biblionumber)=@_;
     my $mungeditem = { 
@@ -1657,6 +1716,7 @@ the derived value.
 my %derived_columns = (
     'items.cn_sort' => {
         'itemcallnumber' => 1,
+        'itemnumber' => 1,
         'items.cn_source' => 1,
         'BUILDER' => \&_calc_items_cn_sort,
     }
@@ -1768,9 +1828,6 @@ sub _do_column_fixes_for_mod {
     if (exists $item->{'location'} && !exists $item->{'permanent_location'}) {
         $item->{'permanent_location'} = $item->{'location'};
     }
-    if (exists $item->{'timestamp'}) {
-        delete $item->{'timestamp'};
-    }
 }
 
 =head2 _get_single_item_column
@@ -1805,7 +1862,7 @@ sub _calc_items_cn_sort {
     my $item = shift;
     my $source_values = shift;
 
-    $item->{'items.cn_sort'} = GetClassSort($source_values->{'items.cn_source'}, $source_values->{'itemcallnumber'}, "");
+    $item->{'items.cn_sort'} = GetClassSort($source_values->{'items.cn_source'}, $source_values->{'itemcallnumber'}, "", $source_values->{'itemnumber'});
 }
 
 =head2 _set_defaults_for_add 
@@ -1884,6 +1941,7 @@ sub _koha_new_item {
             itemnotes           = ?,
             holdingbranch       = ?,
             paidfor             = ?,
+            physical_address    = ?,
             location            = ?,
             onloan              = ?,
             issues              = ?,
@@ -1897,7 +1955,9 @@ sub _koha_new_item {
             uri = ?,
             enumchron           = ?,
             more_subfields_xml  = ?,
-            copynumber          = ?
+            copynumber          = ?,
+            istate              = ?,
+            holdingdesk         = ?
           ";
     my $sth = $dbh->prepare($query);
    $sth->execute(
@@ -1920,6 +1980,7 @@ sub _koha_new_item {
             $item->{'itemnotes'},
             $item->{'holdingbranch'},
             $item->{'paidfor'},
+            $item->{'physical_address'},
             $item->{'location'},
             $item->{'onloan'},
             $item->{'issues'},
@@ -1934,6 +1995,8 @@ sub _koha_new_item {
             $item->{'enumchron'},
             $item->{'more_subfields_xml'},
             $item->{'copynumber'},
+            $item->{'istate'},
+            $item->{'holdingdesk'},
     );
     my $itemnumber = $dbh->{'mysql_insertid'};
     if ( defined $sth->errstr ) {
@@ -2032,31 +2095,21 @@ sub DelItemCheck {
     my $sth=$dbh->prepare("select * from issues i where i.itemnumber=?");
     $sth->execute($itemnumber);
 
-    my $item = GetItem($itemnumber);
-    my $onloan = $sth->fetchrow;
-    if ($onloan) {
-        $error = "book_on_loan";
-    }
-    elsif (C4::Context->preference("IndependantBranches") and (C4::Context->userenv->{branch} ne $item->{C4::Context->preference("HomeOrHoldingBranch")||'homebranch'})){
-        $error = "not_same_branch";
-    } 
-    else {
-	if ($onloan){ 
-	    $error = "book_on_loan" 
-	}
-	else {
-	    # check it doesnt have a waiting reserve
-	    $sth=$dbh->prepare("SELECT * FROM reserves WHERE (found = 'W' or found = 'T') AND itemnumber = ?");
-	    $sth->execute($itemnumber);
-	    my $reserve=$sth->fetchrow;
-	    if ($reserve) {
-		$error = "book_reserved";
-	    } 
-	    else {
-		DelItem($dbh, $biblionumber, $itemnumber);
-		return 1;
-	    }
-	}
+    my $onloan=$sth->fetchrow;
+
+    if ($onloan){
+        $error = "book_on_loan" 
+    }else{
+        # check it doesnt have a waiting reserve
+        $sth=$dbh->prepare("SELECT * FROM reserves WHERE (found = 'W' or found = 'T') AND itemnumber = ?");
+        $sth->execute($itemnumber);
+        my $reserve=$sth->fetchrow;
+        if ($reserve){
+            $error = "book_reserved";
+        }else{
+            DelItem($dbh, $biblionumber, $itemnumber);
+            return 1;
+        }
     }
     return $error;
 }
@@ -2154,20 +2207,17 @@ sub _marc_from_item_hash {
                                 : ()  } keys %{ $item } }; 
 
     my $item_marc = MARC::Record->new();
-    foreach my $item_field ( keys %{$mungeditem} ) {
-        my ( $tag, $subfield ) = GetMarcFromKohaField( $item_field, $frameworkcode );
-        next unless defined $tag and defined $subfield;    # skip if not mapped to MARC field
-        my @values = split(/\s?\|\s?/, $mungeditem->{$item_field}, -1);
-        foreach my $value (@values){
-            if ( my $field = $item_marc->field($tag) ) {
-                    $field->add_subfields( $subfield => $value );
-            } else {
-                my $add_subfields = [];
-                if (defined $unlinked_item_subfields and ref($unlinked_item_subfields) eq 'ARRAY' and $#$unlinked_item_subfields > -1) {
-                    $add_subfields = $unlinked_item_subfields;
+    foreach my $item_field (keys %{ $mungeditem }) {
+        my ($tag, $subfield) = GetMarcFromKohaField($item_field, $frameworkcode);
+        next unless defined $tag and defined $subfield; # skip if not mapped to MARC field
+        if (my $field = $item_marc->field($tag)) {
+            $field->add_subfields($subfield => $mungeditem->{$item_field});
+        } else {
+            my $add_subfields = [];
+            if (defined $unlinked_item_subfields and ref($unlinked_item_subfields) eq 'ARRAY' and $#$unlinked_item_subfields > -1) {
+                $add_subfields = $unlinked_item_subfields;
             }
-            $item_marc->add_fields( $tag, " ", " ", $subfield => $value, @$add_subfields );
-            }
+            $item_marc->add_fields( $tag, " ", " ", $subfield =>  $mungeditem->{$item_field}, @$add_subfields);
         }
     }
 
@@ -2334,5 +2384,216 @@ sub  _parse_unlinked_item_subfields_from_xml {
     }
     return $unlinked_subfields;
 }
+
+### B011 Item state management ###
+
+##
+# Change item istate
+#
+# param : item id
+# param : new istate
+# param : desk code, will be erased if missing
+##
+sub _setItemStatus($$;$){
+    
+    # input args
+    my ($itemnumber, $new_state, $desk_code) = @_;
+    
+    # if no desk set, store undef
+    if ($desk_code && $desk_code eq 'NO_DESK_SET') {
+        undef $desk_code;
+    }
+    
+    # local vars
+    my $dbh = C4::Context->dbh;
+    
+    my $query = '
+        UPDATE items SET
+            istate = ?,
+            holdingdesk = ?
+        WHERE itemnumber = ?
+    ';
+    
+    my $sth = $dbh->prepare($query);
+    $sth->execute($new_state, $desk_code, $itemnumber);
+}
+
+##
+# Set item on loan
+#
+# param : item id
+##
+sub setItemOnLoan($) {
+    _setItemStatus(shift, $ISTATE_ON_LOAN);
+}
+
+##
+# Set item on stack
+#
+# param : item id
+##
+sub setItemOnStack($) {
+    _setItemStatus(shift, $ISTATE_ON_STACK);
+}
+
+##
+# Set item wait for stack
+#
+# param : item id
+# param : delivery desk code
+##
+sub setItemWaitStack($$) {
+    my ($itemnumber, $desk_code) = @_;
+    _setItemStatus($itemnumber, $ISTATE_WAIT_STACK, $desk_code);
+}
+
+##
+# Set item wait for stack
+#
+# param : item id
+# param : delivery desk code
+##
+sub setItemWaitRenew($$) {
+    my ($itemnumber, $desk_code) = @_;
+    _setItemStatus($itemnumber, $ISTATE_WAIT_RENEW, $desk_code);
+}
+
+##
+# Set item on stack
+#
+# param : item id
+##
+sub setItemOnStackRequest($) {
+    _setItemStatus(shift, $ISTATE_STACKREQ);
+}
+
+##
+# Set item waiting for reserve
+#
+# param : item id
+# param : desk code
+##
+sub setItemWaitReserve($$) {
+    my ($itemnumber, $desk_code) = @_;
+    _setItemStatus($itemnumber, $ISTATE_RES_GUARD, $desk_code);
+}
+
+##
+# Set item available
+#
+# param : item id
+##
+sub setItemAvailable($) {
+    _setItemStatus(shift, undef); # empty means available
+}
+
+##
+# Set item not available
+#
+# param : item id
+##
+sub setItemNotAvailable($) {
+    _setItemStatus(shift, $ISTATE_NOT_AVAIL);
+}
+
+##
+# Is item available
+#
+# param : item
+##
+sub IsItemAvailable($;$) {
+    my $item = shift;
+    my $ignore_istates = shift;
+    
+    my $istate = $item->{'istate'};
+    
+    if ( $istate && !(grep {$_ eq $istate} @{$ignore_istates}) ) {
+    	return undef;
+    }
+    return 1;
+}
+
+##
+# Try to set item available
+# Note that item state is recomputed and may not be available
+#
+# param : itemnumber
+# param : item
+# param : desk code
+##
+sub CheckItemAvailability($$;$) {
+    
+    # input args
+    my ($itemnumber, $item, $desk_code) = @_;
+    
+    unless ($item) {
+        $item = GetItem($itemnumber);
+    } else {        
+        $itemnumber = $item->{'itemnumber'};
+    }
+    
+    # if desk is undefined, means that desk hasn't changed
+    unless ($desk_code) {
+        $desk_code = $item->{'holdingdesk'};
+    }
+    
+    # check that there is no issue on this item
+    my $dbh = C4::Context->dbh;
+    my $sth=$dbh->prepare("select * from issues i where i.itemnumber=?");
+    $sth->execute($itemnumber);
+
+    my $onloan=$sth->fetchrow;
+
+    unless ($onloan){
+    	
+    	my $request = GetCurrentStackByItemnumber($itemnumber);
+        unless ($request){
+    
+            if (GetBlockingStackRequest($itemnumber)) {
+                   
+                # a blocking stack request exists
+                setItemOnStackRequest($itemnumber);
+                   
+            } else {
+        
+                my ($resfound, $resrec) = C4::Reserves::CheckReserves($itemnumber, undef);
+                if ($resfound) {
+                    
+                    # item is reserved
+                    setItemWaitReserve($itemnumber, $desk_code);
+                    # B11
+                    GeneratePDF_Old(
+                        '/tmp/',
+                        'fiche_reservation'.$item->{'itemnumber'}.'.pdf',
+                        'fiche_reservation',
+                        { 
+                            ITEMNUMBER     => $item->{itemnumber},
+                            BORROWERNUMBER => '',
+                        }
+                    );
+                } else {
+                        
+                    # item.notforloan can be in itemnotforloan (then notforloan is from itemtype) or notforloan
+                    my $nfl = ($item->{'itemnotforloan'}) ? $item->{'itemnotforloan'} : $item->{'notforloan'};
+                    if ( defined $nfl && (
+                        $nfl eq $AV_ETAT_LOAN
+                     || $nfl eq $AV_ETAT_STACK
+                     || $nfl eq $AV_ETAT_GENERIC
+                    )) {
+                        # item is available for loan or for stack
+                        setItemAvailable($itemnumber);
+                        
+                    } else {
+                        
+                        # item is not available 
+                        setItemNotAvailable($itemnumber);
+                    }
+                }
+            }
+        }
+    }
+}
+
+### END B011 ###
 
 1;

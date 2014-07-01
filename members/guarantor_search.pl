@@ -46,7 +46,6 @@ my $theme = $input->param('theme') || "default";
 
 my $member=$input->param('member');
 my $orderby=$input->param('orderby');
-my $category_type=$input->param('category_type');
 $orderby = "surname,firstname" unless $orderby;
 $member =~ s/,//g;   #remove any commas from search string
 $member =~ s/\*/%/g;
@@ -56,11 +55,6 @@ if ($member eq ''){
 		$template->param(results=>1);
 }	
 
-my $search_category = 'A';
-if ($category_type eq 'P'){
-	$search_category = 'I';
-}
-
 my ($count,$results);
 my @resultsdata;
 my $background = 0;
@@ -68,11 +62,11 @@ my $background = 0;
 if ($member ne ''){
 	if(length($member) == 1)
 	{
-		($count,$results)=SearchMember($member,$orderby,"simple",$search_category);
+		($count,$results)=SearchMember($member,$orderby,"simple",'A');
 	}
 	else
 	{
-		($count,$results)=SearchMember($member,$orderby,"advanced",$search_category);
+		($count,$results)=SearchMember($member,$orderby,"advanced",'A');
 	}
 	for (my $i=0; $i < $count; $i++){
 	#find out stats
@@ -107,7 +101,7 @@ if ($member ne ''){
 $template->param( 
 			member          => $member,
 			numresults		=> $count,
-			category_type   => $category_type,
+			
 			resultsloop     => \@resultsdata );
 
 output_html_with_http_headers $input, $cookie, $template->output;

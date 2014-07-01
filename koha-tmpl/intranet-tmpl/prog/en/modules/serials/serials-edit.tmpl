@@ -81,15 +81,49 @@ function HideItems(index,labelindex) {
 	label = document.getElementById(labelindex);
 	label.style.display='block';	
 }
+
+//Progilone B10 : Serial callnumber
+function addItemPopup(index, labelId, serialId, itemnumber) {
+	var destination = "/cgi-bin/koha/cataloguing/additem.pl?mode=popup&type=serial&serialItemFieldset="+index;
+	if (itemnumber) {
+		destination += "&op=edititem&itemnumber="+itemnumber;
+	}
+	<!-- TMPL_IF name="biblionumber" -->
+		destination += "&biblionumber="+<!-- TMPL_VAR NAME="biblionumber" -->; 
+	<!-- /TMPL_IF -->
+	<!-- TMPL_IF name="callnumber" -->
+		destination += "&callnumber=<!-- TMPL_VAR NAME="callnumber" -->"; 
+	<!-- /TMPL_IF -->
+	window.open(destination,'AddItemPopup','width=1024,height=768,toolbar=no,scrollbars=yes');
+}
+
+function reportSerialItemId(idFieldset, itemnumber) {
+	var baseElement = document.getElementById(idFieldset);
+	var elements = document.getElementsByName('serialitemid');
+	for (var i = 0; i < elements.length; i++) {
+		var el = elements[i];
+		if (isChildrenOf(baseElement, el)) {
+			el.value = itemnumber;
+		}
+	}
+}
+
+function isChildrenOf(base, element) {
+	if (element == null) {
+		return false;
+	}
+	if (element == base) {
+		return true;
+	}
+	return isChildrenOf(base, element.parentNode);
+}
+//End Progilone
+
 function setStatus(serialid){
     $("#status"+serialid).val("2").attr("selected","selected");
 }
 function changeDate(adate) {
     var elem = document.getElementById("expecteddate");
-    elem.value = adate;
-}
-function changeDate2(adate) {
-   var elem = document.getElementById("supexpecteddate");
     elem.value = adate;
 }
 function CloneSubfield(index){
@@ -231,7 +265,7 @@ function CloneSubfield(index){
               <select name="status" size="1"  disabled="disabled">
             <!--TMPL_ELSE-->
               <!--TMPL_IF Name="serialsadditems"-->
-              <select name="status" size="1" id="status<!-- TMPL_VAR NAME="serialid" -->" onchange="if (this.value==2){unHideItems('items'+<!-- TMPL_VAR NAME="subscriptionid" --><!-- TMPL_VAR NAME="serialid" -->,'label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->','<!-- TMPL_VAR NAME="serialid" -->'); changeDate('<!-- TMPL_VAR NAME="arriveddate" -->')} else if (this.value==7){changeDate('<!-- TMPL_VAR NAME="arriveddate" -->')} else { HideItems('items'+<!-- TMPL_VAR NAME="subscriptionid" -->+<!-- TMPL_VAR NAME="serialid" -->,'label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->'); changeDate('<!-- TMPL_VAR NAME="planneddate" -->')}" >
+              <select name="status" size="1" id="status<!-- TMPL_VAR NAME="serialid" -->" onchange="if (this.value==2){addItemPopup('items'+<!-- TMPL_VAR NAME="subscriptionid" --><!-- TMPL_VAR NAME="serialid" -->,'label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->','<!-- TMPL_VAR NAME="serialid" -->'); changeDate('<!-- TMPL_VAR NAME="arriveddate" -->')} else if (this.value==7){changeDate('<!-- TMPL_VAR NAME="arriveddate" -->')} else { HideItems('items'+<!-- TMPL_VAR NAME="subscriptionid" -->+<!-- TMPL_VAR NAME="serialid" -->,'label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->'); changeDate('<!-- TMPL_VAR NAME="planneddate" -->')}" ><!-- Progilone B10 : Serial callnumber -->
                <!--TMPL_ELSE -->
               <select name="status" size="1" id="status<!-- TMPL_VAR NAME="serialid" -->" onchange="if (this.value==2 || this.value==7){changeDate('<!-- TMPL_VAR NAME="arriveddate" -->')} else {changeDate('<!-- TMPL_VAR NAME="planneddate" -->')}" >
                <!--/TMPL_IF--> 
@@ -280,14 +314,21 @@ function CloneSubfield(index){
   <!--TMPL_IF Name="serialsadditems"-->
           <tr>
           <td colspan="5">
-      <a id="label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->" style="color: grey; font-size: 80%; cursor: pointer;"  onclick="unHideItems('items<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->','label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->',  '<!--TMPL_VAR Name="serialid"-->');setStatus(<!-- TMPL_VAR NAME="serialid" -->);">
-             Click to add item</a>
+          	<!-- Progilone B10 : Serial callnumber -->
+			<!-- TMPL_LOOP NAME="items" -->
+				<!-- TMPL_UNLESS name="itemnumber" -->
+					<a id="label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->" style="color: grey; font-size: 80%; cursor: pointer;"  onclick="addItemPopup('items<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->','label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->',  '<!--TMPL_VAR Name="serialid"-->', '');setStatus(<!-- TMPL_VAR NAME="serialid" -->);">
+						Click to add item</a>
+				<!-- TMPL_ELSE -->
+					<a id="label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->" style="color: grey; font-size: 80%; cursor: pointer;"  onclick="addItemPopup('items<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->','label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->',  '<!--TMPL_VAR Name="serialid"-->', '<!-- TMPL_VAR name="itemnumber" -->');setStatus(<!-- TMPL_VAR NAME="serialid" -->);">
+						Click to edit item <!-- TMPL_VAR name="itemnumber" --></a>
+				<!-- /TMPL_UNLESS -->
         <fieldset class="rows" style="display:none;" id="items<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->">
         <legend><a style="cursor: pointer;"  onclick="HideItems('items<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->','label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->')">
                 Item</a>
         </legend>
           <div class="cataloguing_additem_itemlist">
-        <!-- TMPL_LOOP NAME="items" -->
+        
         <div id="item<!-- TMPL_VAR NAME="serialid" --><!-- TMPL_VAR NAME="countitems" -->" class="items">
         <ol><!-- TMPL_LOOP NAME="iteminformation" --><li>
                <div class="subfield_line" style="<!-- TMPL_VAR NAME='hidden' -->;" id="subfield<!-- TMPL_VAR NAME='serialid' --><!-- TMPL_VAR NAME='countitems' --><!-- TMPL_VAR NAME='subfield' --><!-- TMPL_VAR name="random" -->">
@@ -295,6 +336,7 @@ function CloneSubfield(index){
                 <label><!-- TMPL_VAR NAME="subfield" --> - <!-- TMPL_IF name="mandatory" --><b><!-- /TMPL_IF --><!-- TMPL_VAR NAME="marc_lib" --><!-- TMPL_IF name="mandatory" --> *</b><!-- /TMPL_IF --></label>
                 <!-- TMPL_VAR NAME="marc_value" -->
                 <input type="hidden" name="itemid" value="<!-- TMPL_VAR NAME="itemid" -->" />
+                <input type="hidden" name="serialitemid" value="<!-- TMPL_VAR NAME="serialitemid" -->" />
                 <input type="hidden" name="kohafield" value="<!-- TMPL_VAR NAME="kohafield" -->" />
                 <input type="hidden" name="tag" value="<!-- TMPL_VAR NAME="tag" -->" />
                 <input type="hidden" name="subfield" value="<!-- TMPL_VAR NAME="subfield" -->" />
@@ -312,10 +354,13 @@ function CloneSubfield(index){
         <input type="hidden" name="serial" value="<!-- TMPL_VAR NAME="serialid" -->" />
         <input type="hidden" name="bibnum" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
         <input type="hidden" name="itemid" value="<!-- TMPL_VAR NAME="itemid" -->" />
+        <input type="hidden" name="serialitemid" value="<!-- TMPL_VAR NAME="serialitemid" -->" />
         <input type="hidden" name="field_value" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
-        <!--/TMPL_LOOP--> <!-- /items -->
+        
         </div>
         </fieldset>
+        <!--/TMPL_LOOP--> <!-- /items -->
+        <!-- End Progilone -->
     </td>
     </tr>
   <!-- /TMPL_IF -->
@@ -329,16 +374,16 @@ function CloneSubfield(index){
             <input type="hidden" name="biblionumber" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
             <input type="hidden" name="itemcount" value="<!-- TMPL_VAR name="issuesatonce" -->" />
             <input type="hidden" name="user" value="<!-- TMPL_VAR name="librarian" -->" />
-            Supplemental Issue <input type="text" name="serialseq" value="" size="20" maxlength="100" onchange="if (this.value!=''){unHideItems('items<!-- TMPL_VAR NAME="subscriptionid" --><!-- TMPL_VAR NAME="serialid" -->','label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->', '<!--TMPL_VAR Name="serialid"-->')} else {HideItems('items<!-- TMPL_VAR NAME="subscriptionid" --><!-- TMPL_VAR NAME="serialid" -->','label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->')}" />
+            Supplemental Issue <input type="text" name="serialseq" value="" size="20" maxlength="100" onchange="if (this.value!=''){addItemPopup('items<!-- TMPL_VAR NAME="subscriptionid" --><!-- TMPL_VAR NAME="serialid" -->','label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->', '<!--TMPL_VAR Name="serialid"-->')} else {HideItems('items<!-- TMPL_VAR NAME="subscriptionid" --><!-- TMPL_VAR NAME="serialid" -->','label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->')}" /><!-- Progilone B10 : Serial callnumber -->
         </td>
         <td>
             <input type="text" name="publisheddate" value="<!-- TMPL_VAR name="publisheddate" -->" size="10" maxlength="15" />
         </td>
         <td>
-            <input type="text" name="planneddate" id="supexpecteddate" value="<!-- TMPL_VAR name="planneddate" -->" size="10" maxlength="15" />
+            <input type="text" name="planneddate" value="<!-- TMPL_VAR name="planneddate" -->" size="10" maxlength="15" />
         </td>
         <td>
-            <select name="status" size="1" id="addstatus<!-- TMPL_VAR NAME="serialid" -->" onchange="if (this.value==2 || this.value==7){changeDate2('<!-- TMPL_VAR NAME="arriveddate" -->')} else {changeDate2('<!-- TMPL_VAR NAME="planneddate" -->')}" >
+            <select name="status" size="1" id="addstatus<!-- TMPL_VAR NAME="serialid" -->">
                     <option value="">----</option>
   <!--TMPL_IF name="status1" -->
                     <option value="1" selected="selected">Expected</option>
@@ -383,7 +428,7 @@ function CloneSubfield(index){
   <!--TMPL_IF Name="serialsadditems"-->
           <tr>
           <td colspan="5">
-      <a id="label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->" style="color: grey; font-size: 80%; cursor: pointer;"  onclick="unHideItems('items<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->','label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->', '<!--TMPL_VAR Name="serialid"-->')">
+      <a id="label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->" style="color: grey; font-size: 80%; cursor: pointer;"  onclick="addItemPopup('items<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->','label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->', '<!--TMPL_VAR Name="serialid"-->', '')"><!-- Progilone B10 : Serial callnumber -->
              Click to add item</a>
         <fieldset  class="rows" style="display:none;" id="items<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->">
         <legend><a style="cursor: pointer;"  onclick="HideItems('items<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->','label<!-- TMPL_VAR NAME="subscriptionid" --><!--TMPL_VAR Name="serialid"-->')">
@@ -397,6 +442,7 @@ function CloneSubfield(index){
                 <label><!-- TMPL_VAR NAME="subfield" --> - <!-- TMPL_IF name="mandatory" --><b><!-- /TMPL_IF --><!-- TMPL_VAR NAME="marc_lib" --><!-- TMPL_IF name="mandatory" --> *</b><!-- /TMPL_IF --></label>
                 <!-- TMPL_VAR NAME="marc_value" -->
                 <input type="hidden" name="itemid" value="<!-- TMPL_VAR NAME="itemid" -->" />
+                <input type="hidden" name="serialitemid" value="<!-- TMPL_VAR NAME="serialitemid" -->" />
                 <input type="hidden" name="kohafield" value="<!-- TMPL_VAR NAME="kohafield" -->" />
                 <input type="hidden" name="tag" value="<!-- TMPL_VAR NAME="tag" -->" />
                 <input type="hidden" name="subfield" value="<!-- TMPL_VAR NAME="subfield" -->" />
@@ -413,6 +459,7 @@ function CloneSubfield(index){
         <input type="hidden" name="serial" value="<!-- TMPL_VAR NAME="serialid" -->" />
         <input type="hidden" name="bibnum" value="<!-- TMPL_VAR NAME="biblionumber" -->" />
         <input type="hidden" name="itemid" value="<!-- TMPL_VAR NAME="itemid" -->" />
+        <input type="hidden" name="serialitemid" value="<!-- TMPL_VAR NAME="serialitemid" -->" />
         <input type="hidden" name="field_value" value="<!-- TMPL_VAR NAME="itemnumber" -->" />
         </div>
         </div>

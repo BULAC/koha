@@ -21,11 +21,8 @@ use strict;
 use warnings;
 
 use C4::Context;
-# WARNING: Any other tested YAML library fails to work properly in this
-# script content
 use YAML::Syck qw( Dump LoadFile );
 use Locale::PO;
-use FindBin qw( $Bin );
 
 $YAML::Syck::ImplicitTyping = 1;
 
@@ -49,7 +46,7 @@ sub new {
                                '/prog/en/modules/admin/preferences';
     set_lang( $self, $lang ) if $lang;
     $self->{pref_only}       = $pref_only;
-    $self->{translator_path} = $Bin;
+    $self->{translator_path} = $context->config('intranetdir') . "/misc/translator";
     $self->{path_po}         = $self->{translator_path} . "/po";
     $self->{po}              = {};
 
@@ -86,7 +83,7 @@ sub po_filename {
     my $self = shift;
 
     my $context    = C4::Context->new;
-    my $trans_path = $Bin . '/po';
+    my $trans_path = $context->config('intranetdir') . '/misc/translator/po';
     my $trans_file = "$trans_path/" . $self->{lang} . "-pref.po";
     return $trans_file;
 }
@@ -131,7 +128,7 @@ sub add_prefs {
                     }
                 }
             }
-            elsif ( $element && $pref_name ) {
+            elsif ( $element ) {
                 $self->po_append( $self->{file} . "#$pref_name# $element", $comment );
             }
         }
@@ -173,9 +170,8 @@ sub update_tab_prefs {
                     }
                 }
             }
-            elsif ( $element && $pref_name ) {
-                my $id = $self->{file} . "#$pref_name# $element";
-                my $text = $self->get_trans_text( $id );
+            elsif ( $element ) {
+                my $text = $self->get_trans_text( $self->{file} . "#$pref_name# $element" );
                 $p->[$i] = $text if $text;
             }
         }
@@ -189,8 +185,7 @@ sub get_po_from_prefs {
     for my $file ( @{$self->{pref_files}} ) {
         my $pref = LoadFile( $self->{path_pref_en} . "/$file" );
         $self->{file} = $file;
-        # Entries for tab titles
-        $self->po_append( $self->{file}, $_ ) for keys %$pref;
+        #print Dump($pref), "\n";
         while ( my ($tab, $tab_content) = each %$pref ) {
             if ( ref($tab_content) eq 'ARRAY' ) {
                 $self->add_prefs( $tab, $tab_content );
@@ -214,9 +209,10 @@ sub save_po {
 }
 
 
-sub get_po_merged_with_en {
+sub update_prefs {
     my $self = shift;
 
+    print "Update '", $self->{lang}, "' preferences .po file from 'en' .pref files\n";
     # Get po from current 'en' .pref files
     $self->get_po_from_prefs();
     my $po_current = $self->{po};
@@ -225,19 +221,12 @@ sub get_po_merged_with_en {
     my $po_previous = Locale::PO->load_file_ashash( $self->po_filename );
 
     for my $id ( keys %$po_current ) {
-        my $po =  $po_previous->{Locale::PO->quote($id)};
+        my $po =  $po_previous->{'"'.$id.'"'};
         next unless $po;
         my $text = Locale::PO->dequote( $po->msgstr );
         $po_current->{$id}->msgstr( $text );
     }
-}
 
-
-sub update_prefs {
-    my $self = shift;
-    print "Update '", $self->{lang},
-          "' preferences .po file from 'en' .pref files\n";
-    $self->get_po_merged_with_en();
     $self->save_po();
 }
 
@@ -250,19 +239,13 @@ sub install_prefs {
         exit;
     }
 
-    # Get the language .po file merged with last modified 'en' preferences
-    $self->get_po_merged_with_en();
+    # Update the language .po file with last modified 'en' preferences
+    # and load it.
+    $self->update_prefs();
 
     for my $file ( @{$self->{pref_files}} ) {
         my $pref = LoadFile( $self->{path_pref_en} . "/$file" );
         $self->{file} = $file;
-        # First, keys are replaced (tab titles)
-        $pref = do {
-            my %pref = map { 
-                $self->get_trans_text( $self->{file} ) || $_ => $pref->{$_}
-            } keys %$pref;
-            \%pref;
-        };
         while ( my ($tab, $tab_content) = each %$pref ) {
             if ( ref($tab_content) eq 'ARRAY' ) {
                 $self->update_tab_prefs( $pref, $tab_content );
@@ -273,8 +256,7 @@ sub install_prefs {
             }
             my $ntab = {};
             for my $section ( keys %$tab_content ) {
-                my $id = $self->{file} . " $section";
-                my $text = $self->get_trans_text($id);
+                my $text = $self->get_trans_text($self->{file} . " $section");
                 my $nsection = $text ? $text : $section;
                 $ntab->{$nsection} = $tab_content->{$section};
             }
@@ -364,23 +346,11 @@ sub install {
 }
 
 
-sub get_all_langs {
-    my $self = shift;
-    opendir( my $dh, $self->{path_po} );
-    my @files = grep { $_ =~ /-i-opac-t-prog-v-3002000.po$/ }
-        readdir $dh;
-    @files = map { $_ =~ s/-i-opac-t-prog-v-3002000.po$//; $_ } @files;
-}
-
-
 sub update {
     my $self = shift;
-    my @langs = $self->{lang} ? ($self->{lang}) : $self->get_all_langs();
-    for my $lang ( @langs ) {
-        $self->set_lang( $lang );
-        $self->update_tmpl() unless $self->{pref_only};
-        $self->update_prefs();
-    }
+    return unless $self->{lang};
+    $self->update_tmpl() unless $self->{pref_only};
+    $self->update_prefs();
 }
 
 

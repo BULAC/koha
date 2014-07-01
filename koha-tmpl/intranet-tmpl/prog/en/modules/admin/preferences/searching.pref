@@ -115,7 +115,58 @@ Searching:
                   dsc: descending.
                   az: from A to Z.
                   za: from Z to A.
-            -
+            - " (sorting by choosen field will be allowed whatever OPAC[field]SortOrder value is)."
+        # PROGILONE - may 2010 - F17
+        -
+            - pref: OPACrelevanceSortOrder
+              type: boolean
+              choices:
+                  yes: Allow
+                  no: "Don't allow"
+            - "sorting search results in the staff client by relevance."
+        -
+            - pref: OPACpopularitySortOrder
+              type: boolean
+              choices:
+                  yes: Allow
+                  no: "Don't allow"
+            - "sorting search results in the staff client by total number of checkouts."
+        -
+            - pref: OPACcallnumberSortOrder
+              type: boolean
+              choices:
+                  yes: Allow
+                  no: "Don't allow"
+            - "sorting search results in the staff client by call number."
+        -
+            - pref: OPACpubdateSortOrder
+              type: boolean
+              choices:
+                  yes: Allow
+                  no: "Don't allow"
+            - "sorting search results in the staff client by date of publication."
+        -
+            - pref: OPACacqdateSortOrder
+              type: boolean
+              choices:
+                  yes: Allow
+                  no: "Don't allow"
+            - "sorting search results in the staff client by date added."
+        -
+            - pref: OPACtitleSortOrder
+              type: boolean
+              choices:
+                  yes: Allow
+                  no: "Don't allow"
+            - "sorting search results in the staff client by title."
+        -
+            - pref: OPACauthorSortOrder
+              type: boolean
+              choices:
+                  yes: Allow
+                  no: "Don't allow"
+            - "sorting search results in the staff client by author."
+        # End PROGILONE
         -
             - By default, show
             - pref: OPACnumSearchResults
@@ -123,8 +174,16 @@ Searching:
             - results per page in the OPAC.
         -
             - pref: OPACItemsResultsDisplay
+              choices:
+                statuses: "statuses"
+                itemdetails: "itemdetails"
+            - "statuses : show only the status and branch of items in results list. itemdisplay : show full location of items (branch+location+callnumber) as in staff interface."
+        -
+        # PROGILONE - may 2010 - F22
+            - pref: OPACBranchTooltipDisplay
               type: boolean
               choices:
                   yes: Show
                   no: "Don't show"
-            - "an item's branch, location and call number in OPAC search results."
+            - "tooltip on branch name in OPAC search results."
+        # End PROGILONE

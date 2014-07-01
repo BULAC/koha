@@ -1,0 +1,108 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Patrons &rsaquo; <!-- TMPL_IF NAME="unknowuser" -->Patron does not exist<!-- TMPL_ELSE -->Patron Details for <!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --> (<!-- TMPL_VAR NAME="cardnumber" -->)<!-- /TMPL_IF --></title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+
+<script type="text/javascript" src="<!-- TMPL_VAR name="themelang" -->/lib/jquery/plugins/jquery.tablesorter.min.js"></script>
+<script type="text/javascript">
+
+    $(document).ready(function() {
+        
+        $("#quotast").tablesorter({<!-- TMPL_IF NAME="dateformat_metric" -->
+            dateFormat: 'uk',<!-- /TMPL_IF -->
+            sortList: [[0,0]],
+        });
+        
+        $("#quotast td").each(function() {
+            var nb = $(this).text();
+        	if (nb == '0'){
+                $(this).addClass('countzero');
+            }
+        });
+        
+    }); 
+        
+</script>
+
+<style type="text/css">
+    
+    table#quotast {
+        margin: 1em;
+    }
+    
+    #quotast th.coltitle {
+        width: 18em;
+    }
+    
+    #quotast td {
+        text-align: center;
+    }
+    
+    #quotast td.left {
+        text-align: left;
+    }
+    
+    #quotast td.countzero {
+        color: #AAAAAA;
+    }
+    
+}
+</style>
+
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="patron-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/members/members-home.pl">Patrons</a>  &rsaquo; <!-- TMPL_IF NAME="unknowuser" -->Patron does not exist<!-- TMPL_ELSE -->Patron Details for <!-- TMPL_VAR NAME="firstname" --> <!-- TMPL_VAR NAME="surname" --> (<!-- TMPL_VAR NAME="cardnumber" -->)<!-- /TMPL_IF --> </div>
+
+<div id="doc3" class="yui-t2">
+   
+    <div id="bd">
+    <div id="yui-main">
+
+        <div class="yui-b">
+        <h1>Quotas</h1>
+            <!-- TMPL_IF NAME="QUOTAS" -->
+                <table id="quotast">
+                    <thead><tr>
+                        <th class="coltitle">Item Type</th>
+                        <th>Current Checkouts Allowed (count)</th>
+                        <th>Loan period (days)</th>
+                        <th>Holds Allowed (count)</th>
+                        <th>Instant Stack Requests Allowed (count)</th>
+                        <th>Delayed Stack Requests Allowed (count)</th>
+                        <th>Current Stacks Allowed (count)</th>
+                    </tr></thead>
+                    <tbody>
+                        <!-- TMPL_LOOP NAME="QUOTAS" -->
+                        <tr>
+                            <td class="left">
+                                <!-- TMPL_IF NAME="itemtype_default" -->
+                                    - All -
+                                <!-- TMPL_ELSE -->
+                                    <!-- TMPL_VAR NAME="itemtype_ui" -->
+                                <!-- /TMPL_IF -->
+                            </td>
+                            <td><!-- TMPL_VAR NAME="maxissueqty" --></td>
+                            <td><!-- TMPL_VAR NAME="issuelength" --></td>
+                            <td><!-- TMPL_VAR NAME="reservesallowed" --></td>
+                            <td><!-- TMPL_VAR NAME="maxinstantstackqty" --></td>
+                            <td><!-- TMPL_VAR NAME="maxdelayedstackqty" --></td>
+                            <td><!-- TMPL_VAR NAME="maxstackqty" --></td>
+                        </tr>
+                        <!-- /TMPL_LOOP -->
+                    </tbody>
+                </table>
+            <!-- TMPL_ELSE -->
+                User has no quotas.
+            <!-- /TMPL_IF -->
+        </div>
+        
+    </div>
+
+    <div class="yui-b">
+    <!-- TMPL_INCLUDE NAME="circ-menu.inc" -->
+    </div>
+    
+    </div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

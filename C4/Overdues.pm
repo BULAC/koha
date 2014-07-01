@@ -1023,13 +1023,14 @@ sub GetOverduerules {
 }
 
 
+# PROGILONE - A2
 =head2 CheckBorrowerDebarred
 
-    ($debarredstatus) = &CheckBorrowerDebarred($borrowernumber);
+($debarredstatus) = &CheckBorrowerDebarred($borrowernumber);
 
 Check if the borrowers is already debarred
 
-C<$debarredstatus> return 0 for not debarred and return 1 for debarred
+C<$debarredstatus> return undef for not debarred and return end of debar date for debarred
 
 C<$borrowernumber> contains the borrower number
 
@@ -1038,40 +1039,44 @@ C<$borrowernumber> contains the borrower number
 # FIXME: Shouldn't this be in C4::Members?
 sub CheckBorrowerDebarred {
     my ($borrowernumber) = @_;
-    my $dbh   = C4::Context->dbh;
-    my $query = qq|
+    my $dbh              = C4::Context->dbh;
+    my $query            = qq|
         SELECT debarred
         FROM borrowers
         WHERE borrowernumber=?
+        AND debarred > NOW()
     |;
     my $sth = $dbh->prepare($query);
     $sth->execute($borrowernumber);
-    my ($debarredstatus) = $sth->fetchrow;
-    return ( $debarredstatus eq '1' ? 1 : 0 );
+    my $debarredstatus = $sth->fetchrow;
+    return $debarredstatus;
+
 }
 
 =head2 UpdateBorrowerDebarred
 
-    ($borrowerstatut) = &UpdateBorrowerDebarred($borrowernumber);
+($borrowerstatut) = &UpdateBorrowerDebarred($borrowernumber, $todate);
 
 update status of borrowers in borrowers table (field debarred)
 
 C<$borrowernumber> borrower number
+C<$todate> end of bare
 
 =cut
 
-sub UpdateBorrowerDebarred{
-    my($borrowernumber) = @_;
-    my $dbh = C4::Context->dbh;
-        my $query=qq|UPDATE borrowers
-             SET debarred='1'
+sub UpdateBorrowerDebarred {
+    my ( $borrowernumber, $todate ) = @_;
+    my $dbh   = C4::Context->dbh;
+    my $query = qq|UPDATE borrowers
+                     SET debarred=?
                      WHERE borrowernumber=?
             |;
-    my $sth=$dbh->prepare($query);
-        $sth->execute($borrowernumber);
-        $sth->finish;
-        return 1;
+    my $sth = $dbh->prepare($query);
+    $sth->execute( $todate, $borrowernumber );
+    $sth->finish;
+    return 1;
 }
+# END PROGILONE
 
 =head2 CheckExistantNotifyid
 
@@ -1234,23 +1239,19 @@ Create a line into notify, if the method is phone, the notification_send_date is
 =cut
 
 sub AddNotifyLine {
-    my ( $borrowernumber, $itemnumber, $overduelevel, $method, $notifyId ) = @_;
+    my ( $borrowernumber, $itemnumber, $overduelevel, $overduetype, $method, $notify_send_date ) = @_;
     my $dbh = C4::Context->dbh;
-    if ( $method eq "phone" ) {
+    if ( $notify_send_date ) {
         my $sth = $dbh->prepare(
-            "INSERT INTO notifys (borrowernumber,itemnumber,notify_date,notify_send_date,notify_level,method,notify_id)
-        VALUES (?,?,now(),now(),?,?,?)"
+            "INSERT INTO notifys (borrowernumber,itemnumber,notify_date,notify_send_date,notify_level,method,overduetype) VALUES (?,?,now(),now(),?,?,?)"
         );
-        $sth->execute( $borrowernumber, $itemnumber, $overduelevel, $method,
-            $notifyId );
+        $sth->execute( $borrowernumber, $itemnumber, $overduelevel, $method, $overduetype );
     }
     else {
         my $sth = $dbh->prepare(
-            "INSERT INTO notifys (borrowernumber,itemnumber,notify_date,notify_level,method,notify_id)
-        VALUES (?,?,now(),?,?,?)"
+            "INSERT INTO notifys (borrowernumber,itemnumber,notify_date,notify_level,method,overduetype) VALUES (?,?,now(),?,?,?)"
         );
-        $sth->execute( $borrowernumber, $itemnumber, $overduelevel, $method,
-            $notifyId );
+        $sth->execute( $borrowernumber, $itemnumber, $overduelevel, $method, $overduetype );
     }
     return 1;
 }

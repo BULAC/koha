@@ -1,0 +1,138 @@
+BULAC:
+    # B051
+    Spaces:
+        -
+            - pref: UseSpaces
+              choices:
+                  yes: Allow
+                  no: "Don't allow"
+            - Spaces booking.
+        -
+            - pref: SpacesUrl
+              class: Text
+            - URL of space management application.
+    # B12
+    Stocktaking:
+        -
+            - pref: UseAdvancedInventoryManagement
+              choices:
+                  yes: Use
+                  no: "Don't use"
+            - advanced inventory management.
+        -
+            - pref: UseAdvancedCountInventory
+              choices:
+                  yes: Use
+                  no: "Don't use"
+            - advanced cumulative inventory.
+    # B10
+    Callnumber:
+        -
+            - pref: UseAdvancedCallNumberManagement
+              choices:
+                  yes: Use
+                  no: "Don't use"
+            - advanced callnumber management.
+        -
+            - pref: UseCallNumberActivationButton
+              choices:
+                  yes: Use
+                  no: "Don't use"
+            - callnumber activation buttons.
+        -
+            - Use the OLIMP Web Service from the URL 
+            - pref: UseOlimpLocation
+            - to retrieve item location.
+    Items:
+        -
+            - "List of subfield codes to keep when duplicating an item : "
+            - pref: DuplicateFields
+              class: multi
+            - (separate fields with |)
+    # B07        
+    Circulation offline:
+        -
+            - pref: UseOfflineCircManagement
+              choices:
+                  yes: Use
+                  no: "Don't use"
+            - advanced offline circulation management.
+    # B04
+    Duplication:
+        -
+            - pref: UseDuplication
+              choices:
+                  yes: Use
+                  no: "Don't use"
+            - If ON, enables the duplication application (OPAC and Intranet).
+        -
+            - pref: DuplicationUrl
+              class: Text
+            - URL of duplication application.
+        -
+            - Use
+            - pref: DuplicationStaffEmailAdress
+              class: email
+            - as the email address for the duplication staff of Koha.
+        -
+            - Reproduction allowed for item published for more than
+            - pref: DuplicationPublicationYear
+              class: integer
+            - years.
+        -
+            - pref: DuplicationDeadlineExpiration
+              class: integer
+            - Duplication expiration delay (in days).
+    # B03
+    Communication:
+        -
+            - pref: UseStackrequest
+              choices:
+                  yes: Enable
+                  no: Disable
+            - the advanced stack request management (OPAC and Intranet).
+        -
+            - Number of minutes the borrower has to wait to get his item at desk after a stack request
+            - pref: StackRequestWaitingTime
+              class: integer
+        -
+            - Number of days needed before a differed stack can be created
+            - pref: DelayBeforeDifferedStack
+              class: integer
+    # B11
+    JasperReport:
+        -
+            - pref: JasperServerUrl
+              class: Text
+            - Address IP of Jasper server.
+        -
+            - pref: JasperServerUserConnection
+              class: Text
+            - ID user connection.    
+        -
+            - pref: JasperServerPasswordConnection
+              class: Text
+            - Password connection.
+    SCA:
+        -
+            - pref: UseSCA
+              choices:
+                  yes: Enable
+                  no: Disable
+            - the connection to the SCA.
+        -
+            - pref: ScaUrl
+              class: Text
+            - URL of the SCA.
+        -
+            - "Connect to the sca with the user : "
+            - pref: ScaUser
+              class: Text
+        -
+            - "Connect to the sca with the password : "
+            - pref: ScaPassword
+              class: Text
+        -
+            - "Key for the sca : "
+            - pref: ScaKey
+              class: Text

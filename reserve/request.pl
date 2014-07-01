@@ -41,6 +41,11 @@ use C4::Circulation;
 use C4::Dates qw/format_date/;
 use C4::Members;
 use C4::Search;		# enabled_staff_search_views
+use C4::Stack::Search;
+
+# B011
+use C4::Jasper::JasperReport;
+
 
 my $dbh = C4::Context->dbh;
 my $sth;
@@ -103,11 +108,46 @@ if ( $action eq 'move' ) {
 } elsif ( $action eq 'cancel' ) {
   my $borrowernumber = $input->param('borrowernumber');
   my $biblionumber = $input->param('biblionumber');
+  my $reserveinfo = GetReserveInfo( $borrowernumber, $biblionumber );
+  
   CancelReserve( $biblionumber, '', $borrowernumber );
+  
+  CheckItemAvailability( $reserveinfo->{'itemnumber'}, undef);
 } elsif ( $action eq 'setLowestPriority' ) {
   my $borrowernumber = $input->param('borrowernumber');
   my $biblionumber   = $input->param('biblionumber');
   ToggleLowestPriority( $borrowernumber, $biblionumber );
+} elsif ( $action eq 'reprint' ) {
+	my @report_parameters_list = ();
+	my ( $report_directory, $report_name, $report_action ) = ( 'exports', 'fiche_reservation', 'visualization' );
+	my @report_errors = ();
+	
+	my $itemnumber     = $input->param('itemnumber');
+    my $borrowernumber = $input->param('borrowernumber');
+	
+	push( @report_parameters_list, { Item_Number => $itemnumber, borrower_number => $borrowernumber } );
+	my ( $report_zipdirectory, $report_zipfile, @report_results ) = GenerateZip( $report_directory, $report_name, $report_action, \@report_parameters_list );
+	
+	for ( my $i = 0; $i < scalar( @report_parameters_list ); $i++ ) {
+		if ( $report_results[$i] == 0) {
+			push @report_errors, { report_name => $report_name, borrower => $report_parameters_list[$i]->{ 'borrower_number' } }; 
+		}
+	}
+	
+	if ( ( scalar @report_errors ) < ( scalar @report_parameters_list ) ) {
+		#At least one report to send
+		$template->param(
+		    report_zipdirectory => $report_zipdirectory,
+			report_zipfile      => $report_zipfile,
+			report_print        => $report_action eq 'print' ? 1 : 0,
+		);
+	}
+		    
+	if ( scalar @report_errors ) {
+		$template->param(
+			report_errors => \@report_errors,
+		);
+	}
 }
 
 if ($findborrower) {
@@ -129,20 +169,21 @@ if ($findborrower) {
     }
 }
 
+my $maxreserves = undef;
+
 if ($cardnumber) {
     my $borrowerinfo = GetMemberDetails( 0, $cardnumber );
     my $diffbranch;
     my @getreservloop;
     my $count_reserv = 0;
-    my $maxreserves;
-
+    
 #   we check the reserves of the borrower, and if he can reserv a document
 # FIXME At this time we have a simple count of reservs, but, later, we could improve the infos "title" ...
 
     my $number_reserves =
       GetReserveCount( $borrowerinfo->{'borrowernumber'} );
 
-    if ( $number_reserves > C4::Context->preference('maxreserves') ) {
+    if ( $number_reserves >= C4::Context->preference('maxreserves') ) {
 		$warnings = 1;
         $maxreserves = 1;
     }
@@ -151,7 +192,7 @@ if ($cardnumber) {
     my $expiry_date = $borrowerinfo->{dateexpiry};
     my $expiry = 0; # flag set if patron account has expired
     if ($expiry_date and $expiry_date ne '0000-00-00' and
-            Date_to_Days(split /-/,$date) > Date_to_Days(split /-/,$expiry_date)) {
+            Date_to_Days(split '-',$date) > Date_to_Days(split '-',$expiry_date)) {
 		$messages = $expiry = 1;
     }
      
@@ -162,6 +203,7 @@ if ($cardnumber) {
         $diffbranch = 1;
     }
 
+    warn "valeur reserve : " .$maxreserves; 
     $template->param(
                 borrowernumber => $borrowerinfo->{'borrowernumber'},
                 borrowersurname   => $borrowerinfo->{'surname'},
@@ -233,13 +275,14 @@ my @biblioloop = ();
 foreach my $biblionumber (@biblionumbers) {
 
     my %biblioloopiter = ();
-	my $maxreserves;
 
     my $dat          = GetBiblioData($biblionumber);
 
-    if ( not CanBookBeReserved($borrowerinfo->{borrowernumber}, $biblionumber) ) {
- 		$warnings = 1;
-        $maxreserves = 1;
+    if (not defined $maxreserves) {
+        unless (CanBookBeReserved($borrowerinfo->{borrowernumber}, $biblionumber) ) {
+ 		     $warnings = 1;
+             $maxreserves = 1;
+        }
     }
     # get existing reserves .....
     my ( $count, $reserves ) = GetReservesFromBiblionumber($biblionumber,1);
@@ -258,8 +301,38 @@ foreach my $biblionumber (@biblionumbers) {
             $biblioloopiter{alreadyres} = 1;
         }
     }
+    
+    #Progilone Mantis 159
+
+	my $issues = GetPendingIssues( $borrowerinfo->{borrowernumber} );
+	my $already_issued;
+	foreach my $issue (@$issues) {
+        if ( $issue->{'biblionumber'} == $biblionumber && $issue->{'borrowernumber'} == $borrowerinfo->{borrowernumber}) {
+            $warnings = 1;
+            $already_issued = 1;
+            $biblioloopiter{warn} = 1;
+            $biblioloopiter{already_issued} = 1;
+        }
+	}
+	
+	my $stack_requests = GetStacksOfBorrower( $borrowerinfo->{borrowernumber} );
+	my $already_stack_requested;
+	foreach my $stack_request (@$stack_requests) {
+        if ( $stack_request->{'biblionumber'} == $biblionumber && $stack_request->{'borrowernumber'} == $borrowerinfo->{borrowernumber}) {
+            $warnings = 1;
+            $already_stack_requested = 1;
+            $biblioloopiter{warn} = 1;
+            $biblioloopiter{already_stack_requested} = 1;
+        }
+	}
+	
+	#End Progilone
+	
+    warn "valeur reserve 2 : " .$maxreserves;
 
     $template->param( alreadyreserved => $alreadyreserved,
+					  already_issued => $already_issued,
+					  already_stack_requested => $already_stack_requested,
                       messages => $messages,
                       warnings => $warnings,
 					  maxreserves=>$maxreserves
@@ -427,18 +500,21 @@ foreach my $biblionumber (@biblionumbers) {
                 $policy_holdallowed = 0;
             }
             
-            if (IsAvailableForItemLevelRequest($itemnumber) and not $item->{cantreserve} and CanItemBeReserved($borrowerinfo->{borrowernumber}, $itemnumber) ) {
+            # MAN125
+            if (IsAvailableForItemLevelRequest($itemnumber) && !$item->{cantreserve}) {
                 if ( not $policy_holdallowed and C4::Context->preference( 'AllowHoldPolicyOverride' ) ) {
                     $item->{override} = 1;
+                    $num_override++;
+                } elsif (!CanItemBeReserved($borrowerinfo->{'borrowernumber'}, $itemnumber)) {
+                    $item->{override_quota} = 1;
                     $num_override++;
                 } elsif ( $policy_holdallowed ) {
                     $item->{available} = 1;
                     $num_available++;
                 }
-            } elsif (C4::Context->preference( 'AllowHoldPolicyOverride' ) ) {
-                    $item->{override} = 1;
-                    $num_override++;
             }
+            # END MAN125
+            
             # If none of the conditions hold true, then neither override nor available is set and the item cannot be checked
             
             # FIXME: move this to a pm
@@ -450,14 +526,19 @@ foreach my $biblionumber (@biblionumbers) {
             push @{ $biblioitem->{itemloop} }, $item;
         }
         
-        if ( $num_override == scalar( @{ $biblioitem->{itemloop} } ) ) { # That is, if all items require an override
-            $template->param( override_required => 1 );
-        } elsif ( $num_available == 0 ) {
-            $template->param( none_available => 1 );
+        # MAN125
+        if ( $num_available == 0 ) {
+            if ($num_override) {
+                $template->param( override_required => 1 );
+            }
+            else {
+                $template->param( none_available => 1 );
+                $biblioloopiter{warn} = 1;
+                $biblioloopiter{none_avail} = 1;
+            }
             $template->param( warnings => 1 );
-            $biblioloopiter{warn} = 1;
-            $biblioloopiter{none_avail} = 1;
         }
+        # END MAN125
         
         push @bibitemloop, $biblioitem;
     }
@@ -575,6 +656,9 @@ foreach my $biblionumber (@biblionumbers) {
 
     if (@reserveloop) {
         $template->param( reserveloop => \@reserveloop );
+        # B017 reserves count
+        $template->param( countreserveloop => scalar(@reserveloop) > 1 );
+        # END
     }
     
 

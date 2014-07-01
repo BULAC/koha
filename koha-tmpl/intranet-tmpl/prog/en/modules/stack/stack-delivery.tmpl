@@ -1,0 +1,184 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Circulation</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+
+<script language="JavaScript" type="text/javascript">
+    //<![CDATA[
+    function updateMissingInfo(sourceId, targetId, checkValue) {
+    	if (checkValue == document.getElementById(sourceId).value) {
+    		document.getElementById(targetId).hidden = false;
+        } else {
+        	document.getElementById(targetId).hidden = true;
+        }
+    }
+    //]]>
+</script>
+
+</head>
+<body onload="updateMissingInfo('materialsinfo', 'missingdescription', 'B');">
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="circ-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a> &rsaquo; Delivery</div>
+    <div id="doc" class="yui-t7">
+        <div id="bd">
+            <div id="yui-main">
+                
+            <!-- TMPL_IF NAME="errmsgloop" -->
+                
+                <div class="dialog alert">
+                <!-- TMPL_LOOP NAME="errmsgloop" -->
+                    
+                    <!-- TMPL_IF NAME="badItemBarcode" -->
+                        <div class="problem">
+                           <p>No Item with item barcode: <strong><!-- TMPL_VAR NAME="msg" --></strong></p>
+                        </div>
+                       <!-- /TMPL_IF -->
+                    
+                    <!-- TMPL_IF NAME="noStack" -->
+                        <div class="problem">
+                           <p>No waiting stack request found for item with barecode: <strong><!-- TMPL_VAR NAME="msg" --></strong>.</p>
+                        </div>
+                    <!-- /TMPL_IF -->
+                    
+                    <!-- TMPL_IF NAME="canceled" -->
+                        <div class="problem">
+                           <p>Stack request number <!-- TMPL_VAR NAME="msg" --> delivery has been canceled.</p>
+                        </div>
+                    <!-- /TMPL_IF -->
+                    
+                    <!-- TMPL_IF NAME="materials" -->
+                        <div class="problem">
+                            <p>The item <!-- TMPL_VAR NAME="item" --> has the following materials : <!-- TMPL_VAR NAME="msg" -->.</p>
+                        </div>
+                    <!-- /TMPL_IF -->
+                    
+                <!-- /TMPL_LOOP -->
+                </div>
+                
+            <!-- /TMPL_IF -->
+            
+            <!-- TMPL_IF NAME="materials" -->
+                <div class="yui-g">
+                    <div class="yui-u first">
+                        <form method="post" action="/cgi-bin/koha/stack/stack-delivery.pl" >
+                            <input type="hidden" name="barcode" value="<!-- TMPL_VAR NAME='barcode' -->" />
+                            <input type="hidden" name="op_materials" value="1" />
+                                        
+                            <fieldset>
+                                <legend>Materials</legend>
+                                    <div>
+                                        <label for="materialsinfo" class="tip">Status of the materials: </label>
+                                        <select name="materialsinfo" id="materialsinfo" size="1" onchange="updateMissingInfo('materialsinfo', 'missingdescription', 'B');">
+				                            <!-- TMPL_LOOP NAME="materials_loop" -->
+				                                <option value="<!-- TMPL_VAR NAME="authorised_value" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->>
+				                                    <!-- TMPL_VAR name="lib" -->
+				                                </option>
+				                            <!-- /TMPL_LOOP -->
+				                        </select>
+                                    </div>
+                                    <div id="missingdescription">
+                                        <label for="missinginfo" class="tip">Additional informations: </label>
+                                        <textarea cols="50" rows="5" id="missinginfo" name="missinginfo"><!-- TMPL_VAR NAME="missinginfo" --></textarea>
+                                    </div>
+                                    <div>
+                                        <br/>
+                                        <input type="submit" name="op" class="submit" value="Submit" />
+                                    </div>
+                            </fieldset>
+                        </form>
+                    </div>
+                </div>
+            <!-- TMPL_ELSE -->    
+                <div class="yui-g">
+                    <div class="yui-u first">
+                        <form method="post" action="/cgi-bin/koha/stack/stack-delivery.pl" >
+                            <fieldset>
+                                <legend>Delivery</legend>
+                                    <div id="item-bc" class="residentsearch">
+                                        <label for="barcode" class="tip">Enter an item barcode: </label>
+                                        <input name="barcode" id="barcode" size="14" class="focus"/>
+                                        <input type="submit" name="op" class="submit" value="Submit" />
+                                    </div>
+                            </fieldset>
+                        </form>
+                    </div>
+                </div>
+            <!-- /TMPL_IF -->
+
+            <!-- TMPL_IF NAME="has_results" -->
+                <div class="yui-g">   
+                <h2>Delivered item</h2>
+                    <div>
+                        <table border="1">
+                            <tr>
+                                <th>Stack request</th>
+                                <th>Request Date</th>
+                                <th>State</th>
+                                <th>Origin request</th>
+                                <th style="min-width: 10em;">Borrower</th>
+                                <th>Cardnumber</th>
+                                <th>Callnumber</th>
+                                <th>Item barcode</th>
+                                <th>Unit(s)</th>
+                                <th style="min-width: 16em;">Title</th>
+                                <th style="min-width: 8em;">Action</th>
+                            </tr>           
+                            <!-- TMPL_LOOP NAME="loop_results" -->
+                            <tr>
+                                <td>
+                                    <a href="/cgi-bin/koha/stack/all-operations.pl?input=<!-- TMPL_VAR NAME='request_number' -->">
+                                    <!-- TMPL_VAR NAME="request_number" -->
+                                    </a>
+                                </td>
+                                <td>
+                                    <!-- TMPL_VAR NAME="begin_date_ui" ESCAPE="HTML" -->
+                                </td> 
+                                <td>
+                                    <!-- TMPL_INCLUDE NAME="stack/stack-state.inc" -->
+                                </td> 
+                                <td>
+                                    <!-- TMPL_INCLUDE NAME="stack/stack-origin.inc" -->
+                                </td> 
+                                <td>
+                                    <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">
+                                    <!-- TMPL_VAR NAME="firstname" ESCAPE="HTML" --> <!-- TMPL_VAR NAME="surname" ESCAPE="HTML" -->
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=<!-- TMPL_VAR NAME="borrowernumber" -->">
+                                    <!-- TMPL_VAR NAME="cardnumber" ESCAPE="HTML" -->
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#item<!-- TMPL_VAR NAME="itemnumber" -->">
+                                    <!-- TMPL_VAR NAME="itemcallnumber" ESCAPE="HTML" -->
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->#item<!-- TMPL_VAR NAME="itemnumber" -->">
+                                        <!-- TMPL_VAR NAME="barcode" ESCAPE="HTML" -->
+                                    </a>
+                                </td>
+                                <td>
+                                    <!-- TMPL_VAR NAME="units" ESCAPE="HTML" -->
+                                </td>  
+                                <td>
+                                    <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=<!-- TMPL_VAR NAME="biblionumber" -->"><!-- TMPL_VAR NAME="title" ESCAPE="HTML" --></a>
+                                </td> 
+                                <td>
+                                    <form method="post" action="/cgi-bin/koha/stack/stack-delivery.pl" >
+                                        <input type="hidden" name="request_number" value="<!-- TMPL_VAR NAME="request_number" -->" />
+                                        <input type="submit" name="cancel" class="icon delete cancel" value="Cancel" />
+                                    </form>
+                                </td>
+                            </tr>
+                            <!-- /TMPL_LOOP -->
+                        </table>
+                    </div>
+                </div>
+            <!-- /TMPL_IF -->
+            
+            </div>
+        </div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

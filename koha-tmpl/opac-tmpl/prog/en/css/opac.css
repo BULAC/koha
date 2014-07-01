@@ -23,11 +23,16 @@ body {
     color : #C00;
 }
 
+/* B014 */
+span.required {
+    margin-left: .3em;
+}
+/* END B014 */
+
 caption {
 	font-size : 140%;
-	font-weight : bold;
-	line-height : 144%;
 	text-align : left;
+	font-weight : bold;
 }
 
 fieldset {
@@ -54,13 +59,15 @@ fieldset.rows legend {
 	font-size : 110%;
 }
 
-fieldset.rows label, fieldset.rows span.label {
+/* B014 */
+fieldset.rows label, fieldset.rows span.label {  
 	float: left;  
 	font-weight : bold;
-	width: 9em;  
+	width: 10em;  
 	margin-right: 1em;  
 	text-align: right;
 }
+/* END B014 */
 
 fieldset.rows fieldset {
 	border-width : 1px;
@@ -152,6 +159,12 @@ fieldset.action {
 
 fieldset.action p {
 	margin-bottom : 1em;
+}
+
+/* PROGILONE - 06/05/10
+   [F7]- Select multiple items lisbox */
+fieldset label {
+	vertical-align: top;
 }
 
 form {
@@ -378,12 +391,6 @@ a .term {
 	text-decoration : underline;
 }
 
-/* style for shelving location in catalogsearch */
-.shelvingloc {
-    display : block;
-    font-style : italic;
-}
-
 .transfered {
 	background-color : #F9FF9A;
 }
@@ -402,12 +409,14 @@ a .term {
 	padding : .3em 0;
 }
 
-#action a {
+/* B04 B031 */
+#action a, .itemaction * {
 	background-position : 5px center;
 	background-repeat : no-repeat;
 	text-decoration : none;
 	padding-left : 35px;
 }
+/* END B04 B031 */
 
 #action a.print {
 	background-image:url(../../images/print.gif);
@@ -441,15 +450,37 @@ a .term {
 	background-image:url(../../images/cart2.gif);
 }
 
-/* toolbar buttons */
-
-#toolbar { 
-background-color:#EEEEEE;
-border:1px solid #E8E8E8;
-margin : .5em 0;
-padding:3px 3px 5px 5px;
-vertical-align:middle;
+/*  B04 */
+.reproduction a {
+    background-image:url(../../images/pgl-reproduction.png);
+    background-size: 35px;
+    font-size: 2.5em;
+    padding-left: 40px;
 }
+/* END B04 */
+
+/* B031 */
+.itemaction a span {
+}
+
+.itemstackrq a, #action a.stackrq {
+    background-image : url(../../images/stackrq.png);
+    background-size: 35px;
+    font-size: 2.5em;
+    padding-left: 40px;
+}
+/* END B031 */
+
+/* B017 */
+.itemhold a, #action a.hold {
+    background-image : url(../../images/placereserve.png);
+    background-size: 35px;
+    font-size: 2.5em;
+    padding-left: 40px;
+}
+/* END B017 */
+
+/* toolbar buttons */
 
 #toolbar a,
 #toolbar input {
@@ -587,10 +618,7 @@ input.deleteshelf {
 }
 
 
-#toolbar input.editshelf:active,
-input.editshelf:active,
-#toolbar input.deleteshelf:active,
-input.deleteshelf:active {
+#toolbar input.editshelf:active,input.deleteshelf:active {
 	border : 0;
 }
 
@@ -602,8 +630,6 @@ input.deleteshelf:active {
 	padding-left : 25px;
 	text-decoration: none;
 }
-
-#tagslist li { display : inline; }
 
 #placehold input.submit:hover,
 #tagsel_span input.submit:hover {
@@ -824,6 +850,14 @@ body#advsearch #listsmenulink {
 	text-indent : 1em;
 }
 
+/* PROGILONE - avril 2010 - F20 */
+#search-facets .facetcount {
+    background-color : #EEEEEB;
+    color : #707070;
+    font-size : 85%;
+    font-style : italic;
+}
+	
 .suggestion {
 	background-color : #EEEEEB;
 	border : 1px solid #DDDED3;
@@ -883,45 +917,12 @@ em {
 	font-style : italic;
 }
 
-
-table#marc,
-table#marc td,
-table#marc th {
-	background-color : transparent;
-	border : 0;
-}
-
-table#marc p span.label {
+#catalogue_detail_biblio p span.label {  
 	font-weight : bold;
 }
 
-table#marc p,
-table#marc ul {
+#catalogue_detail_biblio p, #catalogue_detail_biblio ul {  
 	padding-bottom: .6em;
-}
-
-table#items,
-table#items td
-table#items th {
-	border-width : 1px solid #EEE;
-	font-size : 90%;
-}
-
-
-table#marc div.results_summary {
-	clear :  left;
-}
-table#marc div.results_summary ul {
-	display : inline;
-	float :  none;
-	clear :  none;
-	margin: 0;
-	padding: 0;
-	list-style : none;
-}
-
-table#marc div.results_summary ul li {
-	display : inline;
 }
 
 #basketcount {
@@ -985,6 +986,19 @@ fieldset.brief div.hint, fieldset.rows div.hint {
 	margin : .4em;
 }
 
+/* B03 */
+.tip {
+    font-size: 100%;
+    color : #666666;
+}
+/* END B03 */
+
+/* B014 */
+.yui-b fieldset.rows div.hint {
+    margin-left : 11em;
+}
+/* END B014 */
+
 h2 span.hint {
 	font-size: 76%;
 	font-weight : normal;
@@ -996,6 +1010,10 @@ h2 span.hint {
 }
 a.cancel {
 	padding-left : 1em;
+}
+
+a.hidemytags {
+	padding-left : 2em;
 }
 
 .resultscontrol, .resultscontrol select {
@@ -1102,9 +1120,38 @@ td.resultscontrol img {
 	line-height : 1.8em;
 	text-align: center;
 }
+a:link.current {
+	background-color: transparent;
+	color: #3366CC;
+	font-weight: bold;
+	padding: 1px 5px 1px 5px;
+	text-decoration: none;
+}
+a:visited.current {
+	background-color: transparent;
+	color: #3366CC;
+	font-weight: bold;
+	padding: 1px 5px 1px 5px;
+	text-decoration: none;
+}
 
-.current,
-.currentPage {
+a:hover.current {
+	background-color: #CCFF00;
+	color: #CC3333;
+	font-weight: bold;
+	padding: 1px 5px 1px 5px;
+	text-decoration: none;
+}
+
+a:active.current {
+	background-color: #99CC00;
+	color: #FFFF99;
+	font-weight: bold;
+	padding: 1px 5px 1px 5px;
+	text-decoration: none;
+}
+
+.current {
 	background-color: #FFFFFF;
 	color: #3366CC;
 	font-weight: bold;
@@ -1112,8 +1159,7 @@ td.resultscontrol img {
 	text-decoration: none;
 }
 
-a:link.nav,
-div.pages a:link {
+a:link.nav {
 	background-color: #EEE;
 	border: 1px solid #CCCC99;
 	color: #3366CC;
@@ -1122,8 +1168,7 @@ div.pages a:link {
 	text-decoration: none;
 }
 
-a:visited.nav,
-div.pages a:visited {
+a:visited.nav {
 	background-color: #EEE;
 	border: 1px solid #CCCC99;
 	color: #3366CC;
@@ -1132,8 +1177,7 @@ div.pages a:visited {
 	text-decoration: none;
 }
 
-a:hover.nav,
-div.pages a:hover {
+a:hover.nav {
 	background-color: #FFFFCC;
 	border: 1px solid #CCCC99;
 	color: #CC3333;
@@ -1142,8 +1186,7 @@ div.pages a:hover {
 	text-decoration: none;
 }
 
-a:active.nav,
-div.pages a:active {
+a:active.nav {
 	background-color: #FFFFCC;
 	border: 1px solid #CCCC99;
 	color: #D25500;
@@ -1205,6 +1248,11 @@ div.tab-container {
 	margin-top : 4px;
 	padding : .7em;
 	width : 90%;
+}
+
+#catalogue_detail_biblio table, #catalogue_detail_biblio td, #catalogue_detail_biblio th {
+	background-color : transparent;
+	border : 0;
 }
 
 tr.overdue td {
@@ -1314,6 +1362,22 @@ padding-left : .4em;
 	padding-left : 13px;
 }
 
+#catalogue_detail_biblio div.results_summary {
+	clear :  left;
+}
+#catalogue_detail_biblio div.results_summary ul {
+	display : inline;
+	float :  none;
+	clear :  none;
+	margin: 0;
+	padding: 0;
+	list-style : none;
+}
+
+#catalogue_detail_biblio div.results_summary ul li {
+	display : inline;
+}
+
 .dialog {
   border: 1px solid #bcbcbc;
 	padding : .5em;
@@ -1409,7 +1473,6 @@ div#changelanguage{
 	color : #666;
 	font-size : 85%;
 	padding : 1em;
-	margin-top : 2em;
  }
  
 div#changelanguage a {
@@ -1435,7 +1498,7 @@ div#changelanguage li.yuimenuitem a.yuimenuitemlabel {
 	padding : 0;
 }
 
-#cartDetails,#cartUpdate,#holdDetails,#listsDetails {
+#cartDetails,#cartUpdate,#holdDetails,#listsDetails,.branchdetails {
 	background-color : #FFF;
 	border: 1px solid #739acf;
 	color : black;
@@ -1449,6 +1512,31 @@ div#changelanguage li.yuimenuitem a.yuimenuitemlabel {
 	-webkit-box-shadow: 1px 1px 3px #666;
 
 }
+
+/* PROGILONE - avril 2010 - F21 */
+.branchdetails {
+	text-align : left;
+	width : 140px;
+}
+
+.branchaddress {
+    display : block;
+}
+
+.branchaddress,.branchphone {
+    padding-left : 6px;
+}
+
+.branchphone {
+    display : block;
+    font-style : italic;
+}
+
+.branchnotes {
+    display : block;
+    font-size : 90%;
+}
+/* End PROGILONE */
 
 .yui-panel .hd, .yui-panel .bd, .yui-panel .ft {
 	background-color : transparent;
@@ -1957,6 +2045,7 @@ a.p1:active {
 div.ft {
 	clear : both;
 }
+
 #basket td ul li {
 	font-size:90%;
 	list-style:disc outside url("../../images/item-bullet.gif");

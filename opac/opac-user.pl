@@ -32,6 +32,14 @@ use C4::Items;
 use C4::Dates qw/format_date/;
 use C4::Letters;
 use C4::Branch; # GetBranches
+use C4::Overdues qw/CheckBorrowerDebarred/; # PROGILONE - A2
+# B031 - View stacks
+use C4::Stack::Search; 
+use C4::Stack::Rules qw/CanRenewRequestStack CanCancelRequestStack GetEndDateWithGuardPeriod IsInstantStackRequest/;
+use C4::Utils::Constants;
+use C4::Stack::Desk qw/GetDesk/;
+use C4::Utils::IState;
+# END B031
 
 my $query = new CGI;
 
@@ -53,6 +61,7 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
     }
 );
 
+my $today = C4::Dates->new();
 my $OPACDisplayRequestPriority = (C4::Context->preference("OPACDisplayRequestPriority")) ? 1 : 0;
 my $patronupdate = $query->param('patronupdate');
 
@@ -64,9 +73,23 @@ for (qw(dateenrolled dateexpiry dateofbirth)) {
 }
 $borr->{'ethnicity'} = fixEthnicity( $borr->{'ethnicity'} );
 
-if ( $borr->{'debarred'} || $borr->{'gonenoaddress'} || $borr->{'lost'} ) {
+# PROGILONE - A2
+if ( $borr->{'flags'}->{'DBARRED'} || $borr->{'flags'}->{'DBARRED2'} || $borr->{'gonenoaddress'} || $borr->{'lost'} ) {
     $borr->{'flagged'} = 1;
 }
+
+# Debarred status and optionnal end date
+if ( $borr->{'flags'}->{'DBARRED'} ) {
+    $borr->{'userdebarred'}     = 1;
+    $borr->{'userdebarreddate'} = format_date( $borr->{'flags'}->{'DBARRED'}->{'dateend'} );
+}
+# Debarred status and optionnal end date
+if ( $borr->{'flags'}->{'DBARRED2'} ) {
+    $borr->{'userdebarred2'}     = 1;
+    $borr->{'userdebarred2date'} = format_date( $borr->{'flags'}->{'DBARRED2'}->{'dateend'} );
+    $borr->{'nb_overdue'} = $borr->{'flags'}->{'DBARRED2'}->{'nb_overdue'};
+}
+# END PROGILONE
 
 if ( $borr->{'amountoutstanding'} > 5 ) {
     $borr->{'amountoverfive'} = 1;
@@ -180,6 +203,57 @@ for my $branch_hash (sort keys %$branches ) {
 }
 $template->param( branchloop => \@branch_loop );
 
+# B031 - View stacks
+# now the stacked items....
+my $stacks = GetStacksOfBorrower($borrowernumber);
+
+# Add some details
+foreach my $stack (@$stacks) {    
+    
+    # add stack renewal date
+    my ($date_renewal_iso, $renew_impossible, $renew_confirm) = CanRenewRequestStack( undef, $stack );
+    if (!scalar keys %$renew_impossible && !scalar keys %$renew_confirm) {
+        $stack->{'end_date_renewal'}    = $date_renewal_iso;
+        $stack->{'end_date_renewal_ui'} = format_date($date_renewal_iso);
+    }
+    
+    # test if can cancel stack request
+    $stack->{'canCancel'} = CanCancelRequestStack( undef, $stack );
+    
+    # test if stack request is overdue
+    if ( $stack->{'end_date'} and $stack->{'end_date'} lt $today->output('iso') and $stack->{'istate'} eq $ISTATE_ON_STACK ) {
+    	$stack->{'overdue'} = 1;
+    }
+    
+    # MAN080
+    # For delayed request, request expires the begin date + guard period, except if linked to a space
+    # Show this end date eaven for asked state
+    if (!IsInstantStackRequest($stack->{'request_number'})
+     && !$stack->{'space_booking_id'}
+     && $stack->{'state'} eq $STACK_STATE_ASKED)
+    {
+        my $new_end_date = GetEndDateWithGuardPeriod($stack);
+        $stack->{'end_date_with_gp'}    = $new_end_date;
+        $stack->{'end_date_with_gp_ui'} = format_date($new_end_date);
+    }
+    # END MAN080
+    
+    my $itm = GetItem( $stack->{'itemnumber'} );
+    
+    AddIStateInfos($itm);
+    $itm->{'istate_isme'} = 1;
+    
+    my @items;
+    push @items, $itm;
+    $stack->{'items'} = \@items;
+}
+
+$template->param( 
+    STACKS       => $stacks,
+    stacks_count => scalar @$stacks,
+);
+# END B031
+
 # now the reserved items....
 my @reserves  = GetReservesFromBorrowernumber( $borrowernumber );
 foreach my $res (@reserves) {
@@ -233,6 +307,14 @@ foreach my $res (@reserves) {
             if($res->{'holdingbranch'} eq $res->{'wbrcode'}){
                 $res->{'atdestination'} = 1;
             }
+            # B01 MAN160
+            if ($item->{'holdingdesk'}) {
+                my $desk = GetDesk($item->{'holdingdesk'});
+                if ($desk) {
+                    $res->{'holdingdesk_ui'} = $desk->{'deskname'};
+                }
+            }
+            # END B01
             # set found to 1 if reserve is waiting for patron pickup
             $res->{'found'} = 1 if $res->{'found'} eq 'W';
         } else {

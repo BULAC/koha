@@ -60,9 +60,7 @@ my $budget_period_id = $input->param('budget_period_id');
 my $period = GetBudgetPeriod($budget_period_id);
 my $count  = GetPeriodsCount();
 my $cur    = GetCurrency;
-$template->param( symbol => $cur->{symbol},
-                  currency => $cur->{currency}
-               );
+
 $template->param( period_button_only => 1 ) if $count == 0;
 
 
@@ -452,6 +450,7 @@ $template->param(
     show_actual               => $show_actual,
     show_percent              => $show_percent,
     show_mine                 => $show_mine,
+    cur                       => $cur->{symbol},
     cur_format                => $cur_format,
     CGIextChoice              => $CGIextChoice,
     CGIsepChoice              => $CGIsepChoice,

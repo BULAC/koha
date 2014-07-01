@@ -1,0 +1,33 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Patron Details</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+</head>
+<body>
+<!-- B014 -->
+
+<div id="doc" class="yui-t7">
+   <div id="bd">
+
+	<h1>Patron Details</h1>
+	
+	<form name="form" method="post" action="/cgi-bin/koha/opac-borrowers_details.pl">
+
+		<p>
+			<label for="surname">Surname</label>
+			<input  style="text-transform:uppercase;" type="text" id="surname" name="surname" size="20" value="<!-- TMPL_VAR NAME="surname" -->" />
+		</p>
+		<p>	
+			<label for="firstname">Firstname</label>
+			<input  style="text-transform:capitalize;" type="text" id="firstname" name="firstname" size="20" value="<!-- TMPL_VAR NAME="firstname" -->" />
+		</p>
+		<p>
+			<label for="dateofbirth">Date of birth</label>
+			<input  type="text" name="dateofbirth" id="dateofbirth" size="12" value="<!-- TMPL_VAR NAME="dateofbirth" -->" />
+		</p>
+    	<p>
+    		<a href="#" onclick="window.close()">Close Window</a>
+    	</p>
+	</form>
+
+</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

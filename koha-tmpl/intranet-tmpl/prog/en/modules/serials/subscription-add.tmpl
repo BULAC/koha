@@ -1007,14 +1007,22 @@ $(document).ready(function() {
         </li>
         <li>
             <label for="location">Location:</label>
-            <select name="location" id="location">
-                <option value="">None</option>
-                <!-- TMPL_LOOP NAME="locations_loop" --><!-- TMPL_IF NAME="selected" --><option value="<!-- TMPL_VAR NAME="authorised_value" -->" selected="selected"><!-- TMPL_VAR NAME="lib" --></option><!-- TMPL_ELSE --><option value="<!-- TMPL_VAR NAME="authorised_value" -->"><!-- TMPL_VAR NAME="lib" --></option><!-- /TMPL_IF --><!-- /TMPL_LOOP -->
-            </select>
+			<select name="location" id="location" style="width: 20em;">
+				<option value="" >None</option>
+					<!-- TMPL_LOOP name="locationloop" -->
+						<!-- TMPL_IF NAME="selected" -->
+							<option value="<!-- TMPL_VAR NAME="authorised_value" -->" selected="selected"><!-- TMPL_VAR NAME="lib" --></option>
+						<!-- TMPL_ELSE -->
+							<option value="<!-- TMPL_VAR NAME="authorised_value" -->"><!-- TMPL_VAR NAME="lib" --></option>
+						<!-- /TMPL_IF -->
+					<!-- /TMPL_LOOP -->
+				</select> (select a location)
         </li>
          <li>
             <label for="callnumber">Call Number:</label>
-            <input type="text" name="callnumber" id="callnumber" value="<!-- TMPL_VAR name="callnumber" -->" size="20" />
+            <input type="text" name="callnumber" id="callnumber" value="<!-- TMPL_VAR name="callnumber" -->" readonly="readonly" />
+            <a href="#" onclick="window.open('/cgi-bin/koha/cataloguing/plugin_launcher.pl?plugin_name=unimarc_field_995B.pl&index=callnumber&result=<!-- TMPL_VAR name="callnumber" -->&subscription=1','Serial callnumber','width=1000,height=600,toolbar=false,scrollbars=yes');">...</a>
+            <input type="hidden" name="oldcallnumber" id="oldcallnumber" value="<!-- TMPL_VAR name="callnumber" -->" readonly="readonly" />
         </li>
         <li>
             <label for="branchcode">Library:</label>

@@ -109,7 +109,7 @@ InstallAuth - Authenticates Koha users for Install process
 sub get_template_and_user {
     my $in       = shift;
     my $query    = $in->{'query'};
-    my $language = $query->cookie('KohaOpacLanguage');
+    my $language = getlanguagecookie($query); # PROGILONE - MAN321
     my $path =
       C4::Context->config('intrahtdocs') . "/prog/"
       . ( $language ? $language : "en" );

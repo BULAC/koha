@@ -1,21 +1,13 @@
-$(document).ready(function() {
-    $("table.preferences").tablesorter({
-        sortList: [[0,0]],
-        headers: { 1: { sorter:false}}
-    });
-});
-
 // We can assume 'KOHA' exists, as we depend on KOHA.AJAX
 
 KOHA.Preferences = {
     Save: function ( form ) {
-        modified_prefs = $( form ).find( '.modified' );
-        data = modified_prefs.serialize();
+        data = $( form ).find( '.modified' ).serialize();
         if ( !data ) {
-            humanMsg.displayAlert( MSG_NOTHING_TO_SAVE );
+            humanMsg.displayAlert( 'Nothing to save' );
             return;
         }
-        KOHA.AJAX.MarkRunning( $( form ).find( '.save-all' ), _( MSG_SAVING ) );
+        KOHA.AJAX.MarkRunning( $( form ).find( '.save-all' ), _( 'Saving...' ) );
         KOHA.AJAX.Submit( {
             data: data,
             url: '/cgi-bin/koha/svc/config/systempreferences/',
@@ -24,13 +16,7 @@ KOHA.Preferences = {
         } );
     },
     Success: function ( form ) {
-        var msg = "";
-        modified_prefs.each(function(){
-            var modified_pref = $(this).attr("id");
-            modified_pref = modified_pref.replace("pref_","");
-            msg += '<strong>Saved preference '+modified_pref+'</strong>\n';
-        });
-        humanMsg.displayAlert(msg);
+        humanMsg.displayAlert( 'Saved' );
 
         $( form )
             .find( '.modified-warning' ).remove().end()
@@ -45,7 +31,7 @@ $( document ).ready( function () {
         $( this ).addClass( 'modified' );
         var name_cell = $( this ).parents( '.name-row' ).find( '.name-cell' );
 		if ( !name_cell.find( '.modified-warning' ).length )
-            name_cell.append( '<em class="modified-warning">('+MSG_MODIFIED+')</em>' );
+            name_cell.append( '<em class="modified-warning">(modified)</em>' );
         KOHA.Preferences.Modified = true;
     }
 
@@ -61,7 +47,7 @@ $( document ).ready( function () {
 
     window.onbeforeunload = function () {
         if ( KOHA.Preferences.Modified ) {
-            return MSG_MADE_CHANGES;
+            return _( "You have made changes to system preferences." );
         }
     }
 
@@ -80,16 +66,16 @@ $( document ).ready( function () {
         return false;
     } ).nextAll( 'textarea, input[type=submit]' ).hide().css( { opacity: 0 } );
 
-    $("h3").attr("class","expanded").attr("title",MSG_CLICK_TO_EXPAND);
+    $("h3").attr("class","expanded").attr("title",_("Click to expand this section"));
     var collapsible = $(".collapsed,.expanded");
 
     $(collapsible).toggle(
         function () {
-            $(this).addClass("collapsed").removeClass("expanded").attr("title",MSG_CLICK_TO_EXPAND);
+            $(this).addClass("collapsed").removeClass("expanded").attr("title",_("Click to expand this section"));
             $(this).next("table").hide();
         },
         function () {
-            $(this).addClass("expanded").removeClass("collapsed").attr("title",MSG_CLICK_TO_COLLAPSE);
+            $(this).addClass("expanded").removeClass("collapsed").attr("title",_("Click to collapse this section"));
             $(this).next("table").show();
         }
     );

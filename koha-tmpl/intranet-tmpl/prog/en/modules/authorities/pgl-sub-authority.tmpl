@@ -1,0 +1,70 @@
+<!-- PROGILONE - july 2010 - C2 -->
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<Title>Koha -- Authority details</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script type="text/javascript">
+    window.onload = go();
+    
+    function go(){
+        try {
+    	                
+	        var index              = "<!-- TMPL_VAR ESCAPE="JS" NAME='index' -->";
+	        var auth_id            = "<!-- TMPL_VAR ESCAPE="JS" NAME="authid" -->";
+	        var dest_subfield_code = "<!-- TMPL_VAR ESCAPE="JS" NAME="destsubfield" -->";
+	        
+	        if (dest_subfield_code) {
+	            
+		        var src = opener.opener;
+		        var whichfield = src.document.getElementById(index);
+
+		        var record_subfields = whichfield.parentNode.parentNode.getElementsByTagName('input');
+		        var re = /^tag_\d*_code_/;
+		        var dest_subfield = null;
+		        var is_empty = false;
+		        for (var i=0, len = record_subfields.length ; i<len ; i++) {
+		            if (record_subfields[i].getAttribute('name').match(re)) {
+		                var record_code     = record_subfields[i];
+		                var record_subfield = record_subfields[i+1];
+		                if (record_code.value == dest_subfield_code) {
+		                	dest_subfield = record_subfield;
+		                	if (dest_subfield.value == null || dest_subfield.value == '') {
+		                		is_empty = true;
+			                	break;
+		                	}		                    
+		                }
+		            }
+		        }
+		        if (dest_subfield) {
+			        var subf_id = dest_subfield.parentNode.id;
+		            if (!is_empty && src.isRepeatableSubfield(subf_id)) {
+		                var new_subf_id = src.CloneSubfield(subf_id);
+		                var new_subf = src.document.getElementById(new_subf_id);
+		                dest_subfield = new_subf.getElementsByTagName('input')[1] ;
+		            }
+		            dest_subfield.value = "<!--TMPL_VAR ESCAPE="JS" NAME="mainentry" -->";
+			        whichfield.value = auth_id;
+		        }
+	        }
+        } catch(e) {
+        }
+        
+      	opener.close();
+       	window.close();
+            
+       	return false;
+    }
+</script>
+</head>
+<body>
+
+<div id="doc" class="yui-t7">
+   <div id="bd">
+	<div class="yui-g">
+
+
+
+</div>
+</div>
+</div>
+
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

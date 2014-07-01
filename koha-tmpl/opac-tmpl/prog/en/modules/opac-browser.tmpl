@@ -27,11 +27,11 @@
                 <td width="33%">
                 <p>
                 <!-- TMPL_IF name="endnode" -->
-                    <a href="opac-search.pl?q=Dewey-classification:<!-- TMPL_VAR name="classification" ESCAPE="uri" -->"><!-- TMPL_VAR name="description" ESCAPE="html" --></a>
+                    <!-- TMPL_VAR name="description" ESCAPE="html" -->
                 <!-- TMPL_ELSE -->
                     <a href="opac-browser.pl?level=<!-- TMPL_VAR name="level"-->&amp;filter=<!-- TMPL_VAR name="classification" ESCAPE="uri" -->"><!-- TMPL_VAR name="description" ESCAPE="html" --></a>
                 <!-- /TMPL_IF --></p>
-                <p style="font-size:0.75em"><i>(<!-- TMPL_VAR name="number"--> biblios)</i></p>
+                <p style="font-size:0.75em"><a href="opac-search.pl?q=Dewey-classification:<!-- TMPL_VAR name="classification" ESCAPE="uri" -->"><i>(<!-- TMPL_VAR name="number"--> biblios)</i></a></p>
                 </td>
                 <!-- TMPL_IF name="count3" --></tr><tr><!-- /TMPL_IF -->
         <!-- /TMPL_LOOP -->
@@ -41,7 +41,7 @@
         <!-- /TMPL_LOOP -->
         </ul></li></ul>
         <!-- TMPL_ELSE -->
-            <div class="warning">The browser table is empty. this feature is not fully set-up. See the <a href="http://wiki.koha-community.org/wiki/Opac_browse_feature">Koha Wiki</a> for more information on what it does and how to configure it.</div>
+            <div class="warning">The browser table is empty. this feature is not fully set-up. See the <a href="http://wiki.koha.org/doku.php?id=opacbrowser">Koha Wiki</a> for more information on what it does and how to configure it.</div>
         <!-- /TMPL_IF -->
 </div></div>
 </div>

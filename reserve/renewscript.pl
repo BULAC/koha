@@ -26,8 +26,8 @@ use warnings;
 use CGI;
 use C4::Circulation;
 use C4::Auth;
-use URI::Escape;
 use C4::Dates qw/format_date_in_iso/;
+use C4::Items;
 my $input = new CGI;
 
 #Set Up User_env
@@ -39,7 +39,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
         query           => $input,
         type            => "intranet",
         authnotrequired => 0,
-        flagsrequired   => { circulate => 1 },
+        flagsrequired   => { circulate => 'circulate_remaining_permissions' },
         debug           => 0,
     }
 );
@@ -77,7 +77,10 @@ my $cardnumber = $input->param("cardnumber");
 my $borrowernumber = $input->param("borrowernumber");
 my $exemptfine = $input->param("exemptfine") || 0;
 my $override_limit = $input->param("override_limit") || 0;
-my $failedrenews = q{};
+my $failedrenews;
+
+my $op_materials = 0;
+
 foreach my $itemno (@data) {
     # check status before renewing issue
 	my ($renewokay,$error) = CanBookBeRenewed($borrowernumber,$itemno,$override_limit);
@@ -88,25 +91,32 @@ foreach my $itemno (@data) {
 		$failedrenews.="&failedrenew=$itemno";        
 	}
 }
-my $failedreturn = q{};
+my $failedreturn;
+my $failedmaterialsinfo;
 foreach my $barcode (@barcodes) {
-    # check status before renewing issue
-   my ( $returned, $messages, $issueinformation, $borrower ) = 
-    AddReturn($barcode, $branch, $exemptfine);
-   $failedreturn.="&failedreturn=$barcode" unless ($returned);
+	
+	my $item = GetItem( '', $barcode );
+        if ( $item->{'materials'} && $item->{'materials'} ne '' &&  !$op_materials ) {
+        	$failedmaterialsinfo.="&failedmaterialsinfo=$barcode";
+        } else {
+	
+		    # check status before renewing issue
+		    my ( $returned, $messages, $issueinformation, $borrower ) = 
+		    AddReturn($barcode, $branch, $exemptfine);
+		    $failedreturn.="&failedreturn=$barcode" unless ($returned);
+        }
 }
 
 #
 # redirection to the referrer page
 #
 if ($input->param('destination') eq "circ"){
-    $cardnumber = uri_escape($cardnumber);
     print $input->redirect(
-        '/cgi-bin/koha/circ/circulation.pl?findborrower='.$cardnumber.$failedrenews.$failedreturn
+        '/cgi-bin/koha/circ/circulation.pl?findborrower='.$cardnumber.$failedrenews.$failedreturn.$failedmaterialsinfo
     );
 }
 else {
     print $input->redirect(
-        '/cgi-bin/koha/members/moremember.pl?borrowernumber='.$borrowernumber.$failedrenews.$failedreturn
+        '/cgi-bin/koha/members/moremember.pl?borrowernumber='.$borrowernumber.$failedrenews.$failedreturn.$failedmaterialsinfo
     );
 }

@@ -1,0 +1,212 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Item Callnumber management</title>
+<!-- Progilone B10 -->
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script type="text/javascript">
+//<![CDATA[
+
+//]]>
+</script>
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="cat-search.inc" -->
+
+<div id="breadcrumbs">
+	<a href="/cgi-bin/koha/mainpage.pl">Home</a>
+	&rsaquo;
+	<a href="/cgi-bin/koha/admin/callnumbers.pl">Item Callnumber management</a>
+</div>
+
+<div id="doc3" class="yui-t2">
+	<div id="bd">
+		<div id="yui-main">
+			<div class="yui-b">
+				<!-- TMPL_IF NAME="list" -->
+					<div id="toolbar">
+						<ul class="toolbar">
+							<li><a href="/cgi-bin/koha/admin/callnumbers.pl?op=add_form">New Callnumber Rule</a></li>
+						</ul>
+					</div>
+
+					<h1>Item Callnumber management</h1>
+                        <div>
+                            <form method="post" action="callnumbers.pl">
+                                <input type="hidden" name="op" value="filter" />
+                                
+                                Filter by : 
+                                Branch 
+                                <select name="filterBranch" size="1">
+                                    <option value=""></option>
+                                    <!-- TMPL_LOOP NAME="branch_values_hash" -->
+                                        <option value="<!-- TMPL_VAR name="value" -->" <!-- TMPL_VAR name="selected" --> ><!-- TMPL_VAR name="label" --></option>
+                                    <!-- /TMPL_LOOP -->
+                                </select>
+                                Document type 
+                                <select name="filterType" size="1">
+                                    <option value=""></option>
+                                    <!-- TMPL_LOOP NAME="type_auth_values_hash" -->
+                                        <option value="<!-- TMPL_VAR name="value" -->" <!-- TMPL_VAR name="selected" --> ><!-- TMPL_VAR name="label" --></option>
+                                    <!-- /TMPL_LOOP -->
+                                </select>
+                                Rule 
+                                <select name="filterActive" size="1">
+                                    <option value="" <!-- TMPL_IF name="noFilterActive" -->selected="selected"<!-- /TMPL_IF --> >all</option>
+                                    <option value="active" <!-- TMPL_IF name="active" -->selected="selected"<!-- /TMPL_IF --> >active only</option>
+                                    <option value="inactive" <!-- TMPL_IF name="inactive" -->selected="selected"<!-- /TMPL_IF --> >inactive only</option>
+                                </select>
+                                <input type="submit" value="Ok" />
+                            </form>
+                        </div>
+						<table>
+							<tr>
+								<th>Rule number</th>
+								<th>Branch</th>
+								<th>Additional mention</th>
+								<th>Document type prefix</th>
+								<th>Format prefix</th>
+								<th>Sequence number</th>
+								<th>&nbsp;</th>
+								<th>&nbsp;</th>
+							</tr>
+							<!-- TMPL_LOOP NAME="loop" -->
+								<tr <!-- TMPL_IF NAME="__odd__" -->class="highlight"<!-- /TMPL_IF --> >
+									<td><!-- TMPL_VAR name="rulenumber" --></td>
+									<td><!-- TMPL_VAR name="branch" --></td>
+									<td><!-- TMPL_VAR name="mention" --></td>
+									<td><!-- TMPL_VAR name="type" --></td>
+									<td><!-- TMPL_VAR name="format" --></td>
+									<td>
+										<!-- TMPL_VAR name="number" -->
+										<div style="float: right;">
+											<a href="/cgi-bin/koha/admin/callnumbers.pl?op=edit_form&amp;rulenumber=<!-- TMPL_VAR name="rulenumber" escape="HTML" --><!-- TMPL_IF name="filterBranch" -->&amp;filterBranch=<!--TMPL_VAR name="filterBranch" --><!-- /TMPL_IF --><!-- TMPL_IF name="filterType" -->&amp;filterType=<!--TMPL_VAR name="filterType" --><!-- /TMPL_IF --><!-- TMPL_IF name="filterActive" -->&amp;filterActive=<!--TMPL_VAR name="filterActive" --><!-- /TMPL_IF -->">
+                                                Edit
+                                            </a>
+										</div>
+									</td>
+									<!-- TMPL_IF NAME="auto" -->
+										<td>
+                                            <a href="/cgi-bin/koha/admin/callnumbers.pl?op=auto_form&amp;rulenumber=<!-- TMPL_VAR name="rulenumber" escape="HTML" -->&amp;auto=0<!-- TMPL_IF name="filterBranch" -->&amp;filterBranch=<!--TMPL_VAR name="filterBranch" --><!-- /TMPL_IF --><!-- TMPL_IF name="filterType" -->&amp;filterType=<!--TMPL_VAR name="filterType" --><!-- /TMPL_IF --><!-- TMPL_IF name="filterActive" -->&amp;filterActive=<!--TMPL_VAR name="filterActive" --><!-- /TMPL_IF -->">
+                                                Disable the automatic generation
+                                            </a>
+                                        </td>
+									<!-- TMPL_ELSE -->
+										<td>
+                                            <a href="/cgi-bin/koha/admin/callnumbers.pl?op=auto_form&amp;rulenumber=<!-- TMPL_VAR name="rulenumber" escape="HTML" -->&amp;auto=1<!-- TMPL_IF name="filterBranch" -->&amp;filterBranch=<!--TMPL_VAR name="filterBranch" --><!-- /TMPL_IF --><!-- TMPL_IF name="filterType" -->&amp;filterType=<!--TMPL_VAR name="filterType" --><!-- /TMPL_IF --><!-- TMPL_IF name="filterActive" -->&amp;filterActive=<!--TMPL_VAR name="filterActive" --><!-- /TMPL_IF -->">
+                                                Activate the automatic generation
+                                            </a>
+                                        </td>
+									<!-- /TMPL_IF -->
+									<!-- TMPL_IF NAME="active" -->
+										<td>
+                                            <a href="/cgi-bin/koha/admin/callnumbers.pl?op=active_form&amp;rulenumber=<!-- TMPL_VAR name="rulenumber" escape="HTML" -->&amp;active=0<!-- TMPL_IF name="filterBranch" -->&amp;filterBranch=<!--TMPL_VAR name="filterBranch" --><!-- /TMPL_IF --><!-- TMPL_IF name="filterType" -->&amp;filterType=<!--TMPL_VAR name="filterType" --><!-- /TMPL_IF --><!-- TMPL_IF name="filterActive" -->&amp;filterActive=<!--TMPL_VAR name="filterActive" --><!-- /TMPL_IF -->">
+                                                Disable the itemcallnumber
+                                            </a>
+                                        </td>
+									<!-- TMPL_ELSE -->
+										<td>
+                                            <a href="/cgi-bin/koha/admin/callnumbers.pl?op=active_form&amp;rulenumber=<!-- TMPL_VAR name="rulenumber" escape="HTML" -->&amp;active=1<!-- TMPL_IF name="filterBranch" -->&amp;filterBranch=<!--TMPL_VAR name="filterBranch" --><!-- /TMPL_IF --><!-- TMPL_IF name="filterType" -->&amp;filterType=<!--TMPL_VAR name="filterType" --><!-- /TMPL_IF --><!-- TMPL_IF name="filterActive" -->&amp;filterActive=<!--TMPL_VAR name="filterActive" --><!-- /TMPL_IF -->">
+                                                Activate the itemcallnumber
+                                            </a>
+                                        </td>
+									<!-- /TMPL_IF -->
+								</tr>
+							<!-- /TMPL_LOOP -->
+						</table>
+
+						<!-- TMPL_IF NAME="previous" -->
+							<a href="<!-- TMPL_VAR NAME="previous" -->">&lt;&lt; Previous</a>
+						<!-- /TMPL_IF -->
+						<!-- TMPL_IF NAME="next" -->
+							<a href="<!-- TMPL_VAR NAME="next" -->">Next &gt;&gt;</a>
+						<!-- /TMPL_IF -->
+
+					<!-- TMPL_ELSE -->
+
+						<!-- TMPL_IF NAME="error" -->
+							<div class="dialog alert">
+								<!-- TMPL_VAR NAME="error_message" -->
+							</div>
+						<!-- /TMPL_IF -->
+
+						<!-- TMPL_IF NAME="add_form" -->
+							<h1>Add New Item Callnumber</h1>
+						<!-- /TMPL_IF -->
+						<!-- TMPL_IF NAME="edit_form" -->
+							<h1>Edit Item Callnumber <!-- TMPL_VAR name="rulenumber" --></h1>
+						<!-- /TMPL_IF -->
+				
+						<form method="post" action="callnumbers.pl">
+							<input type="hidden" name="rulenumber" value="<!-- TMPL_VAR name="rulenumber" -->" />
+							<input type="hidden" name="op" value="save" />
+							<input type="hidden" name="current_op" value="<!-- TMPL_VAR name="current_op" -->" />
+							<input type="hidden" name="current_number" value="<!-- TMPL_VAR name="current_number" -->" />
+                            
+                            <input type="hidden" name="filterBranch" value="<!-- TMPL_VAR name="filterBranch" -->" />
+                            <input type="hidden" name="filterType" value="<!-- TMPL_VAR name="filterType" -->" />
+                            <input type="hidden" name="filterActive" value="<!-- TMPL_VAR name="filterActive" -->" />
+
+							<table>
+								<tr>
+									<td>Branch</td>
+									<td>
+										<!-- TMPL_IF NAME="edit_form" -->
+											<input type="text" name="branch" value="<!-- TMPL_VAR name="branch" -->" readonly="readonly" />
+										<!-- TMPL_ELSE -->
+											<select name="branch" size="1">
+												<!-- TMPL_LOOP NAME="branch_data" -->
+													<option value="<!-- TMPL_VAR name="value" -->" <!-- TMPL_VAR name="selected" --> ><!-- TMPL_VAR name="label" --></option>
+												<!-- /TMPL_LOOP -->
+											</select>
+										<!-- /TMPL_IF -->
+									</td>
+								</tr>
+								<tr>
+									<td>Additional mention</td>
+									<td>
+										<input type="text" maxlength="3" name="mention" value="<!-- TMPL_VAR name='mention' -->" <!-- TMPL_IF NAME="edit_form" -->readonly="readonly"<!-- /TMPL_IF --> />
+									</td>
+								</tr>
+								<tr>
+									<td>Document type prefix</td>
+									<td>
+										<!-- TMPL_IF NAME="edit_form" -->
+											<input type="text" maxlength="3" name="type" value="<!-- TMPL_VAR name="type" -->" readonly="readonly" />
+										<!-- TMPL_ELSE -->
+											<select name="type" size="1">
+												<!-- TMPL_LOOP NAME="type_auth_values_hash" -->
+													<option value="<!-- TMPL_VAR name="value" -->" <!-- TMPL_VAR name="selected" --> ><!-- TMPL_VAR name="label" --></option>
+												<!-- /TMPL_LOOP -->
+											</select>
+										<!-- /TMPL_IF -->
+									</td>
+								</tr>
+								<tr>
+									<td>Format prefix</td>
+									<td>
+										<!-- TMPL_IF NAME="edit_form" -->
+											<input type="text" maxlength="3" name="format" value="<!-- TMPL_VAR name="format" -->" readonly="readonly" />
+										<!-- TMPL_ELSE -->
+											<select name="format" size="1" >
+												<option value = ""></option>
+												<!-- TMPL_LOOP NAME="format_auth_values_hash" -->
+													<option value="<!-- TMPL_VAR name="value" -->" <!-- TMPL_VAR name="selected" --> ><!-- TMPL_VAR name="label" --></option>
+												<!-- /TMPL_LOOP -->
+											</select>
+										<!-- /TMPL_IF -->
+									</td>
+								</tr>
+								<tr>
+									<td>Next sequence number</td>
+									<td><input type="text" maxlength="6" name="number" value="<!-- TMPL_VAR name="number" -->" /></td>
+								</tr>
+							</table>
+				
+							<input type="submit" value="OK" />
+						</form>
+
+					<!-- /TMPL_IF -->
+				</div>
+			</div>
+		</div>
+	<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

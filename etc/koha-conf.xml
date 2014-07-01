@@ -47,7 +47,7 @@ __PAZPAR2_TOGGLE_XML_POST__
                  inputcharset="utf-8"/>
          </backend>
        </retrieval>
-       <retrieval syntax="xml" name="dc">
+       <!-- <retrieval syntax="xml" name="dc">
          <backend syntax="usmarc" name="F">
            <marc inputformat="marc" outputformat="marcxml"
                  inputcharset="utf-8"/>
@@ -81,7 +81,7 @@ __PAZPAR2_TOGGLE_XML_POST__
                  inputcharset="utf-8"/>
            <xslt stylesheet="__INTRANET_TMPL_DIR__/prog/en/xslt/MARC21slimUtils.xsl"/>
          </backend>
-       </retrieval>
+       </retrieval> -->
      </retrievalinfo>
     <xi:include href="__KOHA_CONF_DIR__/zebradb/explain-biblios.xml"
                 xmlns:xi="http://www.w3.org/2001/XInclude">

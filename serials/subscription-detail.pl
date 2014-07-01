@@ -26,6 +26,9 @@ use C4::Output;
 use C4::Context;
 use Date::Calc qw/Today Day_of_Year Week_of_Year Add_Delta_Days/;
 use Carp;
+use C4::Callnumber::FreeAccessCallnumber;
+use C4::Callnumber::Callnumber;
+use C4::Jasper::JasperReport;
 
 my $query = new CGI;
 my $op = $query->param('op') || q{};
@@ -91,7 +94,49 @@ if ($op eq 'del') {
 		print "Content-Type: text/html\n\n<META HTTP-EQUIV=Refresh CONTENT=\"0; URL=serials-home.pl\"></html>";
 		exit;
     }
+} elsif ( $op eq 'print_callnumber') {
+	my $subscriptionid        = $query->param( 'subscriptionid' );
+	my $subscription_location = $query->param( 'subscription_location' );
+	my $serialseq             = $query->param( 'serialseq' );
+	
+	my @report_parameters_list = ();
+	my ( $report_directory, $report_name, $report_action ) = ( 'exports', 'cote', 'print' );
+	my @report_errors = ();
+	
+	my ( $magasin, $level, $geo, $cplt, $classif, $tome ) = GetCallnumberParts( '', $subscriptionid, $subscription_location, $serialseq );
+	push( @report_parameters_list, { itemcallnumber_type_magasin => $magasin, location => $level, bulac_geo => $geo, complement => $cplt, classification => $classif, tome => $tome } );
+	my ( $report_zipdirectory, $report_zipfile, @report_results ) = GenerateZip( $report_directory, $report_name, $report_action, \@report_parameters_list );
+	
+	for ( my $i = 0; $i < scalar( @report_parameters_list ); $i++ ) {
+		if ( $report_results[$i] == 0) {
+			push @report_errors, { report_name => $report_name, serial => $subscriptionid }; 
+		}
+	}
+	
+	if ( ( scalar @report_errors ) < ( scalar @report_parameters_list ) ) {
+		#At least one report to send
+		$template->param(
+		    report_zipdirectory => $report_zipdirectory,
+			report_zipfile      => $report_zipfile,
+			report_print        => $report_action eq 'print' ? 1 : 0,
+		);
+	}
+		    
+	if ( scalar @report_errors ) {
+		$template->param(
+			report_errors => \@report_errors,
+		);
+	}
 }
+
+my $callnumber = $subs->{ 'callnumber' };
+if ( $callnumber && IsSerialCallnumber( $callnumber ) ) {
+	$template->param(
+		pluginCallnumber => 1,
+	)
+}
+
+
 my $hasRouting = check_routing($subscriptionid);
 
 my ($user, $sessionID, $flags);
@@ -103,8 +148,8 @@ my ($user, $sessionID, $flags);
 for my $date qw(startdate enddate firstacquidate histstartdate histenddate){
     $$subs{$date}      = format_date($$subs{$date}) if $date && $$subs{$date};
 }
-$subs->{location} = GetKohaAuthorisedValueLib("LOC",$subs->{location});
 $subs->{abouttoexpire}  = abouttoexpire($subs->{subscriptionid});
+
 $template->param($subs);
 $template->param(biblionumber_for_new_subscription => $subs->{bibnum});
 my @irregular_issues = split /,/, $subs->{irregularity};
@@ -137,6 +182,7 @@ $template->param(
     intranetcolorstylesheet => C4::Context->preference('intranetcolorstylesheet'),
     irregular_issues => scalar @irregular_issues,
     default_bib_view => $default_bib_view,
+    location => $subs->{location}
     );
 
 output_html_with_http_headers $query, $cookie, $template->output;

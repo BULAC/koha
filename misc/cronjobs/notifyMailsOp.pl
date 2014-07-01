@@ -88,7 +88,7 @@ sub GetLetter{
 sub UpdateBorrowerDebarred{
 	my($borrowernumber) = @_;
 	my $dbh = C4::Context->dbh;
-    	my $sth=$dbh->prepare("UPDATE borrowers SET debarred='1' WHERE borrowernumber=?");
+    	my $sth=$dbh->prepare("UPDATE borrowers SET debarred='9999-12-31' WHERE borrowernumber=?"); # PROGILONE - A2
     	$sth->execute($borrowernumber);
     	$sth->finish;
     	return 1;

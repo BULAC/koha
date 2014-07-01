@@ -22,11 +22,13 @@ use warnings;
 
 use C4::Context;
 use C4::Branch;
+use C4::Utils::Constants; # MAN340
 use C4::Items;
 use C4::Koha;
 use C4::Biblio;
 use C4::Circulation;
 use C4::Reserves;
+use C4::AuthoritiesMarc; # PROGILONE - sept 2010 - C2
 use C4::Output qw//;
 use Encode;
 use XML::LibXML;
@@ -128,15 +130,45 @@ sub XSLTParse4Display {
     my $itemsxml  = buildKohaItemsNamespace($biblionumber);
     my $xmlrecord = $record->as_xml(C4::Context->preference('marcflavour'));
     my $sysxml = "<sysprefs>\n";
-    foreach my $syspref ( qw/OPACURLOpenInNewWindow DisplayOPACiconsXSLT URLLinkText viewISBD OPACBaseURL/ ) {
-        my $sp = C4::Context->preference( $syspref );
-        next unless defined($sp);
-        $sysxml .= "<syspref name=\"$syspref\">$sp</syspref>\n";
+    # PROGILONE - may 2010 - F21    
+    foreach my $syspref ( qw/OPACURLOpenInNewWindow DisplayOPACiconsXSLT URLLinkText OPACBranchTooltipDisplay viewISBD OPACBaseURL/ ) {
+        $sysxml .= "<syspref name=\"$syspref\">" .
+                   C4::Context->preference( $syspref ) .
+                   "</syspref>\n";
     }
     $sysxml .= "</sysprefs>\n";
-    $xmlrecord =~ s/\<\/record\>/$itemsxml$sysxml\<\/record\>/;
+
+    # PROGILONE - sept 2010 - C2
+    # add authorities
+    my $authxml = "<authorities>\n";
+    
+    foreach my $authfield ( $record->field("6.."), $record->field("7..") ) {
+        foreach my $authid ( $authfield->subfield('9') ) {
+            my $authrecord = GetAuthority($authid);
+            if ($authrecord) {
+                my $authtypecode = GetAuthTypeCode($authid);
+                my $auth = BuildSummary($authrecord, $authid, $authtypecode);
+                
+                # delete existing html
+                $auth =~ s/\<[^\>]*\>/ /g;
+                
+                #replace non authorized characters                
+                $auth =~ s/\&/\&amp\;/g;
+                $auth =~ s/\</\&lt\;/g;
+                $auth =~ s/\>/\&gt\;/g;
+                $auth =~ s/\'/\&apos\;/g;
+                $auth =~ s/\"/\&quot\;/g;
+        
+                $authxml .= "<authority an=\"$authid\">$auth</authority>\n";
+            }
+        }
+    }
+    $authxml .= "</authorities>\n";
+    # End PROGILONE
+
+    $xmlrecord =~ s/\<\/record\>/$itemsxml$sysxml$authxml\<\/record\>/;
     $xmlrecord =~ s/\& /\&amp\; /;
-    $xmlrecord=~ s/\&amp\;amp\; /\&amp\; /;
+    $xmlrecord =~ s/\&amp\;amp\; /\&amp\; /;
 
     my $parser = XML::LibXML->new();
     # don't die when you find &, >, etc
@@ -172,53 +204,78 @@ sub buildKohaItemsNamespace {
     my ($biblionumber) = @_;
     my @items = C4::Items::GetItemsInfo($biblionumber);
     my $branches = GetBranches();
-    my $itemtypes = GetItemTypes();
     my $xml = '';
     for my $item (@items) {
+        
         my $status;
-
         my ( $transfertwhen, $transfertfrom, $transfertto ) = C4::Circulation::GetTransfers($item->{itemnumber});
-
-	my ( $reservestatus, $reserveitem ) = C4::Reserves::CheckReserves($item->{itemnumber});
-
-        if ( $itemtypes->{ $item->{itype} }->{notforloan} || $item->{notforloan} || $item->{onloan} || $item->{wthdrawn} || $item->{itemlost} || $item->{damaged} || 
-             (defined $transfertwhen && $transfertwhen ne '') || $item->{itemnotforloan} || (defined $reservestatus && $reservestatus eq "Waiting") ){ 
-            if ( $item->{notforloan} < 0) {
-                $status = "On order";
-            } 
-            if ( $item->{itemnotforloan} > 0 || $item->{notforloan} > 0 || $itemtypes->{ $item->{itype} }->{notforloan} == 1 ) {
-                $status = "reference";
-            }
-            if ($item->{onloan}) {
-                $status = "Checked out";
-            }
+	    my ( $reservestatus, $reserveitem ) = C4::Reserves::CheckReserves($item->{itemnumber});
+        
+        # MAN340
+        if ( ($item->{notforloan_per_itemtype} && $item->{itemnotforloan} eq $AV_ETAT_LOAN) || 
+             ( $item->{itemnotforloan} ne $AV_ETAT_LOAN && 
+               $item->{itemnotforloan} ne $AV_ETAT_GENERIC && 
+               $item->{itemnotforloan} ne $AV_ETAT_STACK) || 
+             $item->{istate} || 
+             $item->{wthdrawn} || $item->{itemlost} || $item->{damaged} || 
+             (defined $transfertwhen && $transfertwhen ne '') ||  
+             (defined $reservestatus && $reservestatus eq "Waiting") ){ 
+            
             if ( $item->{wthdrawn}) {
                 $status = "Withdrawn";
             }
-            if ($item->{itemlost}) {
+            elsif ($item->{itemlost}) {
                 $status = "Lost";
             }
-            if ($item->{damaged}) {
+            elsif ($item->{damaged}) {
                 $status = "Damaged"; 
             }
-            if (defined $transfertwhen && $transfertwhen ne '') {
+            elsif (defined $transfertwhen && $transfertwhen ne '') {
                 $status = 'In transit';
             }
-            if (defined $reservestatus && $reservestatus eq "Waiting") {
+            elsif (defined $reservestatus && $reservestatus eq "Waiting") {
                 $status = 'Waiting';
+            }
+            elsif ( $item->{notforloan} < 0) {
+                $status = "On order";
+            } 
+            elsif (( $item->{notforloan_per_itemtype} && $item->{itemnotforloan} eq $AV_ETAT_LOAN ) || 
+                   ( $item->{itemnotforloan} ne $AV_ETAT_LOAN && 
+                     $item->{itemnotforloan} ne $AV_ETAT_GENERIC && 
+                     $item->{itemnotforloan} ne $AV_ETAT_STACK ) || 
+                   $item->{istate}) {
+                $status = "unavailable";
             }
         } else {
             $status = "available";
         }
-        my $homebranch = xml_escape($branches->{$item->{homebranch}}->{'branchname'});
-	    my $itemcallnumber = xml_escape($item->{itemcallnumber});
-        $xml.= "<item><homebranch>$homebranch</homebranch>".
-		"<status>$status</status>".
-		"<itemcallnumber>".$itemcallnumber."</itemcallnumber>"
-        . "</item>";
+        # END MAN 340
+
+        # PROGILONE - avril 2010 - F21
+        $xml .= "<item>";
+
+        my $branch_infos = $branches->{$item->{holdingbranch}}; # like biblio details normal view
+        $xml .= "<homebranch>".$branch_infos->{'branchname'}."</homebranch>";
+
+        foreach my $branch_info ( qw/branchaddress1 branchaddress2 branchaddress3 branchzip branchcity branchcountry branchphone branchnotes/ ) {
+                $xml .= '<'.$branch_info.'>'.$branch_infos->{$branch_info}.'</'.$branch_info.'>';
+        }
+        # End PROGILONE
+
+		$xml .= "<status>".$status."</status>";
+
+        my $itemcallnumber = $item->{itemcallnumber} || '';
+        $itemcallnumber =~ s/\&/\&amp\;/g;
+        $itemcallnumber =~ s/\</\&lt\;/g;
+        $itemcallnumber =~ s/\>/\&gt\;/g;
+        $itemcallnumber =~ s/\'/\&apos\;/g;
+        $itemcallnumber =~ s/\"/\&quot\;/g;
+		
+		$xml .= "<itemcallnumber>".$itemcallnumber."</itemcallnumber>";
+        $xml .=  "</item>";
 
     }
-    $xml = "<items xmlns=\"http://www.koha-community.org/items\">".$xml."</items>";
+    $xml = "<items xmlns=\"http://www.koha.org/items\">".$xml."</items>";
     return $xml;
 }
 

@@ -1,0 +1,490 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Reports <!-- TMPL_IF NAME="do_it" -->&rsaquo; Acquisitions Statistics &rsaquo; Results<!-- TMPL_ELSE -->&rsaquo; Acquisitions Statistics<!-- /TMPL_IF --></title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<!-- TMPL_INCLUDE NAME="calendar.inc" -->
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="cat-search.inc" -->
+
+<script type="text/javascript">
+    var input_available = {};
+    input_available['stackrequests'] = 
+        {'branch_input':    1, 'location_input': 1, 'desk_input':    1,
+         'spacetype_input': 1, 'category_input': 1, 'bsort2_input':  1, 
+         'bsort1_input':    1, 'bsort3_input':   1, 'ccode_input':   1, 
+         'itemtype_input':  1, 'language_input': 1, 'writing_input': 1, 
+         'country_input':   0};
+    input_available['reserves'] = 
+    	{'branch_input':    1, 'location_input': 1, 'desk_input':    0,
+         'spacetype_input': 0, 'category_input': 1, 'bsort2_input':  1, 
+         'bsort1_input':    1, 'bsort3_input':   1, 'ccode_input':   1, 
+         'itemtype_input':  1, 'language_input': 1, 'writing_input': 1, 
+         'country_input':   0};
+    input_available['issues'] = 
+		{'branch_input':    1, 'location_input': 1, 'desk_input':    0,
+         'spacetype_input': 0, 'category_input': 1, 'bsort2_input':  1, 
+         'bsort1_input':    1, 'bsort3_input':   1, 'ccode_input':   1, 
+         'itemtype_input':  1, 'language_input': 1, 'writing_input': 1, 
+         'country_input':   0};
+    input_available['most_requested_references'] = 
+		{'branch_input':    1, 'location_input': 0, 'desk_input':    0,
+     	 'spacetype_input': 0, 'category_input': 1, 'bsort2_input':  1, 
+     	 'bsort1_input':    1, 'bsort3_input':   1, 'ccode_input':   1, 
+     	 'itemtype_input':  1, 'language_input': 0, 'writing_input': 0, 
+     	 'country_input':   0};
+    input_available['most_reserved_references'] = 
+    	{'branch_input':    1, 'location_input': 0, 'desk_input':    0,
+         'spacetype_input': 0, 'category_input': 1, 'bsort2_input':  1, 
+       	 'bsort1_input':    1, 'bsort3_input':   1, 'ccode_input':   1, 
+         'itemtype_input':  1, 'language_input': 0, 'writing_input': 0, 
+         'country_input':   0};
+    input_available['most_stackrequest_references'] = 
+    	{'branch_input':    1, 'location_input': 0, 'desk_input':    0,
+         'spacetype_input': 0, 'category_input': 1, 'bsort2_input':  1, 
+         'bsort1_input':    1, 'bsort3_input':   1, 'ccode_input':   1, 
+         'itemtype_input':  1, 'language_input': 0, 'writing_input': 0, 
+         'country_input':   0};
+    input_available['most_issued_references'] = 
+    	{'branch_input':    1, 'location_input': 0, 'desk_input':    0,
+         'spacetype_input': 0, 'category_input': 1, 'bsort2_input':  1, 
+         'bsort1_input':    1, 'bsort3_input':   1, 'ccode_input':   1, 
+         'itemtype_input':  0, 'language_input': 0, 'writing_input': 0, 
+         'country_input':   0};
+    input_available['stackrequests_follow_by_issue'] = 
+		{'branch_input':    1, 'location_input': 0, 'desk_input':    0,
+         'spacetype_input': 0, 'category_input': 1, 'bsort2_input':  1, 
+         'bsort1_input':    1, 'bsort3_input':   0, 'ccode_input':   1, 
+         'itemtype_input':  0, 'language_input': 0, 'writing_input': 0, 
+         'country_input':   0};
+    input_available['stackrequests_on_absent'] = 
+		{'branch_input':    1, 'location_input': 0, 'desk_input':    0,
+     	 'spacetype_input': 0, 'category_input': 1, 'bsort2_input':  1, 
+     	 'bsort1_input':    1, 'bsort3_input':   0, 'ccode_input':   0, 
+     	 'itemtype_input':  1, 'language_input': 0, 'writing_input': 0, 
+     	 'country_input':   0};
+    input_available['average_time_stackrequests'] = 
+		{'branch_input':    1, 'location_input': 0, 'desk_input':    0,
+ 	 	 'spacetype_input': 0, 'category_input': 1, 'bsort2_input':  1, 
+ 	 	 'bsort1_input':    1, 'bsort3_input':   0, 'ccode_input':   1, 
+ 	 	 'itemtype_input':  1, 'language_input': 0, 'writing_input': 0, 
+ 	 	 'country_input':   0};
+    input_available['average_time_issues'] = 
+    	{'branch_input':    1, 'location_input': 0, 'desk_input':    0,
+    	 'spacetype_input': 0, 'category_input': 1, 'bsort2_input':  1, 
+    	 'bsort1_input':    1, 'bsort3_input':   0, 'ccode_input':   1, 
+    	 'itemtype_input':  1, 'language_input': 0, 'writing_input': 0, 
+    	 'country_input':   0};
+    input_available['average_time_reserves'] = 
+    	{'branch_input':    1, 'location_input': 0, 'desk_input':    0,
+    	 'spacetype_input': 0, 'category_input': 1, 'bsort2_input':  1, 
+    	 'bsort1_input':    1, 'bsort3_input':   1, 'ccode_input':   1, 
+    	 'itemtype_input':  1, 'language_input': 0, 'writing_input': 0, 
+    	 'country_input':   0};;
+    input_available['unsatisfied_stackrequests'] = 
+		{'branch_input':    1, 'location_input': 1, 'desk_input':    0,
+ 	 	 'spacetype_input': 0, 'category_input': 1, 'bsort2_input':  0, 
+ 	 	 'bsort1_input':    1, 'bsort3_input':   1, 'ccode_input':   1, 
+ 	 	 'itemtype_input':  1, 'language_input': 1, 'writing_input': 1, 
+ 	 	 'country_input':   0};
+    input_available['borrowers'] = 
+		{'branch_input':    1, 'location_input': 0, 'desk_input':    0,
+	 	 'spacetype_input': 0, 'category_input': 1, 'bsort2_input':  1, 
+	 	 'bsort1_input':    1, 'bsort3_input':   1, 'ccode_input':   1, 
+	 	 'itemtype_input':  0, 'language_input': 0, 'writing_input': 0, 
+	 	 'country_input':   1};
+    input_available['duplications'] = 
+		{'branch_input':    1, 'location_input': 0, 'desk_input':    0,
+ 	 	 'spacetype_input': 0, 'category_input': 1, 'bsort2_input':  1, 
+ 	 	 'bsort1_input':    1, 'bsort3_input':   0, 'ccode_input':   1, 
+	 	 'itemtype_input':  0, 'language_input': 1, 'writing_input': 1, 
+	 	 'country_input':   1};
+    input_available['spaces'] = 
+		{'branch_input':    1, 'location_input': 0, 'desk_input':    0,
+	 	 'spacetype_input': 1, 'category_input': 1, 'bsort2_input':  1, 
+ 		 'bsort1_input':    1, 'bsort3_input':   1, 'ccode_input':   1, 
+	 	 'itemtype_input':  1, 'language_input': 0, 'writing_input': 0, 
+ 		 'country_input':   0};
+	input_available['average_time_spaces'] = 
+		{'branch_input':    1, 'location_input': 0, 'desk_input':    0,
+	 	 'spacetype_input': 1, 'category_input': 1, 'bsort2_input':  1, 
+ 		 'bsort1_input':    1, 'bsort3_input':   1, 'ccode_input':   0, 
+	 	 'itemtype_input':  0, 'language_input': 0, 'writing_input': 0, 
+ 		 'country_input':   1};
+	input_available['temporary_items'] = 
+		{'branch_input':    1, 'location_input': 1, 'desk_input':    1,
+ 	 	 'spacetype_input': 1, 'category_input': 0, 'bsort2_input':  0,
+		 'bsort1_input':    0, 'bsort3_input':   0, 'ccode_input':   1, 
+ 	 	 'itemtype_input':  1, 'language_input': 1, 'writing_input': 1, 
+		 'country_input':   0};
+	  
+    function updateInputs(selected_input) {
+        var inputs = input_available[selected_input];
+        for (var input_id in inputs) {
+            if (inputs[input_id]) {
+                document.getElementById(input_id).style.display = '';
+            } else {
+                document.getElementById(input_id).style.display = 'none';
+                document.getElementById(input_id).children[1].value = '';
+            }
+        }
+    }
+    
+    $(document).ready(function() {
+        updateInputs(document.getElementById('select_report').value);
+    });
+</script>
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/reports/reports-home.pl">Reports</a> &rsaquo; Circulation Statistics </div>
+
+<div id="doc3" class="yui-t2">
+
+<div id="bd">
+<div id="yui-main">
+<div class="yui-b">
+
+	<!-- TMPL_INCLUDE NAME="jasper.inc" -->
+	
+	<!-- TMPL_IF NAME="input_error" -->
+    <div class="dialog alert">
+        <h3 class="important">There are errors in the input parameters :</h3>
+        <ul>
+        <!-- TMPL_LOOP NAME="input_error" -->
+            
+            <!-- TMPL_IF NAME="REPORT_EMPTY" -->
+                <li>You must select a report..</li>
+            <!-- /TMPL_IF -->
+            
+            <!-- TMPL_IF NAME="START_EMPTY" -->
+                <li>The start date can not be empty.</li>
+            <!-- /TMPL_IF -->
+            
+            <!-- TMPL_IF NAME="START_INVALID" -->
+                <li>The start date is not valid.</li>
+            <!-- /TMPL_IF -->
+            
+            <!-- TMPL_IF NAME="END_EMPTY" -->
+                <li>The end date can not be empty.</li>
+            <!-- /TMPL_IF -->
+            
+            <!-- TMPL_IF NAME="END_INVALID" -->
+                <li>The end date is not valid.</li>
+            <!-- /TMPL_IF -->
+
+        <!-- /TMPL_LOOP -->
+        </ul>
+    </div>
+    <!-- /TMPL_IF -->
+
+	<form method="post" action="/cgi-bin/koha/edition/circulation.pl">
+	
+		<fieldset class="rows">
+			<legend>Circulation type</legend>
+            <ol>
+                <li>
+                    <label for="report_name">Report to edit</label>
+					<select name="select_report" id="select_report" onChange="updateInputs(this.value);">
+						<option value="">None</option>
+						<option value="stackrequests" <!-- TMPL_IF NAME="stackrequests" -->selected="selected"<!-- /TMPL_IF -->>Stack requests</option>
+						<option value="reserves" <!-- TMPL_IF NAME="reserves" -->selected="selected"<!-- /TMPL_IF -->>Holds</option>
+						<option value="issues" <!-- TMPL_IF NAME="issues" -->selected="selected"<!-- /TMPL_IF -->>Issues</option>
+						<option value="most_reserved_references" <!-- TMPL_IF NAME="most_reserved_references" -->selected="selected"<!-- /TMPL_IF -->>Items with the most reserves</option>
+						<option value="most_stackrequest_references" <!-- TMPL_IF NAME="most_stackrequest_references" -->selected="selected"<!-- /TMPL_IF -->>Items with the most stack requests</option>
+						<option value="most_issued_references" <!-- TMPL_IF NAME="most_issued_references" -->selected="selected"<!-- /TMPL_IF -->>Items with the most issues</option>
+						<option value="stackrequests_follow_by_issue" <!-- TMPL_IF NAME="stackrequests_follow_by_issue" -->selected="selected"<!-- /TMPL_IF -->>Stack requests followed by issues</option>
+						<option value="stackrequests_on_absent" <!-- TMPL_IF NAME="stack_on_absent" -->selected="selected"<!-- /TMPL_IF -->>Stack request absent from the catalog</option>
+						<option value="average_time_stackrequests" <!-- TMPL_IF NAME="average_time_issues" -->selected="selected"<!-- /TMPL_IF -->>Average time of stack requests</option>
+						<option value="average_time_issues" <!-- TMPL_IF NAME="average_time_issues" -->selected="selected"<!-- /TMPL_IF -->>Average time of issues</option>
+						<option value="average_time_reserves" <!-- TMPL_IF NAME="average_time_reserves" -->selected="selected"<!-- /TMPL_IF -->>Average time of reserves</option>
+						<option value="unsatisfied_stackrequests" <!-- TMPL_IF NAME="unsatisfied_stackrequests" -->selected="selected"<!-- /TMPL_IF -->>Unsatisfied stack requests</option>
+						<option value="borrowers" <!-- TMPL_IF NAME="borrowers" -->selected="selected"<!-- /TMPL_IF -->>Borrowers</option>
+						<option value="duplications" <!-- TMPL_IF NAME="duplications" -->selected="selected"<!-- /TMPL_IF -->>Duplications</option>
+						<option value="spaces" <!-- TMPL_IF NAME="spaces" -->selected="selected"<!-- /TMPL_IF -->>Space bookings</option>
+						<option value="average_time_spaces" <!-- TMPL_IF NAME="average_time_spaces" -->selected="selected"<!-- /TMPL_IF -->>Average time of space bookings</option>
+						<option value="temporary_items" <!-- TMPL_IF NAME="temporary_items" -->selected="selected"<!-- /TMPL_IF -->>Temporary items</option>
+					</select>
+                </li>
+            </ol>
+		</fieldset>
+		
+		<fieldset class="rows">
+			<legend>Date</legend>
+			<ol>
+				<li>
+					<label for="start_date">Start date</label>
+					<input type="text" size="10" id="start_date" name="start_date" value="<!-- TMPL_VAR NAME="start_date" -->" />
+					<img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" border="0" id="openCalendarStartDate" style="cursor: pointer;" />
+					<script type="text/javascript">
+						//<![CDATA[
+							function validate1(date) {
+								var day = date.getDate();
+								var month = date.getMonth() + 1;
+								var year = date.getFullYear();
+								var weekDay = date.getDay();
+								var dayMonth = month + '/' + day;
+								var dateString = year + '/' + month + '/' + day;
+								var dateTo = document.getElementById('end_date').value.split("/");
+								var limitDate = new Date(dateTo[2], (dateTo[1] - 1), dateTo[0]);
+								if (date > limitDate) {
+									return true;
+								} else {
+									return false;
+								}
+							}
+
+							Calendar.setup(
+								{
+									inputField : "start_date",
+									ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
+									button : "openCalendarStartDate",
+									disableFunc : validate1,
+									dateStatusFunc : validate1
+								}
+							);
+						//]]>
+					</script>
+					<span class="hint"><!-- TMPL_INCLUDE NAME="date-format.inc" --></span>
+				</li>
+				
+				<li>
+					<label for="end_date">End date</label>
+					<input type="text" size="10" id="end_date" name="end_date" value="<!-- TMPL_VAR NAME="end_date" -->" />
+					<img src="<!-- TMPL_VAR Name="themelang" -->/lib/calendar/cal.gif" alt="Show Calendar" border="0" id="openCalendarEndDate" style="cursor: pointer;" />
+					<script type="text/javascript">
+						//<![CDATA[
+							function validate2(date) {
+									var day = date.getDate();
+									var month = date.getMonth() + 1;
+									var year = date.getFullYear();
+									var weekDay = date.getDay();
+									var dayMonth = month + '-' + day;
+									var dateString = year + '-' + month + '-' + day;
+									var dateFrom = document.getElementById('start_date').value.split("/");
+									var limitDate = new Date(dateFrom[2], (dateFrom[1] - 1), dateFrom[0]);
+									if (limitDate > date) {
+										return true;
+									} else {
+										return false;
+									}
+								}
+
+							Calendar.setup(
+									{
+										inputField : "end_date",
+										ifFormat : "<!-- TMPL_VAR NAME="DHTMLcalendar_dateformat" -->",
+										button : "openCalendarEndDate",
+										disableFunc : validate2,
+										dateStatusFunc : validate2
+									}
+								);
+						//]]>
+					</script>
+					<span class="hint"><!-- TMPL_INCLUDE NAME="date-format.inc" --></span>
+				</li>
+				
+				<li>
+					<label for="date_group">Group by</label>
+					<select name="date_group" id="date_group">
+						<option value="NONE" <!-- TMPL_IF NAME="date_group_NONE" -->selected="selected"<!-- /TMPL_IF -->>None</option>
+						<option value="DAILY" <!-- TMPL_IF NAME="date_group_DAILY" -->selected="selected"<!-- /TMPL_IF -->>Daily</option>
+						<option value="WEEKLY" <!-- TMPL_IF NAME="date_group_WEEKLY" -->selected="selected"<!-- /TMPL_IF -->>Week</option>
+						<option value="MONTHLY" <!-- TMPL_IF NAME="date_group_MONTHLY" -->selected="selected"<!-- /TMPL_IF -->>Month</option>
+						<option value="QUARTERLY" <!-- TMPL_IF NAME="date_group_QUARTERLY" -->selected="selected"<!-- /TMPL_IF -->>Quarter</option>
+						<option value="HALFYEARLY" <!-- TMPL_IF NAME="date_group_HALFYEARLY" -->selected="selected"<!-- /TMPL_IF -->>Half Year</option>
+						<option value="YEARLY" <!-- TMPL_IF NAME="date_group_YEARLY" -->selected="selected"<!-- /TMPL_IF -->>Year</option>
+					</select>
+				</li>
+				
+			</ol>
+		</fieldset>
+		
+		<fieldset class="rows">
+			<legend>Parameters</legend>
+			<ol>
+				<li id="branch_input">
+					<label for="branch">Branch</label>
+					<select name="branch" id="branch" size="1">
+                        <option value=""></option>
+                        <option value="*" <!-- TMPL_IF NAME="branch_all_selected" -->selected="selected"<!-- /TMPL_IF -->>All</option>
+						<!-- TMPL_LOOP NAME="branchloop" -->
+							<option value="<!-- TMPL_VAR name="value" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->>
+								<!-- TMPL_VAR name="branchname" -->
+							</option>
+						<!-- /TMPL_LOOP -->
+					</select>
+				</li>
+				<li id="location_input">
+					<label for="location">Location</label>
+					<select name="location" id="location" size="1">
+						<option value=""></option>
+						<option value="*" <!-- TMPL_IF NAME="location_all_selected" -->selected="selected"<!-- /TMPL_IF -->>All</option>
+						<!-- TMPL_LOOP NAME="locationloop" -->
+							<option value="<!-- TMPL_VAR NAME="authorised_value" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->>
+								<!-- TMPL_VAR NAME="lib" -->
+							</option>
+						<!-- /TMPL_LOOP  -->
+					</select>
+				</li>
+				<li id="desk_input">
+					<label for="desk">Desk</label>
+					<select name="desk" id="desk" size="1">
+						<option value=""></option>
+						<option value="*" <!-- TMPL_IF NAME="desk_all_selected" -->selected="selected"<!-- /TMPL_IF -->>All</option>
+						<!-- TMPL_LOOP NAME="deskloop" -->
+							<option value="<!-- TMPL_VAR NAME="deskcode" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->>
+								<!-- TMPL_VAR NAME="deskname" -->
+							</option>
+						<!-- /TMPL_LOOP  -->
+					</select>
+				</li>
+				<li id="spacetype_input">
+					<label for="spacetype">Space Type</label>
+					<select name="spacetype" id="spacetype" size="1">
+						<option value=""></option>
+						<option value="*" <!-- TMPL_IF NAME="spacetype_all_selected" -->selected="selected"<!-- /TMPL_IF -->>All</option>
+						<!-- TMPL_LOOP NAME="spacetypeloop" -->
+							<option value="<!-- TMPL_VAR NAME="spacetype_id" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->>
+								<!-- TMPL_VAR NAME="spacetype_name" -->
+							</option>
+						<!-- /TMPL_LOOP  -->
+					</select>
+				</li>
+				<li id="category_input">
+					<label for="category">Category</label>
+					<select name="category" id="category" size="1">
+						<option value=""></option>
+						<option value="*" <!-- TMPL_IF NAME="category_all_selected" -->selected="selected"<!-- /TMPL_IF -->>All</option>
+						<!-- TMPL_LOOP NAME="categoryloop" -->
+							<option value="<!-- TMPL_VAR NAME="categorycode" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->>
+								<!-- TMPL_VAR NAME="description" -->
+							</option>
+						<!-- /TMPL_LOOP  -->
+					</select>
+				</li>
+				<li id="bsort2_input">
+					<label for="bsort2">Sort 2</label>
+					<select name="bsort2" id="bsort2" size="1">
+						<option value=""></option>
+						<option value="*" <!-- TMPL_IF NAME="bsort2_all_selected" -->selected="selected"<!-- /TMPL_IF -->>All</option>
+						<!-- TMPL_LOOP NAME="bsort2loop" -->
+							<option value="<!-- TMPL_VAR NAME="authorised_value" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->>
+								<!-- TMPL_VAR NAME="lib" -->
+							</option>
+						<!-- /TMPL_LOOP  -->
+					</select>
+				</li>
+				<li id="bsort1_input">
+					<label for="bsort1">Sort 1</label>
+					<select name="bsort1" id="bsort1" size="1">
+						<option value=""></option>
+						<option value="*" <!-- TMPL_IF NAME="bsort1_all_selected" -->selected="selected"<!-- /TMPL_IF -->>All</option>
+						<!-- TMPL_LOOP NAME="bsort1loop" -->
+							<option value="<!-- TMPL_VAR NAME="authorised_value" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->>
+								<!-- TMPL_VAR NAME="lib" -->
+							</option>
+						<!-- /TMPL_LOOP  -->
+					</select>
+				</li>
+				<li id="bsort3_input">
+					<label for="bsort3">Sort 3</label>
+					<select name="bsort3" id="bsort3" size="1">
+						<option value=""></option>
+						<option value="*" <!-- TMPL_IF NAME="bsort3_all_selected" -->selected="selected"<!-- /TMPL_IF -->>All</option>
+						<!-- TMPL_LOOP NAME="bsort3loop" -->
+							<option value="<!-- TMPL_VAR NAME="authorised_value" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->>
+								<!-- TMPL_VAR NAME="lib" -->
+							</option>
+						<!-- /TMPL_LOOP  -->
+					</select>
+				</li>
+				<li id="ccode_input">
+					<label for="ccode">Collection code</label>
+					<select name="ccode" id="ccode" size="1">
+						<option value=""></option>
+						<option value="*" <!-- TMPL_IF NAME="ccode_all_selected" -->selected="selected"<!-- /TMPL_IF -->>All</option>
+						<!-- TMPL_LOOP NAME="ccodeloop" -->
+							<option value="<!-- TMPL_VAR NAME="authorised_value" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->>
+								<!-- TMPL_VAR NAME="lib" -->
+							</option>
+						<!-- /TMPL_LOOP  -->
+					</select>
+				</li>
+				<li id="itemtype_input">
+					<label for="itemtype">Item type</label>
+					<select name="itemtype" id="itemtype" size="1">
+						<option value=""></option>
+						<option value="*" <!-- TMPL_IF NAME="itemtype_all_selected" -->selected="selected"<!-- /TMPL_IF -->>All</option>
+						<!-- TMPL_LOOP NAME="itemtypeloop" -->
+							<option value="<!-- TMPL_VAR NAME="itemtype" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->>
+								<!-- TMPL_VAR NAME="description" -->
+							</option>
+						<!-- /TMPL_LOOP  -->
+					</select>
+				</li>
+				<li id="language_input">
+					<label for="language">Document language</label>
+					<select name="language" id="language" size="1">
+						<option value=""></option>
+						<option value="*" <!-- TMPL_IF NAME="language_all_selected" -->selected="selected"<!-- /TMPL_IF -->>All</option>
+						<!-- TMPL_LOOP NAME="languageloop" -->
+							<option value="<!-- TMPL_VAR NAME="authorised_value" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->>
+								<!-- TMPL_VAR NAME="lib" -->
+							</option>
+						<!-- /TMPL_LOOP  -->
+					</select>
+				</li>
+				<li id="writing_input">
+					<label for="writing">Writing</label>
+					<select name="writing" id="writing" size="1">
+						<option value=""></option>
+						<option value="*" <!-- TMPL_IF NAME="writing_all_selected" -->selected="selected"<!-- /TMPL_IF -->>All</option>
+						<!-- TMPL_LOOP NAME="writingloop" -->
+							<option value="<!-- TMPL_VAR NAME="authorised_value" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->>
+								<!-- TMPL_VAR NAME="lib" -->
+							</option>
+						<!-- /TMPL_LOOP  -->
+					</select>
+				</li>
+				<li id="country_input">
+					<label for="country">Country</label>
+					<select name="country" id="country" size="1">
+						<option value=""></option>
+						<option value="*" <!-- TMPL_IF NAME="country_all_selected" -->selected="selected"<!-- /TMPL_IF -->>All</option>
+						<!-- TMPL_LOOP NAME="countryloop" -->
+							<option value="<!-- TMPL_VAR NAME="authorised_value" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->>
+								<!-- TMPL_VAR NAME="lib" -->
+							</option>
+						<!-- /TMPL_LOOP  -->
+					</select>
+				</li>
+			</ol>
+		</fieldset>
+		
+		<fieldset class="rows">
+			<legend>Output</legend>
+			<ol>
+				<li>
+					<label for="exporttype">To a file of type:</label>
+					<select name="exporttype" id="exporttype" size="1">
+						<!-- TMPL_LOOP NAME="exporttypeloop" -->
+							<option value="<!-- TMPL_VAR NAME="value" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->><!-- TMPL_VAR NAME="label" --></option>
+						<!-- /TMPL_LOOP  -->
+					</select>
+				</li>
+			</ol>
+		</fieldset>
+
+		<fieldset class="action">
+			<input type="submit" value="Submit" />
+			<input type="hidden" name="op" value="export" />
+		</fieldset>
+
+	</form>
+	
+</div>
+</div>
+<div class="yui-b">
+<!-- TMPL_INCLUDE NAME="reports-menu.inc" -->
+</div>
+</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->
