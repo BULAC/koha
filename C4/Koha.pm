@@ -58,6 +58,7 @@ BEGIN {
 		&getitemtypeimagesrc
 		&getitemtypeimagelocation
 		&GetAuthorisedValues
+                &GetAuthorisedValuesMap
 		&GetAuthorisedValueCategories
                 &IsAuthorisedValueCategory
 		&GetKohaAuthorisedValues
@@ -1202,6 +1203,29 @@ sub GetAuthorisedValues {
     $cache->set_in_cache( $cache_key, \@results, { deepcopy => 1, expiry => 5 } );
     return \@results;
 }
+
+=head2 GetAuthorisedValuesMap
+
+Get a hash with authorised_value as key and lib as value
+param : category
+=cut
+
+sub GetAuthorisedValuesMap($) {
+    
+    my $category = shift;
+    my $ret;
+    
+    my $avs = GetAuthorisedValues($category);
+    foreach my $av (@$avs) {
+        my $code = $av->{'authorised_value'};
+        if (defined $code) {            
+            $ret->{"$code"} = $av->{'lib'};
+        }
+    }
+    
+    return $ret;
+}
+
 
 =head2 GetAuthorisedValueCategories
 

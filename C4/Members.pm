@@ -44,6 +44,8 @@ use Text::Unaccent qw( unac_string );
 use Koha::AuthUtils qw(hash_password);
 use Koha::Database;
 use Module::Load;
+use C4::Utils::Constants;
+
 if ( C4::Context->preference('NorwegianPatronDBEnable') && C4::Context->preference('NorwegianPatronDBEnable') == 1 ) {
     load Koha::NorwegianPatronDB, qw( NLUpdateHashedPIN NLEncryptPIN NLSync );
 }
@@ -141,6 +143,8 @@ BEGIN {
         &ethnicitycategories
         &fixup_cardnumber
         &checkcardnumber
+        &CheckBorrowerDebarred2
+        &LiftBorrowerDebarred2
     );
 }
 
@@ -1440,6 +1444,54 @@ sub checkcardnumber {
 
     return 0;
 }
+
+sub CheckBorrowerDebarred2 {
+        my ($borrowernumber) = @_;
+        
+        my $stacks = GetStacksOfBorrower($borrowernumber);
+    my $debarred_value = undef;
+    my $nb_overdue     = 0;
+    my $today          = C4::Dates->new();
+    
+    foreach my $stack (@$stacks) {
+        if ($stack->{'end_date'} and $stack->{'end_date'} lt $today->output('iso') and $stack->{'istate'} eq $ISTATE_ON_STACK) {
+            $debarred_value = '9999-12-31';
+            $nb_overdue++;
+        }
+    }
+    
+    if (defined $debarred_value) {
+            my $dbh = C4::Context->dbh;
+            my $query = "UPDATE borrowers SET debarred2 = ? WHERE borrowernumber = ?";
+            my $sth = $dbh->prepare($query);
+            $sth->execute($debarred_value, $borrowernumber);
+    }
+    
+    return ($debarred_value, $nb_overdue);
+}
+
+sub LiftBorrowerDebarred2 {
+    my ($borrowernumber) = @_;
+    
+    my $stacks = GetStacksOfBorrower($borrowernumber);
+    my $debarred_value = undef;
+    my $today       = C4::Dates->new();
+    
+    foreach my $stack (@$stacks) {
+        if ($stack->{'end_date'} and $stack->{'end_date'} lt $today->output('iso') and $stack->{'istate'} eq $ISTATE_ON_STACK) {
+            $debarred_value = '9999-12-31';
+            last;
+        }
+    }
+    
+    unless (defined $debarred_value) {
+        my $dbh = C4::Context->dbh;
+        my $query = "UPDATE borrowers SET debarred2 = ? WHERE borrowernumber = ?";
+        my $sth = $dbh->prepare($query);
+        $sth->execute($debarred_value, $borrowernumber);
+    }
+}
+
 
 =head2 get_cardnumber_length
 

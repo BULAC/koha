@@ -1,0 +1,79 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Circulation</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+
+<script language="JavaScript" type="text/javascript">
+    //<![CDATA[
+    function updateMissingInfo(sourceId, targetId, checkValue) {
+    	if (checkValue == document.getElementById(sourceId).value) {
+    		document.getElementById(targetId).hidden = false;
+        } else {
+        	document.getElementById(targetId).hidden = true;
+        }
+    }
+    //]]>
+</script>
+
+</head>
+<body onload="updateMissingInfo('materialsinfo', 'missingdescription', 'B');">
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="circ-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a> &rsaquo; Renew</div>
+    <div id="doc" class="yui-t7">
+        <div id="bd">
+            <div id="yui-main">
+                
+                <div class="dialog alert">
+                    
+                    <!-- TMPL_IF NAME="materials" -->
+                        <div class="problem">
+                            <p>The item <!-- TMPL_VAR NAME="item" --> has the following materials : <!-- TMPL_VAR NAME="materials" -->.</p>
+                        </div>
+                    <!-- /TMPL_IF -->
+                    
+                </div>
+                
+            
+            <!-- TMPL_IF NAME="materials" -->
+                <div class="yui-g">
+                    <div class="yui-u first">
+                        <form method="post" action="/cgi-bin/koha/stack/renew-cancel-stacks.pl" >
+                            <input type="hidden" name="barcode" value="<!-- TMPL_VAR NAME='barcode' -->" />
+                            <input type="hidden" name="op_materials" value="1" />
+                            <input type="hidden" name="destination" value="allop" />
+                            <input type="hidden" name="stack_renew" value="<!-- TMPL_VAR NAME='requestnumber' -->" />
+                            <input type="hidden" name="inp_barcode" value="<!-- TMPL_VAR NAME='requestnumber' -->" />
+                            <input type="hidden" name="stack_renew_checked" value="1" />
+                            <input type="hidden" name="store" value="<!--TMPL_VAR NAME='do_store' -->" />
+                                        
+                            <fieldset>
+                                <legend>Materials</legend>
+                                    <div>
+                                        <label for="materialsinfo" class="tip">Status of the materials: </label>
+                                        <select name="materialsinfo" id="materialsinfo" size="1" onchange="updateMissingInfo('materialsinfo', 'missingdescription', 'B');">
+				                            <!-- TMPL_LOOP NAME="materials_loop" -->
+				                                <option value="<!-- TMPL_VAR NAME="authorised_value" -->" <!-- TMPL_IF NAME="selected" -->selected="selected"<!-- /TMPL_IF -->>
+				                                    <!-- TMPL_VAR name="lib" -->
+				                                </option>
+				                            <!-- /TMPL_LOOP -->
+				                        </select>
+                                    </div>
+                                    <div id="missingdescription">
+                                        <label for="missinginfo" class="tip">Additional informations: </label>
+                                        <textarea cols="50" rows="5" id="missinginfo" name="missinginfo"><!-- TMPL_VAR NAME="missinginfo" --></textarea>
+                                    </div>
+                                    <div>
+                                        <br/>
+                                        <input type="submit" name="op" class="submit" value="Submit" />
+                                    </div>
+                            </fieldset>
+                        </form>
+                    </div>
+                </div>
+
+            <!-- /TMPL_IF -->
+            
+            </div>
+        </div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->

@@ -37,6 +37,12 @@ use Data::Dumper; # used as part of logging item record changes, not just for
 use Koha::DateUtils qw/dt_from_string/;
 
 use Koha::Database;
+# B011
+use C4::Utils::Constants;
+use C4::Stack::Search;
+#use C4::Jasper::JasperReport qw/GeneratePDF_Old/;
+use C4::Stack::Search;
+# END B011
 
 use vars qw($VERSION @ISA @EXPORT);
 
@@ -91,6 +97,20 @@ BEGIN {
         SearchItems
 
         PrepareItemrecordDisplay
+                
+        IsItemAvailable
+        
+        setItemOnLoan
+        setItemOnStack
+        setItemWaitStack
+        setItemWaitRenew
+        setItemOnStackRequest
+        setItemWaitReserve
+        setItemAvailable
+        setItemNotAvailable
+        
+        setItemWaitStack
+
 
     );
 }
@@ -3058,4 +3078,217 @@ sub PrepareItemrecordDisplay {
     };
 }
 
-1;
+### B011 Item state management ###
+
+##
+# Change item istate
+#
+# param : item id
+# param : new istate
+# param : desk code, will be erased if missing
+##
+sub _setItemStatus($$;$){
+    
+    # input args
+    my ($itemnumber, $new_state, $desk_code) = @_;
+    
+    # if no desk set, store undef
+    if ($desk_code && $desk_code eq 'NO_DESK_SET') {
+        undef $desk_code;
+    }
+    
+    # local vars
+    my $dbh = C4::Context->dbh;
+    
+    my $query = '
+        UPDATE items SET
+            istate = ?,
+            holdingdesk = ?
+        WHERE itemnumber = ?
+    ';
+    
+    my $sth = $dbh->prepare($query);
+    $sth->execute($new_state, $desk_code, $itemnumber);
+}
+
+##
+# Set item on loan
+#
+# param : item id
+##
+sub setItemOnLoan($) {
+    _setItemStatus(shift, $ISTATE_ON_LOAN);
+}
+
+##
+# Set item on stack
+#
+# param : item id
+##
+sub setItemOnStack($) {
+    _setItemStatus(shift, $ISTATE_ON_STACK);
+}
+
+##
+# Set item wait for stack
+#
+# param : item id
+# param : delivery desk code
+##
+sub setItemWaitStack($$) {
+    my ($itemnumber, $desk_code) = @_;
+    _setItemStatus($itemnumber, $ISTATE_WAIT_STACK, $desk_code);
+}
+
+##
+# Set item wait for stack
+#
+# param : item id
+# param : delivery desk code
+##
+sub setItemWaitRenew($$) {
+    my ($itemnumber, $desk_code) = @_;
+    _setItemStatus($itemnumber, $ISTATE_WAIT_RENEW, $desk_code);
+}
+
+##
+# Set item on stack
+#
+# param : item id
+##
+sub setItemOnStackRequest($) {
+    _setItemStatus(shift, $ISTATE_STACKREQ);
+}
+
+##
+# Set item waiting for reserve
+#
+# param : item id
+# param : desk code
+##
+sub setItemWaitReserve($$) {
+    my ($itemnumber, $desk_code) = @_;
+    _setItemStatus($itemnumber, $ISTATE_RES_GUARD, $desk_code);
+}
+
+##
+# Set item available
+#
+# param : item id
+##
+sub setItemAvailable($) {
+    _setItemStatus(shift, undef); # empty means available
+}
+
+##
+# Set item not available
+#
+# param : item id
+##
+sub setItemNotAvailable($) {
+    _setItemStatus(shift, $ISTATE_NOT_AVAIL);
+}
+
+##
+# Is item available
+#
+# param : item
+##
+sub IsItemAvailable($;$) {
+    my $item = shift;
+    my $ignore_istates = shift;
+    
+    my $istate = $item->{'istate'};
+    
+    if ( $istate && !(grep {$_ eq $istate} @{$ignore_istates}) ) {
+        return undef;
+    }
+    return 1;
+}
+
+##
+# Try to set item available
+# Note that item state is recomputed and may not be available
+#
+# param : itemnumber
+# param : item
+# param : desk code
+##
+sub CheckItemAvailability($$;$) {
+    
+    # input args
+    my ($itemnumber, $item, $desk_code) = @_;
+    
+    unless ($item) {
+        $item = GetItem($itemnumber);
+    } else {        
+        $itemnumber = $item->{'itemnumber'};
+    }
+    
+    # if desk is undefined, means that desk hasn't changed
+    unless ($desk_code) {
+        $desk_code = $item->{'holdingdesk'};
+    }
+    
+    # check that there is no issue on this item
+    my $dbh = C4::Context->dbh;
+    my $sth=$dbh->prepare("select * from issues i where i.itemnumber=?");
+    $sth->execute($itemnumber);
+
+    my $onloan=$sth->fetchrow;
+
+    unless ($onloan){
+        
+        my $request = GetCurrentStackByItemnumber($itemnumber);
+        unless ($request){
+	    
+            if (GetBlockingStackRequest($itemnumber)) {
+		if (GetBlockingStackRequest($itemnumber)) {
+		    
+		    # a blocking stack request exists
+		    setItemOnStackRequest($itemnumber);
+		    
+		} else {
+		    
+		    my ($resfound, $resrec) = C4::Reserves::CheckReserves($itemnumber, undef);
+		    if ($resfound) {
+			
+			# item is reserved
+			setItemWaitReserve($itemnumber, $desk_code);
+			# B11
+			GeneratePDF_Old(
+			    '/tmp/',
+			    'fiche_reservation'.$item->{'itemnumber'}.'.pdf',
+			    'fiche_reservation',
+			    { 
+				ITEMNUMBER     => $item->{itemnumber},
+				BORROWERNUMBER => '',
+			    }
+			    );
+		    } else {
+                        
+			# item.notforloan can be in itemnotforloan (then notforloan is from itemtype) or notforloan
+			my $nfl = ($item->{'itemnotforloan'}) ? $item->{'itemnotforloan'} : $item->{'notforloan'};
+			if ( defined $nfl && (
+				 $nfl eq $AV_ETAT_LOAN
+				 || $nfl eq $AV_ETAT_STACK
+				 || $nfl eq $AV_ETAT_GENERIC
+			     )) {
+			    # item is available for loan or for stack
+			    setItemAvailable($itemnumber);
+			    
+			} else {
+			    
+			    # item is not available 
+			    setItemNotAvailable($itemnumber);
+			}
+		    }
+		}
+	    }
+	}
+    }
+}
+### END B011 ###
+
+
+    1;

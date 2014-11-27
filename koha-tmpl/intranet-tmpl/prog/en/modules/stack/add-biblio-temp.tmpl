@@ -1,0 +1,166 @@
+<!-- TMPL_INCLUDE NAME="doc-head-open.inc" -->
+<title>Koha &rsaquo; Add temporary biblio and items</title>
+<!-- TMPL_INCLUDE NAME="doc-head-close.inc" -->
+<script type="text/javascript">
+//<![CDATA[
+    function Check(f) {
+        var _alertString="";
+        var alertString2;
+        if (f.title.value.length==0) {
+            _alertString += "\n- " + _("Title missing");
+        }
+        if (f.barcode.value.length==0) {
+            _alertString += "\n- " + _("Barcode missing");
+        }
+        if (f.checkboxmaterials.checked && f.materials.value.length==0) {
+            _alertString += "\n- " + _("Description materials missing");
+        }
+        
+        if (_alertString.length==0) {
+            f.submit();
+        } else {
+            alertString2  = _("Form not submitted because of the following problem(s)");
+            alertString2 += "\n------------------------------------------------------------------------------------\n";
+            alertString2 += _alertString;
+            alert(alertString2);
+        }
+    }
+    
+    function Modify(f) {
+        if (f.materials.value.length!=0) {
+            f.checkboxmaterials.checked=1;
+        } else {
+            f.checkboxmaterials.checked=0;
+        }
+    }
+    
+    function getPhysicalAdress(f) {
+
+        var xmlhttp = new XMLHttpRequest();
+        if ( typeof xmlhttp.overrideMimeType != 'undefined') {
+            xmlhttp.overrideMimeType('text/xml');
+        }
+
+        var url = '../stack/search-physical-adress.pl?callnumber=' + f.itemcallnumber.value;
+        xmlhttp.open('GET', url, false);
+        xmlhttp.send(null);
+
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+           f.physicaladress.value = xmlhttp.responseText;
+        }
+    }
+    
+//]]>
+</script>
+</head>
+<body>
+<!-- TMPL_INCLUDE NAME="header.inc" -->
+<!-- TMPL_INCLUDE NAME="cataloging-search.inc" -->
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; Cataloging</div>
+
+<div id="doc" class="yui-t2">
+
+   <div id="bd">
+    <div id="yui-main">
+
+<h2>Add temporary biblio and item</h2>
+    <!-- TMPL_IF Name="error" -->
+        <div class="dialog alert">
+            <!-- TMPL_IF NAME="BARCODE_ERROR" -->
+                <li>The barcode already exist. Please choose another barcode.</li>
+            <!-- /TMPL_IF -->
+        </div>
+    <!-- /TMPL_IF -->
+    
+    <form id="f" name="f" method="post" action="/cgi-bin/koha/stack/add-biblio-temp.pl">
+    
+    <input type="hidden" name="op" id="op" value="do_it" />
+    <input type="hidden" name="request_number" value="<!-- TMPL_VAR NAME='stackrequestnumber' -->" />
+    
+    <div class="yui-g">
+        <fieldset class="rows">
+            <legend>Biblio (temporary)</legend>
+            <ol>
+                <li>
+                    <label style="color: red;"><span>* </span>Title: </label>
+                    <input type="text" id="title"  name="title" value="<!-- TMPL_VAR NAME='stacktitre' -->" maxlength="255" size="67" />
+                </li>
+                <li>
+                    <label>Author: </label>
+                    <input type="text" id="author"  name="author" value="<!-- TMPL_VAR NAME='stackauthor' -->" maxlength="255" size="67" />
+                </li>
+                <li>
+                    <label>Publication Year: </label>
+                    <input type="text" id="publicationyear"  name="publicationyear" value="<!-- TMPL_VAR NAME='stackeditionyear' -->" size="10" />
+                </li>
+            </ol>
+         </fieldset>
+         <div id="cataloguing_additem_newitem">
+            <fieldset class="rows">
+            <ol>
+                <li><div class="subfield_line">
+                    <label>Number of unit: </label>
+                    <input type="text" id="unite" name="unite" value="<!-- TMPL_VAR NAME="unite" -->" maxlength="10" />
+                </div></li>
+                <li><div class="subfield_line">
+                    <label>Materials: </label>
+                    <input type="checkbox" id="checkboxmaterials" name="checkboxmaterials" value="<!-- TMPL_VAR NAME="checkboxmaterials" -->" />
+                </div></li>
+                <li><div class="subfield_line">
+                    <label>Materials description: </label>
+                    <input type="text" id="materials" name="materials" onChange="Modify(this.form)" maxlength="225" size="60" value="<!-- TMPL_VAR NAME="materials" -->" />
+                </div></li>
+                <li><div class="subfield_line">
+                    <label>Year: </label>
+                    <input type="text" id="year" name="year" value="<!-- TMPL_VAR NAME='stackyears' -->" size="10" />
+                </div></li>
+                <li><div class="subfield_line">
+                    <label>Volum: </label>
+                    <input type="text" id="volume" name="volume" value="<!-- TMPL_VAR NAME='stacknumbers' -->"  maxlength="10" size="10" />
+                </div></li>
+                <li><div class="subfield_line">
+                    <label>Number: </label>
+                    <input type="text" id="number" name="number" maxlength="10" size="10" value="<!-- TMPL_VAR NAME='number' -->" />
+                </div></li>
+                <li><div class="subfield_line">
+                    <label>Call number: </label>
+                    <input type="text" id="itemcallnumber" name="itemcallnumber" value="<!-- TMPL_VAR NAME='stackcallnumber' -->" />
+                </div></li>
+                <li><div class="subfield_line">
+                    <label for="adress">Physical Address:</label>
+                    <input id="physicaladress" type="text" name="physicaladress" readonly="readonly" value="<!-- TMPL_VAR NAME='physicaladress' -->" />
+                    <input type="button" value="Search" onclick="getPhysicalAdress(this.form)" />
+                </div></li>
+                <li><div class="subfield_line">
+                    <label style="color: red;"><span>* </span>Barcode: </label>
+                    <input type="text" id="barcode" name="barcode" maxlength="20" size="20" value="<!-- TMPL_VAR NAME='barcode' -->" />
+                </div></li>
+                <li><div class="subfield_line">
+                <label for="selectItype">Item type:</label><!-- TMPL_VAR name="itype" -->
+                <input type="hidden" name="selectItype" value="<!-- TMPL_VAR NAME='selectItype' -->" />
+                </div></li>
+                <li><div class="subfield_line">
+                    <label>Nature: </label>
+                    <select name="temporary">
+                        <option value="1" selected="selected">Temporary</option>
+                    </select>
+                </div></li>
+            </ol>
+            </fieldset>
+        </div>
+     </div>
+    
+    <fieldset class="action">
+        <input type="submit" class="submit" value="Add" onclick="Check(this.form); return false;" />
+    </fieldset>
+    
+    <!-- TMPL_LOOP Name="inputloop" -->
+        <input type="hidden" name="retrieval-<!-- TMPL_VAR Name="counter" -->" value="<!-- TMPL_VAR Name="request_number" -->" />
+    <!-- /TMPL_LOOP -->
+    
+    </form>
+    
+</div>
+</div>
+<!-- TMPL_INCLUDE NAME="intranet-bottom.inc" -->
