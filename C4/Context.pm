@@ -1070,7 +1070,8 @@ sub userenv {
   C4::Context->set_userenv($usernum, $userid, $usercnum,
                            $userfirstname, $usersurname,
                            $userbranch, $branchname, $userflags,
-                           $emailaddress, $branchprinter, $persona);
+                           $emailaddress, $branchprinter, $persona,
+                           $desk, $deskcode);
 
 Establish a hash of user environment variables.
 
@@ -1081,7 +1082,7 @@ set_userenv is called in Auth.pm
 #'
 sub set_userenv {
     shift @_;
-    my ($usernum, $userid, $usercnum, $userfirstname, $usersurname, $userbranch, $branchname, $userflags, $emailaddress, $branchprinter, $persona, $shibboleth)=
+    my ($usernum, $userid, $usercnum, $userfirstname, $usersurname, $userbranch, $branchname, $userflags, $emailaddress, $branchprinter, $persona, $shibboleth, $deskcode, $deskname)=
     map { Encode::is_utf8( $_ ) ? $_ : Encode::decode('UTF-8', $_) } # CGI::Session doesn't handle utf-8, so we decode it here
     @_;
     my $var=$context->{"activeuser"} || '';
@@ -1098,6 +1099,8 @@ sub set_userenv {
         "emailaddress"     => $emailaddress,
         "branchprinter"    => $branchprinter,
         "persona"    => $persona,
+	"deskcode"   => $deskcode,
+	"deskname"   => $deskname,
         "shibboleth" => $shibboleth,
     };
     $context->{userenv}->{$var} = $cell;

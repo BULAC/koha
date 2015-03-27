@@ -30,6 +30,7 @@ use C4::Context;
 use C4::Templates;    # to get the template
 use C4::Languages;
 use C4::Branch;       # GetBranches
+use C4::Desks;
 use C4::Search::History;
 use Koha;
 use Koha::AuthUtils qw(hash_password);
@@ -431,6 +432,7 @@ sub get_template_and_user {
             IntranetmainUserblock                                                      => C4::Context->preference("IntranetmainUserblock"),
             LibraryName                                                                => C4::Context->preference("LibraryName"),
             LoginBranchname                                                            => ( C4::Context->userenv ? C4::Context->userenv->{"branchname"} : undef ),
+            LoginDeskname                                                              => ( C4::Context->userenv ? C4::Context->userenv->{"deskname"} : undef ),
             advancedMARCEditor                                                         => C4::Context->preference("advancedMARCEditor"),
             canreservefromotherbranches                                                => C4::Context->preference('canreservefromotherbranches'),
             intranetcolorstylesheet                                                    => C4::Context->preference("intranetcolorstylesheet"),
@@ -451,7 +453,22 @@ sub get_template_and_user {
             UseKohaPlugins                                                             => C4::Context->preference('UseKohaPlugins'),
             UseCourseReserves                                                          => C4::Context->preference("UseCourseReserves"),
             useDischarge                                                               => C4::Context->preference('useDischarge'),
-        );
+                        );
+        if ( C4::Context->userenv ? C4::Context->userenv->{"branch"} : undef) {
+            my $desksaref = GetDesks(C4::Context->userenv->{"branch"});
+            if ($#$desksaref > -1) {
+                $template->param(
+                                 LoginDeskcode => ( C4::Context->userenv->{"deskcode"} ),
+                                 LoginDeskname => ( C4::Context->userenv->{"deskname"} ),
+                                 HasDesk       => (1),
+                                );
+            }
+            else {
+                $template->param(
+                                 HasDesk       => ( undef ),
+                                );
+            }
+        }
     }
     else {
         warn "template type should be OPAC, here it is=[" . $in->{'type'} . "]" unless ( $in->{'type'} eq 'opac' );
@@ -501,6 +518,7 @@ sub get_template_and_user {
             LibraryName                           => "" . C4::Context->preference("LibraryName"),
             LibraryNameTitle                      => "" . $LibraryNameTitle,
             LoginBranchname                       => C4::Context->userenv ? C4::Context->userenv->{"branchname"} : "",
+            Logindeskname                         => C4::Context->userenv ? C4::Context->userenv->{"deskname"} : "",
             OPACAmazonCoverImages                 => C4::Context->preference("OPACAmazonCoverImages"),
             OPACFRBRizeEditions                   => C4::Context->preference("OPACFRBRizeEditions"),
             OpacHighlightedWords                  => C4::Context->preference("OpacHighlightedWords"),
@@ -789,7 +807,8 @@ sub checkauth {
                 $session->param('surname'),      $session->param('branch'),
                 $session->param('branchname'),   $session->param('flags'),
                 $session->param('emailaddress'), $session->param('branchprinter'),
-                $session->param('persona'),      $session->param('shibboleth')
+                $session->param('persona'),      $session->param('shibboleth'),
+                $session->param('deskcode'),     $session->param('deskname')
             );
             C4::Context::set_shelves_userenv( 'bar', $session->param('barshelves') );
             C4::Context::set_shelves_userenv( 'pub', $session->param('pubshelves') );
@@ -1015,7 +1034,8 @@ sub checkauth {
                     C4::Context->_unset_userenv($sessionID);
                 }
                 my ( $borrowernumber, $firstname, $surname, $userflags,
-                    $branchcode, $branchname, $branchprinter, $emailaddress );
+                     $branchcode, $branchname, $branchprinter, $emailaddress,
+                     $deskcode, $deskname);
 
                 if ( $return == 1 ) {
                     my $select = "
@@ -1091,6 +1111,8 @@ sub checkauth {
                     $session->param( 'surname',      $surname );
                     $session->param( 'branch',       $branchcode );
                     $session->param( 'branchname',   $branchname );
+                    $session->param( 'deskcode',     $deskcode );
+                    $session->param( 'deskname',     $deskname );
                     $session->param( 'flags',        $userflags );
                     $session->param( 'emailaddress', $emailaddress );
                     $session->param( 'ip',           $session->remote_addr() );
@@ -1109,6 +1131,8 @@ sub checkauth {
                     $session->param( 'surname',      C4::Context->config('user') );
                     $session->param( 'branch',       'NO_LIBRARY_SET' );
                     $session->param( 'branchname',   'NO_LIBRARY_SET' );
+                    $session->param( 'deskcode',     'NO_DESK_SET' );
+                    $session->param( 'deskname',     'NO_DESK_SET' );
                     $session->param( 'flags',        1 );
                     $session->param( 'emailaddress', C4::Context->preference('KohaAdminEmailAddress') );
                     $session->param( 'ip',           $session->remote_addr() );
@@ -1123,7 +1147,8 @@ sub checkauth {
                     $session->param('surname'),      $session->param('branch'),
                     $session->param('branchname'),   $session->param('flags'),
                     $session->param('emailaddress'), $session->param('branchprinter'),
-                    $session->param('persona'),      $session->param('shibboleth')
+                    $session->param('persona'),      $session->param('shibboleth'),
+                    $session->param('deskcode'),     $session->param('deskname')
                 );
 
             }
@@ -1373,7 +1398,9 @@ sub check_api_auth {
                 $session->param('cardnumber'),   $session->param('firstname'),
                 $session->param('surname'),      $session->param('branch'),
                 $session->param('branchname'),   $session->param('flags'),
-                $session->param('emailaddress'), $session->param('branchprinter')
+                $session->param('emailaddress'), $session->param('branchprinter'),
+                $session->param('persona'),      $session->param('shibboleth'),
+                $session->param('deskcode'),     $session->param('deskname')
             );
 
             my $ip       = $session->param('ip');
@@ -1460,7 +1487,8 @@ sub check_api_auth {
                 my (
                     $borrowernumber, $firstname,  $surname,
                     $userflags,      $branchcode, $branchname,
-                    $branchprinter,  $emailaddress
+                    $branchprinter,  $emailaddress, $deskcode,
+                    $deskname
                 );
                 my $sth =
                   $dbh->prepare(
@@ -1521,6 +1549,8 @@ sub check_api_auth {
                 $session->param( 'surname',      $surname );
                 $session->param( 'branch',       $branchcode );
                 $session->param( 'branchname',   $branchname );
+                $session->param( 'deskcode',     $deskcode );
+                $session->param( 'deskname',     $deskname );
                 $session->param( 'flags',        $userflags );
                 $session->param( 'emailaddress', $emailaddress );
                 $session->param( 'ip',           $session->remote_addr() );
@@ -1535,6 +1565,8 @@ sub check_api_auth {
                 $session->param( 'surname',      C4::Context->config('user') );
                 $session->param( 'branch',       'NO_LIBRARY_SET' );
                 $session->param( 'branchname',   'NO_LIBRARY_SET' );
+                $session->param( 'deskcode',     'NO_DESK_SET' );
+                $session->param( 'deskname',     'NO_DESK_SET' );
                 $session->param( 'flags',        1 );
                 $session->param( 'emailaddress', C4::Context->preference('KohaAdminEmailAddress') );
                 $session->param( 'ip',           $session->remote_addr() );
@@ -1545,7 +1577,9 @@ sub check_api_auth {
                 $session->param('cardnumber'),   $session->param('firstname'),
                 $session->param('surname'),      $session->param('branch'),
                 $session->param('branchname'),   $session->param('flags'),
-                $session->param('emailaddress'), $session->param('branchprinter')
+                $session->param('emailaddress'), $session->param('branchprinter'),
+                $session->param('persona'),      $session->param('shibboleth'),
+                $session->param('deskcode'),     $session->param('deskname'),
             );
             return ( "ok", $cookie, $sessionID );
         } else {
@@ -1626,7 +1660,9 @@ sub check_cookie_auth {
             $session->param('cardnumber'),   $session->param('firstname'),
             $session->param('surname'),      $session->param('branch'),
             $session->param('branchname'),   $session->param('flags'),
-            $session->param('emailaddress'), $session->param('branchprinter')
+            $session->param('emailaddress'), $session->param('branchprinter'),
+            $session->param('persona'),      $session->param('shibboleth'),
+            $session->param('deskcode'),     $session->param('deskname'),
         );
 
         my $ip       = $session->param('ip');

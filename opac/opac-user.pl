@@ -34,6 +34,7 @@ use C4::Biblio;
 use C4::Items;
 use C4::Letters;
 use C4::Branch; # GetBranches
+use C4::Desks;
 use Koha::DateUtils;
 use Koha::Borrower::Debarments qw(IsDebarred);
 
@@ -321,6 +322,12 @@ foreach my $res (@reserves) {
             $res->{'wbrcode'} = $res->{'branchcode'};
             $res->{'itemnumber'}    = $res->{'itemnumber'};
             $res->{'wbrname'} = $branches->{$res->{'branchcode'}}->{'branchname'};
+            if ($res->{'deskcode'}) {
+                my $desk = GetDesk($res->{'deskcode'});
+                if ($desk) {
+                    $res->{'wdkname'} = $desk->{'deskname'};
+                }
+            }
             if($res->{'holdingbranch'} eq $res->{'wbrcode'}){
                 $res->{'atdestination'} = 1;
             }

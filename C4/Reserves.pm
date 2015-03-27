@@ -849,7 +849,7 @@ sub GetReservesForBranch {
     my $dbh = C4::Context->dbh;
 
     my $query = "
-        SELECT reserve_id,borrowernumber,reservedate,itemnumber,waitingdate
+        SELECT reserve_id,borrowernumber,reservedate,itemnumber,waitingdate, deskcode
         FROM   reserves 
         WHERE   priority='0'
         AND found='W'
@@ -1359,7 +1359,7 @@ sub ModReserveStatus {
 
 =head2 ModReserveAffect
 
-  &ModReserveAffect($itemnumber,$borrowernumber,$diffBranchSend);
+  &ModReserveAffect($itemnumber,$borrowernumber,$diffBranchSend, $deskcode);
 
 This function affect an item and a status for a given reserve
 The itemnumber parameter is used to find the biblionumber.
@@ -1373,7 +1373,7 @@ take care of the waiting status
 =cut
 
 sub ModReserveAffect {
-    my ( $itemnumber, $borrowernumber,$transferToDo ) = @_;
+    my ( $itemnumber, $borrowernumber,$transferToDo, $deskcode ) = @_;
     my $dbh = C4::Context->dbh;
 
     # we want to attach $itemnumber to $borrowernumber, find the biblionumber
@@ -1404,6 +1404,19 @@ sub ModReserveAffect {
           AND biblionumber = ?
     ";
     }
+    elsif ($deskcode) {
+        # add deskcode with waiting
+        $query = "
+            UPDATE reserves
+            SET     priority = 0,
+                    found = 'W',
+                    waitingdate = NOW(),
+                    deskcode = '$deskcode',
+                    itemnumber = ?
+            WHERE borrowernumber = ?
+              AND biblionumber = ?
+        ";
+    }
     else {
     # affect the reserve to Waiting as well.
         $query = "
@@ -1411,6 +1424,7 @@ sub ModReserveAffect {
             SET     priority = 0,
                     found = 'W',
                     waitingdate = NOW(),
+                    deskcode = NULL,
                     itemnumber = ?
             WHERE borrowernumber = ?
               AND biblionumber = ?

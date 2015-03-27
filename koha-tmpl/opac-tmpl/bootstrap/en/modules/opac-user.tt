@@ -563,7 +563,7 @@
                                                 [% IF ( RESERVE.wait ) %]
                                                     [% IF ( RESERVE.atdestination ) %]
                                                         [% IF ( RESERVE.found ) %]
-                                                            Item waiting at <b> [% RESERVE.wbrname %]</b>[% IF ( RESERVE.waitingdate ) %] since [% RESERVE.waitingdate | $KohaDates %][% END %]
+                                                            Item waiting at <b> [% RESERVE.wbrname %]</b>[% IF (RESERVE.wdkname) %], [% RESERVE.wdkname %][% END %][% IF ( RESERVE.waitingdate ) %], since [% RESERVE.waitingdate | $KohaDates %][% END %]
                                                             <input type="hidden" name="pickup" value="[% RESERVE.wbrcd %]" />
                                                         [% ELSE %]
                                                             Item waiting to be pulled from <b> [% RESERVE.wbrname %]</b>

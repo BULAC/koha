@@ -24,6 +24,7 @@ use CGI qw ( -utf8 );
 use C4::Context;
 use C4::Output;
 use C4::Branch; # GetBranchName
+use C4::Desks;
 use C4::Auth;
 use C4::Dates qw/format_date/;
 use C4::Circulation;
@@ -94,18 +95,26 @@ foreach my $num (@getreserves) {
     my $itemnumber = $num->{'itemnumber'};
     my $gettitle     = GetBiblioFromItemNumber( $itemnumber );
     my $borrowernum = $num->{'borrowernumber'};
+    my $deskcode = $num->{'deskcode'};
+    my $desk = GetDesk($deskcode);
+    my $deskname;
+    if ($desk) {
+        $deskname = $desk->{'deskname'};
+    }
     my $holdingbranch = $gettitle->{'holdingbranch'};
     my $homebranch = $gettitle->{'homebranch'};
 
     my %getreserv = (
         itemnumber => $itemnumber,
         borrowernum => $borrowernum,
+        deskname => $deskname,
     );
 
     # fix up item type for display
     $gettitle->{'itemtype'} = C4::Context->preference('item-level_itypes') ? $gettitle->{'itype'} : $gettitle->{'itemtype'};
     my $getborrower = GetMember(borrowernumber => $num->{'borrowernumber'});
     my $itemtypeinfo = getitemtypeinfo( $gettitle->{'itemtype'} );  # using the fixed up itype/itemtype
+
     $getreserv{'waitingdate'} = $num->{'waitingdate'};
     my ( $waiting_year, $waiting_month, $waiting_day ) = split (/-/, $num->{'waitingdate'});
     ( $waiting_year, $waiting_month, $waiting_day ) =

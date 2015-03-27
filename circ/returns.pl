@@ -146,10 +146,13 @@ if ( $query->param('resbarcode') ) {
     my $iteminfo   = GetBiblioFromItemNumber($item);
     # fix up item type for display
     $iteminfo->{'itemtype'} = C4::Context->preference('item-level_itypes') ? $iteminfo->{'itype'} : $iteminfo->{'itemtype'};
+
     my $diffBranchSend = ($userenv_branch ne $diffBranchReturned) ? $diffBranchReturned : undef;
-# diffBranchSend tells ModReserveAffect whether document is expected in this library or not,
-# i.e., whether to apply waiting status
-    ModReserveAffect( $item, $borrowernumber, $diffBranchSend);
+    # diffBranchSend tells ModReserveAffect whether document is expected in this library or not,
+    # i.e., whether to apply waiting status
+    my $deskcode = C4::Context->userenv->{"deskcode"} || undef;
+    ModReserveAffect( $item, $borrowernumber, $diffBranchSend, $deskcode);
+
 #   check if we have other reserves for this document, if we have a return send the message of transfer
     my ( $messages, $nextreservinfo ) = GetOtherReserves($item);
 

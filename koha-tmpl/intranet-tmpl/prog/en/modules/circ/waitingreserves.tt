@@ -82,6 +82,9 @@
                     <th class="anti-the">Title</th>
                     <th>Patron</th>
                     <th>Location</th>
+		    [% IF HasDesk %]
+                    <th>Desk</th>
+		    [% END %]
                     <th>Copy number</th>
                     <th>Enumeration</th>
                     <th>Action</th>
@@ -101,6 +104,9 @@
                         [% reserveloo.borrowermail %]</a>[% END %]
                     </td>
                     <td>[% Branches.GetName( reserveloo.homebranch ) %]<br />[% reserveloo.itemcallnumber %]</td>
+		    [% IF HasDesk %]
+                    <td>[% reserveloo.deskname %]</td>
+		    [% END %]
                     <td>[% reserveloo.copynumber %]</td>
                     <td>[% reserveloo.enumchron %]</td>
                     <td>

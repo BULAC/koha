@@ -455,7 +455,6 @@ CREATE TABLE `branchtransfers` ( -- information for items that are in transit be
   CONSTRAINT `branchtransfers_ibfk_3` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-
 --
 -- Table structure for table `browser`
 --
@@ -963,6 +962,21 @@ CREATE TABLE `deleteditems` (
   KEY `delhomebranch` (`homebranch`),
   KEY `delholdingbranch` (`holdingbranch`),
   KEY `itype_idx` (`itype`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Table structure for table `desks`
+--
+
+DROP TABLE IF EXISTS `desks`;
+CREATE TABLE `desks` (
+  `deskcode` varchar(10) NOT NULL,         -- desk id
+  `branchcode` varchar(10) NOT NULL,       -- branch id the desk is attached to
+  `deskname` varchar(80) NOT NULL,         -- name used for OPAC or intranet printing
+  `deskdescription` varchar(300) NOT NULL, -- longer description of the desk
+  PRIMARY KEY (`deskcode`),
+  KEY `fk_desks_branchcode` (`branchcode`),
+  CONSTRAINT `fk_desks_branchcode` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
@@ -1663,6 +1677,7 @@ CREATE TABLE `old_reserves` ( -- this table holds all holds/reserves that have b
   `biblionumber` int(11) default NULL, -- foreign key from the biblio table defining which bib record this hold is on
   `constrainttype` varchar(1) default NULL,
   `branchcode` varchar(10) default NULL, -- foreign key from the branches table defining which branch the patron wishes to pick this hold up at
+  `deskcode` varchar(10) default NULL, -- foreign key from the desks table defining which desk the patron may pick this hold up from
   `notificationdate` date default NULL, -- currently unused
   `reminderdate` date default NULL, -- currently unused
   `cancellationdate` date default NULL, -- the date this hold was cancelled
@@ -1681,12 +1696,14 @@ CREATE TABLE `old_reserves` ( -- this table holds all holds/reserves that have b
   KEY `old_reserves_biblionumber` (`biblionumber`),
   KEY `old_reserves_itemnumber` (`itemnumber`),
   KEY `old_reserves_branchcode` (`branchcode`),
+  KEY `old_reserves_deskcode` (`deskcode`),
   CONSTRAINT `old_reserves_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`)
     ON DELETE SET NULL ON UPDATE SET NULL,
   CONSTRAINT `old_reserves_ibfk_2` FOREIGN KEY (`biblionumber`) REFERENCES `biblio` (`biblionumber`)
     ON DELETE SET NULL ON UPDATE SET NULL,
   CONSTRAINT `old_reserves_ibfk_3` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`)
-    ON DELETE SET NULL ON UPDATE SET NULL
+    ON DELETE SET NULL ON UPDATE SET NULL,
+  CONSTRAINT `old_reserves_ibfk_4` FOREIGN KEY (`deskcode`) REFERENCES `desks` (`deskcode`) ON DELETE SET NULL ON UPDATE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
@@ -1850,6 +1867,7 @@ CREATE TABLE `reserves` ( -- information related to holds/reserves in Koha
   `biblionumber` int(11) NOT NULL default 0, -- foreign key from the biblio table defining which bib record this hold is on
   `constrainttype` varchar(1) default NULL,
   `branchcode` varchar(10) default NULL, -- foreign key from the branches table defining which branch the patron wishes to pick this hold up at
+  `deskcode` varchar(10) default NULL, -- foreign key from the desks table defining which desk the patron may pick this hold up from
   `notificationdate` date default NULL, -- currently unused
   `reminderdate` date default NULL, -- currently unused
   `cancellationdate` date default NULL, -- the date this hold was cancelled
@@ -1869,10 +1887,12 @@ CREATE TABLE `reserves` ( -- information related to holds/reserves in Koha
   KEY `biblionumber` (`biblionumber`),
   KEY `itemnumber` (`itemnumber`),
   KEY `branchcode` (`branchcode`),
+  KEY `deskcode` (`deskcode`),
   CONSTRAINT `reserves_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `reserves_ibfk_2` FOREIGN KEY (`biblionumber`) REFERENCES `biblio` (`biblionumber`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `reserves_ibfk_3` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `reserves_ibfk_4` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `reserves_ibfk_4` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `reserves_ibfk_5` FOREIGN KEY (`deskcode`) REFERENCES `desks` (`deskcode`) ON DELETE SET NULL ON UPDATE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --

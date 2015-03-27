@@ -32,6 +32,8 @@
 <dl>
         <dt><a href="/cgi-bin/koha/admin/branches.pl">Libraries and groups</a></dt>
         <dd>Define libraries and groups.</dd>
+	<dt><a href="/cgi-bin/koha/admin/desks.pl">Desks</a></dt>
+	<dd>Define Desks.</dd>
         <dt><a href="/cgi-bin/koha/admin/itemtypes.pl">Item types</a></dt>
         <dd>Define item types used for circulation rules.</dd>
         <dt><a href="/cgi-bin/koha/admin/authorised_values.pl">Authorized values</a></dt>
