@@ -20,18 +20,15 @@
 
 use Modern::Perl;
 use CGI;
-use C4::Output;			# contains gettemplate
+use C4::Output;
 use C4::Auth;
 use C4::Context;
 use C4::Koha;
 use C4::Branch;
 use C4::Desks;
 
-# Fixed variables
 my $script_name = "/cgi-bin/koha/admin/desks.pl";
 
-################################################################################
-# Main loop....
 my $input           = new CGI;
 my $deskcode        = $input->param('deskcode');
 my $branchcode      = $input->param('branchcode');
@@ -39,6 +36,7 @@ my $deskname        = $input->param('deskname');
 my $deskdescription = $input->param('deskdescription');
 my $op              = $input->param('op') || '';
 
+my @deskloop;
 my $branches = GetBranches;
 my @branches = keys $branches;
 my @branchloop;
@@ -52,41 +50,82 @@ foreach my $thisbranch (sort keys %$branches) {
 }
 
 
-my ( $template, $borrowernumber, $cookie ) = get_template_and_user({
-								    template_name   => "admin/desks.tt",
-								    query           => $input,
-								    type            => "intranet",
-								    authnotrequired => 0,
-								    flagsrequired   => { parameters => 'parameters_remaining_permissions'},
-								    debug           => 1,});
+my ( $template, $borrowernumber, $cookie ) =
+  get_template_and_user(
+			{
+			 template_name   => "admin/desks.tt",
+			 query           => $input,
+			 type            => "intranet",
+			 authnotrequired => 0,
+			 flagsrequired   => {
+					     parameters => 'parameters_remaining_permissions'
+					    },
+			 debug           => 1,
+			}
+		       );
 
 $template->param(branchloop => \@branchloop);
 
 $template->param(script_name => $script_name);
 if ($op) {
-    $template->param($op  => 1); # we show only the TMPL_VAR names $op
+    $template->param($op  => 1);
 } else {
     $template->param(else => 1);
 }
+$template->param(deskcode => $deskcode);
 
-################## ADD_VALIDATE ##################################
-# called by add_form, used to insert/modify data in DB
-my $desk = {
-	    'deskcode' => $deskcode,
-	    'deskname'  => $deskname,
-	    'deskdescription' => $deskdescription,
-	    'branchcode' => $branchcode,
-	   };
-if ( $op eq 'add_validate' ) {
-    if ( GetDesks($deskcode) ) {		# it's a modification
-	ModDesk($desk);
+my $desk;
+
+if ( $op eq 'add_form' || $op eq 'delete_confirm') {
+    $desk = GetDesk($deskcode);
+}
+elsif ( $op eq 'add_validate' ) {
+    $desk = {
+	     'deskcode' => $deskcode,
+	     'deskname'  => $deskname,
+	     'deskdescription' => $deskdescription,
+	     'branchcode' => $branchcode,
+	    };
+    if ( GetDesk($deskcode) ) {
+	$template->param(error => 'ALREADY_EXISTS');
+	print $input->redirect('desks.pl');
+	exit;
     }
-    else {
-	AddDesk($desk);
+    if (AddDesk($desk) != 1) {
+	$template->param(error => 'CANT_ADD');
     }
     print $input->redirect('desks.pl');
     exit;
 }
+elsif ( $op eq 'modify_validate' ) {
+    $desk = {
+	     'deskcode' => $deskcode,
+	     'deskname'  => $deskname,
+	     'deskdescription' => $deskdescription,
+	     'branchcode' => $branchcode,
+	    };
+    if (ModDesk($desk) != 1) {
+	$template->param(error => 'CANT_MODIFY');
+    }
+    print $input->redirect('desks.pl');
+    exit;
+}
+elsif ( $op eq 'delete_confirmed' ) {
+    if ( DelDesk($deskcode) != 1) {
+	    $template->param(error => 'CANT_DELETE');
+    }
+    print $input->redirect('desks.pl');
+    exit;
+}
+else {
+    my $userenv = C4::Context->userenv;
+    my $desksaref = GetDesks();
+    foreach my $d (@$desksaref) {
+	push @deskloop, GetDesk($d);
+    }
+     $template->param(deskloop  => \@deskloop);
+}
 
+$template->param(desk => $desk);
 
 output_html_with_http_headers $input, $cookie, $template->output;

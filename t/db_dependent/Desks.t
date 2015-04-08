@@ -61,8 +61,9 @@ ok(ModDesk($modifieddesk) == 0, 'ModDesk returns 0 when deskcode is wrong');
 
 my $desks = GetDesks();
 ok(ref($desks) eq 'ARRAY', 'GetDesks returns an array');
-ok($desks->[$#{ $desks }] eq $deskcode, 'GetDesks returns desk codes');
-ok(! defined GetDesks("this branch sureley doesn't exist"), 'GetDesks returns undef when no desks are found');
+ok($deskcode ~~ @$desks, 'GetDesks returns desk codes');
+my $emptydesksset = GetDesks("this branch sureley doesn't exist");
+ok(! @$emptydesksset , 'GetDesks returns [] when no desks are found');
 
 ok(DelDesk($deskcode) == 1, 'DelDesk returns 1 when successfuly deleting desk');
 ok(DelDesk('this desk surely not exists'),

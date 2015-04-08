@@ -53,7 +53,11 @@ library. The module is ported to Koha 3.19 and up by the BULAC.
 
 =head2 AddDesk
 
-  AddDesk({ 'deskname' => $deskname, 'deskdescription' => $deskdescription})
+  AddDesk({
+    'deskcode'        => $deskcode,
+    'deskname'        => $deskname,
+    'deskdescription' => $deskdescription
+    'branchcode'      => $branchcode });
 
   returns 1 on success, undef on error. A return value greater than 1
   or just -1 means something went wrong.
@@ -73,6 +77,15 @@ sub AddDesk {
 	     $args->{'branchcode'},
 	    );
 }
+
+=head2 DelDesk
+
+  DelDesk($deskcode)
+
+  returns 1 on success, undef on error. A return value greater than 1
+  or just -1 means something went wrong.
+
+=cut
 
 sub DelDesk {
     my $deskcode = shift;
@@ -112,14 +125,14 @@ sub GetDesk {
 
     $desk_aref = GetDesks([$branch])
 
-    returns undef if no results, otherwise returns an array refs of
-    desk deskcode.
+    returns an array ref containing deskcodes. If no desks are
+    available, the array is empty.
 
 =cut
 
 sub GetDesks  {
     my $branchcode   = shift || '';
-
+    my $retaref = [];
     my $query = 'SELECT deskcode FROM desks';
     if ($branchcode) {
         $query = $query . ' WHERE branchcode = ?';
@@ -130,7 +143,10 @@ sub GetDesks  {
     } else {
 	$sth->execute();
     }
-    $sth->fetchrow_arrayref();
+    while (my $rowaref = $sth->fetchrow_arrayref()) {
+	push @{ $retaref }, $rowaref->[0];
+    }
+    return $retaref;
 }
 
 =head2 ModDesks
