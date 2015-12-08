@@ -32,6 +32,9 @@ BEGIN {
 		       &DelDesk
 		       &GetDesk
 		       &GetDesks
+                       &GetDeskItypes
+                       &GetItypeDesk
+                       &AddDeskItype
 		  );
 }
 
@@ -178,6 +181,66 @@ sub ModDesk {
 			 $args->{'branchcode'},
 			 $args->{'deskcode'}
 			);
+}
+
+sub GetDeskItypes {
+    my $deskcode = shift;
+    my $query = '
+        SELECT itype
+        FROM desksitypes
+        WHERE deskcode = ?';
+
+    my $sth = C4::Context->dbh->prepare($query);
+    $sth->execute($deskcode);
+    my $res = [];
+    @{ $res } = map { $_->[0] } @{ $sth->fetchall_arrayref };
+    if (@{ $res }) {
+	return $res;
+    } else {
+	$query = 'SELECT itemtype FROM itemtypes
+                      WHERE itemtype NOT IN (SELECT itype FROM desksitypes)
+';
+	$sth = C4::Context->dbh->prepare($query);
+	$sth->execute();
+	@{ $res } = map { $_->[0] } @{ $sth->fetchall_arrayref };
+	return $res;
+    }
+}
+
+sub GetItypeDesk {
+    my $itype = shift;
+    my $query = '
+        SELECT deskcode
+        FROM desksitypes
+        WHERE itype = ?';
+
+    my $sth = C4::Context->dbh->prepare($query);
+    $sth->execute($itype);
+    map { $_->[0] } @{ $sth->fetchall_arrayref };
+}
+
+sub AddDeskItype {
+    my $deskcode = shift;
+    my $itype = shift;
+    my $query = '
+        INSERT INTO desksitypes
+        (deskcode, itype)
+        VALUES (?,?)';
+    my $sth = C4::Context->dbh->prepare($query);
+    $sth->execute($deskcode, $itype);
+    $sth->fetchall_arrayref;
+}
+
+sub DelDeskItype {
+    my $deskcode = shift;
+    my $itype = shift;
+#    my $sth = C4::Context->dbh->prepare($query);
+#    my $query = '
+#        DELETE FROM desksitypes
+#       WHERE deskcode = ?
+#        AND itype = ?
+#';
+#    $sth->execute($deskcode, $itype);
 }
 
 1;

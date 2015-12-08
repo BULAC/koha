@@ -36,6 +36,7 @@ use C4::Members qw();
 use C4::Letters;
 use C4::Branch qw( GetBranchDetail );
 use C4::Dates qw( format_date_in_iso );
+use C4::Desks;
 
 use Koha::DateUtils;
 use Koha::Calendar;
@@ -140,6 +141,8 @@ BEGIN {
         &GetReservesControlBranch
 
         IsItemOnHoldAndFound
+        &EditReserves
+        &ListReservesByStatus
     );
     @EXPORT_OK = qw( MergeHolds );
 }
@@ -1348,7 +1351,8 @@ sub ModReserveStatus {
     my ($itemnumber, $newstatus) = @_;
     my $dbh = C4::Context->dbh;
 
-    my $query = "UPDATE reserves SET found = ?, waitingdate = NOW() WHERE itemnumber = ? AND found IS NULL AND priority = 0";
+    #    my $query = "UPDATE reserves SET found = ?, waitingdate = NOW() WHERE itemnumber = ? AND (found IS NULL OR found = 'A') AND (priority = 0 OR found = 'A')";
+        my $query = "UPDATE reserves SET found = ?, waitingdate = NOW() WHERE itemnumber = ?";
     my $sth_set = $dbh->prepare($query);
     $sth_set->execute( $newstatus, $itemnumber );
 
@@ -2541,6 +2545,63 @@ sub IsItemOnHoldAndFound {
     );
 
     return $found;
+}
+
+=head2 EditReserves
+
+    my $EditedCount = EditReserves( $deskcode );
+
+    Changes the status for a reservation from ask (A) to edited (E),
+    depending on desk setted.
+
+    Returns -1 or -2 on SQL errors. Returns number of edited reserves
+    otherwise.
+
+=cut
+
+sub EditReserves {
+    my $deskcode = shift;
+    my $itypes = GetDeskItypes($deskcode);
+    my $query = 'SELECT itemnumber FROM reserves WHERE found ="A"';
+    my $sth = C4::Context->dbh->prepare($query);
+    my $ret = $sth->execute();
+    return -1 if (! defined $ret);
+    my $EditedCount = 0;
+    while (my $itemnumber = $sth->fetchrow_arrayref ) {
+	my $itemquery = 'SELECT itype FROM items WHERE itemnumber = ?';
+	my $itemsth = C4::Context->dbh->prepare($itemquery);
+	return -2 if (! defined $itemsth->execute($itemnumber->[0]));
+	my $itype = $itemsth->fetchall_arrayref->[0][0];
+	if ((grep {/^$itype$/} @{ $itypes }) || $itype eq '') {
+	    ModReserveStatus($itemnumber->[0], 'E');
+	    $EditedCount++;
+	}
+    }
+    return $EditedCount;
+}
+
+=head2 ListReservesByStatus
+
+    my $reserves_arrayref = ListReservesByStatus( $status);
+
+    List all reserves whith given $status.
+
+    Return an array ref with all given reserve as a hashref.
+
+=cut
+
+sub ListReservesByStatus {
+    my $status = shift;
+    # my $deskcode = shift;
+    die "Usage: ListReservesByStatus(\$status)" unless ($status);
+    my $query = "SELECT * FROM reserves WHERE found = ?";
+    my $sth = C4::Context->dbh->prepare($query);
+    $sth->execute($status);
+    my $res = [];
+    while (my $row = $sth->fetchrow_hashref) {
+	push @{ $res }, $row;
+    }
+    return $res;
 }
 
 =head1 AUTHOR

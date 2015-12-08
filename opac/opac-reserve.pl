@@ -265,7 +265,12 @@ if ( $query->param('place_reserve') ) {
             my $item = GetItem($itemNum);
             if ( $item->{'holdingbranch'} eq $branch ) {
                 $found = 'W'
-                  unless C4::Context->preference('ReservesNeedReturns');
+		    unless C4::Context->preference('ReservesNeedReturns');
+		my $itype = GetItemItype($itemNum);
+		my @MGdocs = qw(CONSULT-MG PRETABL-MG RESERVE-MG);
+		if (grep { /$itype/ } @MGdocs) {
+		    $found = 'A';
+		}
             }
         }
         else {

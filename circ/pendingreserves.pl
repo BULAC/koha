@@ -138,7 +138,7 @@ if ( $run_report ) {
         LEFT JOIN branchtransfers ON items.itemnumber=branchtransfers.itemnumber
         LEFT JOIN issues ON items.itemnumber=issues.itemnumber
     WHERE
-    reserves.found IS NULL
+    (reserves.found IS NULL OR reserves.found = 'A')
     $sqldatewhere
     AND (reserves.itemnumber IS NULL OR reserves.itemnumber = items.itemnumber)
     AND items.itemnumber NOT IN (SELECT itemnumber FROM branchtransfers where datearrived IS NULL)

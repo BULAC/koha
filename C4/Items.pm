@@ -63,6 +63,7 @@ BEGIN {
     
         GetItemStatus
         GetItemLocation
+        GetItemItype
         GetLostItems
         GetItemsForInventory
         GetItemsCount
@@ -957,6 +958,21 @@ sub GetItemLocation {
     #build default
     $itemlocation{"1"} = "Not For Loan";
     return \%itemlocation;
+}
+
+=head2 GetItemItype
+
+=cut
+
+sub GetItemItype {
+
+    my $itemnumber = shift;
+    my $dbh = C4::Context->dbh;
+    my $strsth = "SELECT itype FROM items WHERE itemnumber = ?";
+    my $sth = $dbh->prepare($strsth);
+    $sth->execute($itemnumber);
+    my $itype = $sth->fetchrow_array;
+    return $itype ;
 }
 
 =head2 GetLostItems
