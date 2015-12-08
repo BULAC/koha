@@ -1,0 +1,48 @@
+[% USE AuthorisedValues %]
+[% INCLUDE 'doc-head-open.inc' %]
+
+[% IF (booking) %]
+	<title>Koha &rsaquo; Spaces booking</title>
+[% ELSE %]
+	[% IF (management) %]
+		<title>Koha &rsaquo; Spaces management</title>
+	[% END %]
+[% END %]
+<base target="_parent">
+[% INCLUDE "doc-head-close.inc" %]
+<script type="text/javascript" src="[% themelang %]/js/spaces/frame-manager.js"></script>
+<style>
+iframe {
+       margin: 0;
+       padding: 0;
+       border: none;
+}
+
+iframe#framehead {
+       height: 1.3em;
+}
+
+iframe#framecontent {
+    width: 100%;
+    height: 800px;
+}
+</style>
+</head>
+[% INCLUDE 'header.inc' %]
+[% INCLUDE 'cat-search.inc' %]
+<div id="breadcrumbs">
+<!-- <frameset rows="137, *" frameborder="0"> -->
+	<iframe src="/cgi-bin/koha/spaces/spaces-header.pl?op=[% op %]" id='framehead'></iframe>
+</div>
+<ul>
+<li><a href="spaces.pl?op=booking">Booking</a></li>
+<li><a href="spaces.pl?op=management">Management</a></li>
+</ul>
+
+	[% IF (booking) %]
+		<iframe src="[% SpacesUrl %]/espaces/booking/bookingList.seam?kohaSessionType=INTRANET&kohaSessionId=[% kohaSessionId %]" id="framecontent"></iframe>
+	[% ELSIF (management) %]
+			<iframe src="[% SpacesUrl %]/espaces/administration/spaceList.seam?kohaSessionType=INTRANET&kohaSessionId=[% kohaSessionId %]" id="framecontent"></iframe>
+	[% END %]
+<!-- </frameset> -->
+</html>
