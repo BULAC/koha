@@ -673,6 +673,7 @@ OPAC:
                   yes: "Consider"
                   no: "Do not consider"
             - "patron's email (borrowers.email) as unique on self registering. An email won't be accepted if it already exists in the database."
+        -
             - pref: PatronSelfRegistrationPrefillForm
               choices:
                   yes: "Display and prefill"

@@ -73,6 +73,7 @@ $template->param(
     action            => $action,
     hidden            => $hidden,
     mandatory         => $mandatory,
+    minpassw          => C4::Context->preference('minPasswordLength'),
     member_titles     => GetTitles() || undef,
     branches          => $branches,
     OPACPatronDetails => C4::Context->preference('OPACPatronDetails'),
@@ -120,7 +121,6 @@ if ( $action eq 'create' ) {
 
             my $verification_token = md5_hex( \%borrower );
             $borrower{'password'} = random_string("..........");
-
             Koha::Borrower::Modifications->new(
                 verification_token => $verification_token )
               ->AddModifications(\%borrower);
