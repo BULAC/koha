@@ -73,7 +73,6 @@ $template->param(
     action            => $action,
     hidden            => $hidden,
     mandatory         => $mandatory,
-    minpassw          => C4::Context->preference('minPasswordLength'),
     member_titles     => GetTitles() || undef,
     branches          => $branches,
     OPACPatronDetails => C4::Context->preference('OPACPatronDetails'),
