@@ -1,0 +1,92 @@
+[% USE Koha %]
+[% USE Branches %]
+[% INCLUDE 'doc-head-open.inc' %]
+<title>[% IF ( LibraryNameTitle ) %][% LibraryNameTitle %][% ELSE %]Koha online[% END %] Request document</title>
+[% INCLUDE 'doc-head-close.inc' %]
+[% BLOCK cssinclude %][% END %]
+</head>
+[% INCLUDE 'bodytag.inc' bodyid='opac-main' %]
+[% INCLUDE 'masthead.inc' %]
+<div class="main">
+    <ul class="breadcrumb">
+        <li><a href="#">Home</a></li>
+    </ul>
+    <div class="container-fluid">
+        <div class="row-fluid">
+	   <div class="span2">
+              <div id="navigation">
+                [% INCLUDE 'navigation.inc' IsPatronPage=1 %]
+              </div>
+          </div>
+	  <div class='span10'>
+[% IF (op == 'addbiblioanditem' || op == 'additem') %]
+<h1>[% biblio.title %], [% biblio.author %], [% itemnumber %] est réservé à votre nom</h1>
+
+          <table class="table table-bordered table-striped">
+          <tr>
+            <th>Location</th>
+            <th>Callnumber</th>
+            <th>Item type</th>
+          </tr>
+          <tr>
+            <td>[% item.location %]</td>
+            <td>[% item.itemcallnumber %]</td>
+            <td>[% item.itype %]</td>
+          </tr>
+          </table>
+
+[% ELSIF (futureop) %]
+<h1>Item from stack request [% IF (item.ccode = 'REVUE')%](periodic)[% END %]</h1>
+
+            <form id="stackrqform" action="/cgi-bin/koha/opac-requestdoc.pl" method="post">
+
+            <div class="yui-u first">
+
+            <input type="hidden" name="genitemnumber" value="[% item.itemnumber %]" />
+            <input type="hidden" name="biblionumber" value="[% biblio.biblionumber %]" />
+	    <input type="hidden" name="op" value="[% futureop %]">
+
+            <fieldset class="brief"><legend>Item</legend>
+            <ol>
+                <li class="mandatory editable">
+                    <label for="title">Title:</label>
+                    <input id="title" type="text" name="title" value="[% biblio.title %]" [% IF (biblio.title) %]readonly[% END %] required/>
+                </li>
+
+                [% IF (item.ccode != 'REVUE') %]
+                <li class="editable">
+                    <label for="author">Author:</label>
+                    <input id="author" type="text" name="author" value="[% biblio.author %]" [% IF (biblio.author) %]readonly[% END %] required/>
+                </li>
+		[% END %]
+
+
+
+                <li class="editable">
+                    <label for="pubyear">publication year:</label>
+                    <input id="pubyear" type="text" name="pubyear" value="" />
+                </li>
+
+
+                <li class="mandatory editable">
+                    <label for="callnumber">Call number:</label>
+                    <input id="callnumber" type="text" name="callnumber" value="[% item.itemcallnumber %]" [% IF (item.itemcallnumber) %]readonly[% END %] required/>
+                </li>
+
+                <li class="editable ">
+                    <label for="numbers">Volum(s), Number(s): <span class="hint">Separate with commas. Note : you can ask for items in this range : [% item.enumchron %]</span></label>
+                    <textarea id="numbers" rows="2" name="numbers"></textarea>
+                </li>
+
+
+            </ol>
+
+             </fieldset>
+	     <input type="submit" value="Submit">
+[% END %]
+        </div>
+</div>
+</div>
+</div>
+[% INCLUDE 'opac-bottom.inc' %]
+[% BLOCK jsinclude %][% END %]

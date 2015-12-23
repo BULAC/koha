@@ -78,6 +78,11 @@ if (defined $checkitem && $checkitem ne ''){
     $item = GetItem($item);
     if ( $item->{'holdingbranch'} eq $branch ){
         $found = 'W' unless C4::Context->preference('ReservesNeedReturns');
+	my $itype = $item->{'itype'};
+	my @MGdocs = qw(CONSULT-MG PRETABL-MG RESERVE-MG);
+	if (grep { /$itype/ } @MGdocs) {
+	    $found = 'A';
+	}
     }
 }
 
