@@ -85,7 +85,8 @@ if ( $action eq 'create' ) {
     %borrower = DelEmptyFields(%borrower);
 
     my @empty_mandatory_fields = CheckMandatoryFields( \%borrower, $action );
-    my $invalid_form_fields = CheckForInvalidFields(\%borrower);
+    my $invalidformfields = CheckForInvalidFields(\%borrower);
+    delete $borrower{'password2'};
 
     if (@empty_mandatory_fields || @$invalid_form_fields ) {
         $template->param(
