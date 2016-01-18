@@ -114,6 +114,8 @@ foreach my $num (@{ $getreserves }) {
     open my $lol,'>', '/tmp/lol';
     my $itemnumber = $num->{'itemnumber'};
     print $lol $itemnumber;
+    my $reserve_barcode = 1230000000000 + $num->{'reserve_id'};
+    print $lol $reserve_barcode;
     my $gettitle     = GetBiblioFromItemNumber( $itemnumber );
     next if (! grep {/^$gettitle->{'itype'}$/} @$deskitypes);
     my $borrowernum = $num->{'borrowernumber'};
@@ -131,6 +133,7 @@ foreach my $num (@{ $getreserves }) {
         itemnumber => $itemnumber,
         borrowernum => $borrowernum,
         deskname => $deskname,
+	reserve_barcode => $reserve_barcode,
     );
 
     # fix up item type for display

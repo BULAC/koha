@@ -58,7 +58,13 @@ my ( $template, $librarian, $cookie ) = get_template_and_user(
         authnotrequired => 0,
         flagsrequired   => { circulate => "circulate_remaining_permissions" },
     }
-);
+    );
+
+my $redirect_bcode = $query->param('barcode');
+if ($redirect_bcode =~ /^123/) {
+    print $query->redirect("manageholdsbarcode.pl?reserve_barcode=$redirect_bcode");
+}
+
 
 my $sessionID = $query->cookie("CGISESSID");
 my $session = get_session($sessionID);

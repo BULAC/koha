@@ -122,7 +122,8 @@
                     <th>Patron</th>
                     <th>Location</th>
                     <th>Enumeration</th>
-		    <th>Barcode</th>
+		    <th>Item Barcode</th>
+		    <th>Reserve Barcode</th>
                     <th>Action</th>
                </tr></thead>
                <tbody>[% FOREACH reserveloo IN reserveloop %]
@@ -142,6 +143,7 @@
                     <td>[% Branches.GetName( reserveloo.homebranch ) %]<br />[% reserveloo.itemcallnumber %]</td>
                     <td>[% reserveloo.enumchron %]</td>
 		    <td>[% reserveloo.barcode %]</td>
+		    <td>[% reserveloo.reserve_barcode %]</td>
                     <td>
                         <form name="Redit Reserve" action="editedreserves.pl" method="post">
                             <input type="hidden" name="borrowernumber" value="[% reserveloo.borrowernum %]" />
