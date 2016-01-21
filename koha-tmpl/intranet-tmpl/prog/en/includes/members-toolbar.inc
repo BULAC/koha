@@ -58,6 +58,11 @@ $(document).ready(function(){
         $(".btn-group").removeClass("open");
         return false;
     });
+    $("#printborrowercard").click(function(){
+        window.open("/cgi-bin/koha/members/printborrowercard.pl?member=[% borrowernumber %]");
+        $(".btn-group").removeClass("open");
+        return false;
+    });
     $("#searchtohold").click(function(){
         searchToHold();
         return false;
@@ -152,6 +157,7 @@ function searchToHold(){
         <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="icon-print"></i> Print <span class="caret"></span></button>
             <ul class="dropdown-menu">
                 [% IF ( CAN_user_borrowers ) %]<li><a id="printsummary" href="#">Print summary</a></li>[% END %]
+		<li><a id="printborrowercard" href="#">Print Card</li>
                 <li><a id="printslip" href="#">Print slip</a></li>
                 <li><a id="printquickslip" href="#">Print quick slip</a></li>
             </ul>

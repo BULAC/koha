@@ -73,8 +73,10 @@ my $default = C4::Context->userenv->{'branch'};
 my $userenv_desk = C4::Context->userenv->{'desk'} || '';
 
 if ($op eq 'editall') {
-    my $EditedCount = EditReserves($curdesk);
-    $template->param(EditedCount => $EditedCount);
+    my ($EditedCount, $EditedReserves) = EditReserves($curdesk);
+    $template->param(EditedCount    => $EditedCount);
+    my $EditedReservesList = join ',', @$EditedReserves;
+    $template->param(EditedReservesList => $EditedReservesList);
 }
 
 my $desks = GetDesks($default);
@@ -111,11 +113,8 @@ my $getreserves = ListReservesByStatus('E');
 
 my $today = Date_to_Days(&Today);
 foreach my $num (@{ $getreserves }) {
-    open my $lol,'>', '/tmp/lol';
     my $itemnumber = $num->{'itemnumber'};
-    print $lol $itemnumber;
     my $reserve_barcode = 1230000000000 + $num->{'reserve_id'};
-    print $lol $reserve_barcode;
     my $gettitle     = GetBiblioFromItemNumber( $itemnumber );
     next if (! grep {/^$gettitle->{'itype'}$/} @$deskitypes);
     my $borrowernum = $num->{'borrowernumber'};
@@ -134,6 +133,7 @@ foreach my $num (@{ $getreserves }) {
         borrowernum => $borrowernum,
         deskname => $deskname,
 	reserve_barcode => $reserve_barcode,
+	reserve_id => $num->{'reserve_id'}
     );
 
     # fix up item type for display

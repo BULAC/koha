@@ -19,6 +19,9 @@
             "sPaginationType": "four_button"
         }));
       });
+      [% IF ( EditedReservesList ) %]
+      window.onload = window.open('printslip.pl?reserves=[% EditedReservesList %]');
+      [% END %]
 //]]>
 </script>
 </head>
@@ -145,13 +148,7 @@
 		    <td>[% reserveloo.barcode %]</td>
 		    <td>[% reserveloo.reserve_barcode %]</td>
                     <td>
-                        <form name="Redit Reserve" action="editedreserves.pl" method="post">
-                            <input type="hidden" name="borrowernumber" value="[% reserveloo.borrowernum %]" />
-                            <input type="hidden" name="itemnumber" value="[% reserveloo.itemnumber %]" />
-                            <input type="hidden" name="fbr" value="[% reserveloo.holdingbranch %]" />
-                            <input type="hidden" name="tbr" value="[% reserveloo.homebranch %]" />
-                            <input type="submit" value="Edit" />
-                       </form>
+		        <span onClick="window.open('printslip.pl?reserves=[% reserveloo.reserve_id %]')">ReEdit</span>
                     </td>
                 </tr>
                 [% END %]</tbody>
