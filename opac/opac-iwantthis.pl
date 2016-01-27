@@ -2,7 +2,7 @@
 
 # This file is part of Koha.
 #
-# Parts Copyright (C) 2013  Mark Tompsett
+# Parts Copyright (C) 2015 Nicolas Legrand
 #
 # Koha is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -40,8 +40,7 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
         template_name   => "opac-iwantthis.tt",
         type            => "opac",
         query           => $input,
-        authnotrequired => ( 1 ),
-        flagsrequired   => { borrow => 1 },
+        authnotrequired => ( 0 ),
     }
 );
 
@@ -76,6 +75,7 @@ my $reservesn = ($allreserves) ? @$allreserves : 0 ;
 
 my $selfreserve;
 my $reservesbefore = 0;
+my $isissued;
 my $selfissue;
 
 if (defined $allreserves) {
@@ -88,6 +88,10 @@ if (defined $allreserves) {
     }
 }
 
+if ($item->{'onloan'}) {
+    $isissued = 1;
+}
+
 if ($item->{'borrowernumber'} eq C4::Context->userenv->{'number'}) {
     $selfissue = 1;
 }
@@ -96,7 +100,7 @@ my $op = $input->param('op');
 my $from = $input->param('op');
 my $canreserve = 1
     if (CanItemBeReserved( C4::Context->userenv->{'number'}, $itemnumber ) eq 'OK');
-if (!$selfreserve && !$selfissue and $op eq 'reserve') {
+if (!$selfreserve && !$selfissue && $op eq 'reserve') {
     my $found;
     my $rank = 0;
     my $error;
@@ -119,17 +123,18 @@ if (!$selfreserve && !$selfissue and $op eq 'reserve') {
 }
 
 $template->param(
-    item => $item,
-    homebranch => $homebranch,
-    reservesn => $reservesn,
-    selfreserve => $selfreserve,
+    item           => $item,
+    homebranch     => $homebranch,
+    reservesn      => $reservesn,
+    selfreserve    => $selfreserve,
     reservesbefore => $reservesbefore,
-    selfissue => $selfissue,
-    canreserve => $canreserve,
-    borroitem => $item->{'borrowernumber'},
-    borrowenv => C4::Context->userenv->{'number'},
-    biblionumber => $biblionumber,
-    itemnumber => $itemnumber,
+    isissued       => $isissued,
+    selfissue      => $selfissue,
+    canreserve     => $canreserve,
+    borroitem      => $item->{'borrowernumber'},
+    borrowenv      => C4::Context->userenv->{'number'},
+    biblionumber   => $biblionumber,
+    itemnumber     => $itemnumber,
     );
 
 
