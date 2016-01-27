@@ -8,6 +8,28 @@
                 <li>
             [% END %]
                 <a href="/cgi-bin/koha/opac-user.pl">your summary</a></li>
+		        [% IF ( bookings ) %]
+                    <li class="active">
+                [% ELSE %]
+                    <li>
+                [% END %]
+	        <a href="/cgi-bin/koha/opac-spaces.pl?op=booking">my bookings</a></li>
+	           </li>
+	        [% IF ( invitation ) %]
+                    <li class="active">
+                [% ELSE %]
+                    <li>
+                [% END %]
+	        <a href="/cgi-bin/koha/opac-spaces.pl?op=invitation">my invitations</a></li>
+	           </li>
+                [% IF ( cardcatalogrequest ) %]
+                    <li class="active">
+                [% ELSE %]
+                    <li>
+                [% END %]
+	        <a href="/cgi-bin/koha/opac-requestdoc.pl?futureop=addbiblioanditem">card catalog request</a></li>
+	           </li>
+
             [% IF ( OPACFinesTab ) %]
                 [% IF ( accountview ) %]
                     <li class="active">
@@ -102,20 +124,6 @@
                 [% END %]
                 <a href="/cgi-bin/koha/opac-discharge.pl">ask for a discharge</a></li>
             [% END %]
-	        [% IF ( bookings ) %]
-                    <li class="active">
-                [% ELSE %]
-                    <li>
-                [% END %]
-	        <a href="/cgi-bin/koha/opac-spaces.pl?op=booking">my bookings</a></li>
-	           </li>
-	        [% IF ( invitation ) %]
-                    <li class="active">
-                [% ELSE %]
-                    <li>
-                [% END %]
-	        <a href="/cgi-bin/koha/opac-spaces.pl?op=invitation">my invitations</a></li>
-	           </li>
         </ul>
     </div>
 [% END %]
