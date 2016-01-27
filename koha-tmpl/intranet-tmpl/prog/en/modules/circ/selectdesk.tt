@@ -1,5 +1,5 @@
 [% INCLUDE 'doc-head-open.inc' %]
-<title>Koha &rsaquo; Circulation &rsaquo; Set library</title>
+<title>Koha &rsaquo; Circulation &rsaquo; Set Desk</title>
 [% INCLUDE 'doc-head-close.inc' %]
 <style type="text/css">
     .noshow {display: none;}
@@ -12,7 +12,7 @@
 <div id="breadcrumbs">
          <a href="/cgi-bin/koha/mainpage.pl">Home</a>
 &rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a>
-&rsaquo; <a href="/cgi-bin/koha/circ/selectdesk.pl">Set library</a>
+&rsaquo; <a href="/cgi-bin/koha/circ/selectdesk.pl">Set Desk</a>
 </div>
 
 <div id="doc" class="yui-t7">
