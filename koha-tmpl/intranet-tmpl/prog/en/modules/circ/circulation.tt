@@ -649,7 +649,7 @@ No patron matched <span class="ex">[% message %]</span>
                     <input type="hidden" name="onsite_checkout" checked="checked" value="1" />
                 </div>
             [% ELSE %]
-                <input type="checkbox" id="onsite_checkout" name="onsite_checkout" /> <label for="onsite_checkout">On-site checkout</label>
+                <input type="checkbox" id="onsite_checkout" name="onsite_checkout" [% IF (onsite_checkout) %] checked="checked"[% END %]/> <label for="onsite_checkout"><span class="circ-hlt" style="font-size: large">On-site checkout</span></label>
             [% END %]
         </div>
     [% END %]
