@@ -8,7 +8,7 @@
 [% INCLUDE 'masthead.inc' %]
 
 	[% IF (booking) %]
-		<iframe src="[% SpacesUrl %]/espaces/booking/bookingList.seam?kohaSessionType=INTRANET&kohaSessionId=[% kohaSessionId %]" id="framecontent"></iframe>
+		<iframe src="[% SpacesUrl %]/espaces/booking/bookingList.seam?kohaSessionId=[% kohaSessionId %]" id="framecontent"></iframe>
 	[% ELSIF (invitation) %]
 			<iframe src="[% SpacesUrl %]/espaces/booking/invitationList.seam?kohaSessionId=[% kohaSessionId %]" id="framecontent"></iframe>
 	[% END %]
