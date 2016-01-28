@@ -43,6 +43,7 @@ use C4::Reserves;
 use C4::Context;
 use CGI::Session;
 use C4::Members::Attributes qw(GetBorrowerAttributes);
+use C4::Spaces;
 use Koha::Borrower::Debarments qw(GetDebarments IsDebarred);
 use Koha::DateUtils;
 use Koha::Database;
@@ -118,6 +119,10 @@ for (@failedreturns) { $return_failed{$_} = 1; }
 my $findborrower = $query->param('findborrower') || q{};
 $findborrower =~ s|,| |g;
 my $borrowernumber = $query->param('borrowernumber');
+if ($borrowernumber) {
+    my $booked_spaces = C4::Spaces::GetBorrowerSpaces($borrowernumber);
+    $template->param (booked_spaces => $booked_spaces);
+}
 
 $branch  = C4::Context->userenv->{'branch'};  
 $printer = C4::Context->userenv->{'branchprinter'};

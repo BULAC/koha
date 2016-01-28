@@ -52,6 +52,7 @@ use C4::Branch; # GetBranchName
 use C4::Form::MessagingPreferences;
 use List::MoreUtils qw/uniq/;
 use C4::Members::Attributes qw(GetBorrowerAttributes);
+use C4::Spaces;
 use Koha::Borrower::Debarments qw(GetDebarments IsDebarred);
 use Module::Load;
 if ( C4::Context->preference('NorwegianPatronDBEnable') && C4::Context->preference('NorwegianPatronDBEnable') == 1 ) {
@@ -119,6 +120,9 @@ my ( $od, $issue, $fines ) = GetMemberIssuesAndFines($borrowernumber);
 $template->param( issuecount => $issue );
 
 my $data = GetMember( 'borrowernumber' => $borrowernumber );
+
+my $booked_spaces = C4::Spaces::GetBorrowerSpaces($borrowernumber);
+$template->param (booked_spaces => $booked_spaces);
 
 if ( not defined $data ) {
     $template->param (unknowuser => 1);

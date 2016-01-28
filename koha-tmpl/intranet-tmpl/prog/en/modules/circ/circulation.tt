@@ -670,7 +670,6 @@ No patron matched <span class="ex">[% message %]</span>
     </div>
 [% END %]
 </form></div>
-
 [% END %]<!-- /unless noissues -->
 
 [% IF ( noissues ) %]
@@ -682,7 +681,9 @@ No patron matched <span class="ex">[% message %]</span>
 [% ELSE %]
     <div class="yui-u">
 [% END %]
-
+[% IF (booked_spaces) %]
+[% INCLUDE 'borrower-booked-spaces.inc' %]
+[% END %]
     [% IF flagged %]
         [% IF ( noissues ) %]
             [% IF ( Koha.Preference('OnSiteCheckouts') && Koha.Preference('OnSiteCheckoutsForce') ) %]
