@@ -19,10 +19,8 @@ my ( $template, $borrowernumber, $cookie ) =
 	    query           => $input,
 	    type            => "intranet",
 	    authnotrequired => 0,
-	    flagsrequired   => {
-		parameters => 'circulate_remaining_permissions'
-	    },
-		    debug           => 1,
+	    flagsrequired   => { circulate => 'circulate_remaining_permissions', },
+	    debug           => 1,
 	}
     );
 
