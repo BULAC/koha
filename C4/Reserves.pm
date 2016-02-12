@@ -854,8 +854,7 @@ sub GetReservesForBranch {
     my $query = "
         SELECT reserve_id,borrowernumber,reservedate,itemnumber,waitingdate, deskcode
         FROM   reserves 
-        WHERE   priority='0'
-        AND found='W'
+        WHERE  found='W'
     ";
     $query .= " AND branchcode=? " if ( $frombranch );
     $query .= "ORDER BY waitingdate" ;
@@ -1402,10 +1401,10 @@ sub ModReserveAffect {
     $query = "
         UPDATE reserves
         SET    priority = 0,
-               itemnumber = ?,
-               found = 'T'
+               found = 'T',
+               deskcode = ?
         WHERE borrowernumber = ?
-          AND biblionumber = ?
+          AND itemnumber = ?
     ";
     }
     elsif ($deskcode) {
@@ -1415,10 +1414,9 @@ sub ModReserveAffect {
             SET     priority = 0,
                     found = 'W',
                     waitingdate = NOW(),
-                    deskcode = '$deskcode',
-                    itemnumber = ?
+                    deskcode = ?
             WHERE borrowernumber = ?
-              AND biblionumber = ?
+              AND itemnumber = ?
         ";
     }
     else {
@@ -1428,14 +1426,13 @@ sub ModReserveAffect {
             SET     priority = 0,
                     found = 'W',
                     waitingdate = NOW(),
-                    deskcode = NULL,
-                    itemnumber = ?
+                    deskcode = ?,
             WHERE borrowernumber = ?
-              AND biblionumber = ?
+              AND itemnumber = ?
         ";
     }
     $sth = $dbh->prepare($query);
-    $sth->execute( $itemnumber, $borrowernumber,$biblionumber);
+    $sth->execute( $deskcode, $borrowernumber, $itemnumber );
     _koha_notify_reserve( $itemnumber, $borrowernumber, $biblionumber ) if ( !$transferToDo && !$already_on_shelf );
     _FixPriority( { biblionumber => $biblionumber } );
     if ( C4::Context->preference("ReturnToShelvingCart") ) {

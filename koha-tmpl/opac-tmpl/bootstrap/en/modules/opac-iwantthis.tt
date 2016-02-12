@@ -29,15 +29,15 @@
 	    <th>current status</th>
           </tr>
           <tr>
-            <td>[% item.title %]</td>
-            <td>[% item.title %]</td>
+            <td><a href="https://koha-test.bulac.fr/cgi-bin/koha/opac-detail.pl?biblionumber=[% item.biblionumber %]">[% item.title %]</a></td>
+            <td>[% item.author %]</td>
             <td>[% item.itemcallnumber %]</td>
             <td>
 	    [% INCLUDE 'item-status-schema-org.inc' item = item %][% INCLUDE 'item-status.inc' item = item %]
 	    </td>
           </tr>
           </table>
-          [% IF (homebranch = item.holdingbranch)%]
+          [% IF (homebranch == item.holdingbranch) %]
             <div class="alert">
 	    [% IF (selfissue)  %]
             <p>This item is checked out to you, thank you to return it before: <b>[% item.datedue %].</b></p>
@@ -45,22 +45,21 @@
 	    <p>This item is currently checked out, it should be checked in again before: [% item.datedue %].</p>
 	      [% IF (selfreserve) %]
 	      <p>This item is on hold for you.<p>
-	      [% IF (reservebefore) %]
+	      [% END %]
+	      [% IF (reservesbefore) %]
 	      <p>There is [% reservesbefore %] Hold(s) by other patrons before your own hold.</p>
 	      [% END %]
-              [% ELSIF (canreserve) %]
-	      <p>You can  <a href="opac-reserve.pl?place_reserve=1&biblionumbers=[% item.biblionumber %]%2F&selecteditems=[% item.biblionumber %]%2F[% item.itemnumber %]%2FBULAC%2F&reserve_mode=multi&single_bib
-=[% item.itemnumber %]&branch=BULAC&reqtype_[% item.itemnumber %]=Specific&checkitem_[% item.itemnumber %]
-=178213">reserve it</a>.</p>
-	      [% IF (reservebefore) %]
-	      <p>There is [% reservesbefore %] Hold(s) by other patrons before your own hold.</p>
+	    [% ELSIF (selfreserve) %]
+	    <p>This item is on hold for you.<p>
+	      [% IF (reservesbefore) %]
+	    <p>There is [% reservesbefore %] Hold(s) by other patrons on this item.</p>
 	      [% END %]
-              [% END %]
-                 </div>
-            [% ELSIF (reservebefore and canreserve) %]
-	    <p>This item is currently on Hold. You can a href="opac-reserve.pl?place_reserve=1&biblionumbers=[% item.biblionumber %]%2F&selecteditems=[% item.biblionumber %]%2F[% item.itemnumber %]%2FBULAC%2F&reserve_mode=multi&single_bib
+            [% ELSIF (reservesbefore) %]
+	    <p>This item is currently on hold.</p>
+	    <p>[% IF (canreserve) %]You can <a href="opac-reserve.pl?place_reserve=1&biblionumbers=[% item.biblionumber %]%2F&selecteditems=[% item.biblionumber %]%2F[% item.itemnumber %]%2FBULAC%2F&reserve_mode=multi&single_bib
 =[% item.itemnumber %]&branch=BULAC&reqtype_[% item.itemnumber %]=Specific&checkitem_[% item.itemnumber %]
 =178213">reserve it</a> too.</p>
+              [% END %]
             [% ELSE %]
 	  <div class="panel panel-default">
 	  <div class="panel-body">
@@ -79,10 +78,9 @@
           [% CASE 'PER-GEN-LA' %]
             <p>You can get the last ten years of this serial by yourself in the library, for in house use only. Don't mind to ask if you have difficulties finding it.</p>
           [% CASE 'PER-GEN-MG' %]
-            <p>You can request a particual document from this series by filling a<a href="opac-requestdoc.pl?futureop=additem&biblionumber=[% biblionumber %]&genitemnumber=[% itemnumber %]">document request</a>.</p>
+            <p>You can request a particual document from this series by filling a<a href="opac-requestdoc.pl?futureop=additem&biblionumber=[% biblionumber %]&genitemnumber=[% itemnumber %]"> document request</a>.</p>
           [% END %]
 
-        [% END %]
         [% END %]
         </div>
         </div>
@@ -91,6 +89,7 @@
 	      <p>You can't make a hold on this item.</p>
           [% END %]
         [% END %]
+	[% END %]
         </div> <!-- /.container-fluid -->
     </div> <!-- /.row-fluid -->
 </div> <!-- /.main -->

@@ -1407,6 +1407,13 @@ sub GetItemsInfo {
             $data->{"borrower$ii"}  = $data2->{'borrowernumber'} if $data2->{'borrowernumber'};
             $ii++;
         }
+        my $sth3 = $dbh->prepare("SELECT reserve_id FROM reserves
+                                    WHERE itemnumber = ?
+                                    LIMIT 1");
+        $sth3->execute($data->{'itemnumber'});
+        if ($sth3->fetchrow_hashref()) {
+	    $data->{'reserved'} = 1;
+	}
 
         $results[$i] = $data;
         $i++;
@@ -2064,11 +2071,7 @@ sub _do_column_fixes_for_mod {
         (not defined $item->{'withdrawn'} or $item->{'withdrawn'} eq '')) {
         $item->{'withdrawn'} = 0;
     }
-    if (exists $item->{location}
-        and $item->{location} ne 'CART'
-        and $item->{location} ne 'PROC'
-        and not $item->{permanent_location}
-    ) {
+    if (exists $item->{'location'} && !$item->{'permanent_location'}) {
         $item->{'permanent_location'} = $item->{'location'};
     }
     if (exists $item->{'timestamp'}) {

@@ -48,6 +48,9 @@ not use an API to fetch items that populates item.datedue.
 [% IF ( item.waiting ) %]
     [% SET itemavailable = 0 %]
     <span class="item-status onhold">On hold</span>
+[% ELSIF (item.reserved) %]
+    [% SET itemavailable = 0 %]
+    <span class="item-status onhold">On hold</span>
 [% END %]
 
 [% IF ( item.withdrawn ) %]

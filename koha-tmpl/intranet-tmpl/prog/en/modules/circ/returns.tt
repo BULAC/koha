@@ -173,6 +173,7 @@ $(document).ready(function () {
             <input type="hidden" name="WT-itemNumber" value="[% WrongTransferItem %]" />
             <input type="hidden" name="WT-waitingAt" value="[% TransferWaitingAt %]" />
             <input type="hidden" name="WT-From" value="[% wtransfertFrom %]" />
+	    [% IF (waitpickup)  %]<input type="hidden" name="waitpickup" value="waitpickup" />[% END %]
             <input type="submit" class="approve" value="Confirm" />
             <input type="hidden" name="print_slip" value="0" />
             <input type="hidden" name="borrowernumber" value="[% borrowernumber %]" />
@@ -214,7 +215,7 @@ $(document).ready(function () {
         [% END %]
         <form method="post" action="returns.pl" class="confirm">
             <input type="submit" class="approve" value="Confirm" />
-
+            [% IF (waitpickup)  %]<input type="hidden" name="waitpickup" value="waitpickup" />[% END %]
             <input type="hidden" name="print_slip" value="0" />
             <input type="submit" value="Print and confirm" class="print" onclick="this.form.print_slip.value = 1; this.form.submit();" />
             [% FOREACH inputloo IN inputloop %]
@@ -262,6 +263,7 @@ $(document).ready(function () {
 
         <form method="post" action="returns.pl" class="confirm">
             <input type="submit" class="approve" value="Confirm" />
+            [% IF (waitpickup)  %]<input type="hidden" name="waitpickup" value="waitpickup" />[% END %]
             <input type="hidden" name="print_slip" value="0" />
             <input type="hidden" name="borrowernumber" value="[% borrowernumber %]" />
             <input type="hidden" name="biblionumber" value="[% itembiblionumber %]" />
@@ -537,6 +539,10 @@ $(document).ready(function () {
             <div class="yui-u">
             <fieldset id="checkin_options">
                 <legend>Options</legend>
+                   <p>
+                       <input type="checkbox" id="waitpickup" name="waitpickup" value="waitpickup" [% IF ( waitpickup ) %]checked="checked" [% END %] />
+                       <label for="waitpickup">Waiting pickup for same borrower</label>
+                   </p>
                     [% IF ( CAN_user_updatecharges_writeoff && overduecharges ) %]
                     <p>
                         [% IF ( exemptfine ) %]

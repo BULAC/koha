@@ -63,8 +63,21 @@ my ( $template, $librarian, $cookie ) = get_template_and_user(
 my $redirect_bcode = $query->param('barcode');
 if ($redirect_bcode =~ /^123/) {
     print $query->redirect("manageholdsbarcode.pl?reserve_barcode=$redirect_bcode");
+    exit;
 }
 
+my $waitpickup = $query->param('waitpickup');
+my $wpbarcode = $query->param('barcode');
+if ($waitpickup && $wpbarcode) {
+    print $query->redirect("makeitwaitpickup.pl?barcode=$wpbarcode");
+    exit;
+}
+elsif ($waitpickup) {
+    $template->param('waitpickup' => 1);
+}
+elsif ($query->param('checkwaitpickup')) {
+    $template->param('waitpickup' => 1);
+}
 
 my $sessionID = $query->cookie("CGISESSID");
 my $session = get_session($sessionID);

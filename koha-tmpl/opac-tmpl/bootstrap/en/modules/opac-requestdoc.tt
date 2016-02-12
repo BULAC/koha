@@ -20,18 +20,18 @@
           </div>
 	  <div class='span10'>
 [% IF (op == 'addbiblioanditem' || op == 'additem') %]
-<h1>[% biblio.title %], [% biblio.author %], [% itemnumber %] est réservé à votre nom</h1>
+<h1>[% biblio.title %][% IF (biblio.author) %], [% biblio.author %],[% END %] [% itemnumber %] est réservé à votre nom</h1>
 
           <table class="table table-bordered table-striped">
           <tr>
-            <th>Location</th>
-            <th>Callnumber</th>
-            <th>Item type</th>
+	    <th>title</th>
+            <th>author</th>
+            <th>callnumber</th>
           </tr>
           <tr>
-            <td>[% item.location %]</td>
+            <td><a href="https://koha-test.bulac.fr/cgi-bin/koha/opac-detail.pl?biblionumber=[% biblio.biblionumber %]">[% biblio.title %]</a></td>
+            <td>[% biblio.author %]</td>
             <td>[% item.itemcallnumber %]</td>
-            <td>[% item.itype %]</td>
           </tr>
           </table>
 
