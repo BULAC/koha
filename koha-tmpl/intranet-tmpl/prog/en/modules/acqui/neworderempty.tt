@@ -355,6 +355,15 @@ $(document).ready(function()
         </li>
         <li>
             [% IF ( biblionumber ) %]
+            <span class="label">Geolinguistic code: </span>
+                <input type="hidden" name="geolangcode" id="geolangcode" value="[% geolangcode %]" />[% geolangcode %]
+            [% ELSE %]
+            <label for="publicationyear">Geolinguistic code: </label>
+                <input type="text" size="4" name="geolangcode" id="geolangcode" value="[% geolangcode %]" />
+            [% END %]
+        </li>
+        <li>
+            [% IF ( biblionumber ) %]
             <span class="label">ISBN: </span>
                 <input type="hidden" name="isbn" id="ISBN" value="[% isbn %]" />[% isbn %]
             [% ELSE %]

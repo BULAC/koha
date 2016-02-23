@@ -632,6 +632,7 @@ $template->param(no_add => $no_add);
 
 $template->param( sort1 => $data{'sort1'});
 $template->param( sort2 => $data{'sort2'});
+$template->param( sort3 => $data{'sort3'});
 
 if ($nok) {
     foreach my $error (@errors) {

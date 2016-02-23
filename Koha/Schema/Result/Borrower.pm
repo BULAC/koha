@@ -343,6 +343,12 @@ __PACKAGE__->table("borrowers");
   is_nullable: 1
   size: 80
 
+=head2 sort3
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 80
+
 =head2 altcontactfirstname
 
   data_type: 'varchar'
@@ -553,6 +559,8 @@ __PACKAGE__->add_columns(
   "sort1",
   { data_type => "varchar", is_nullable => 1, size => 80 },
   "sort2",
+  { data_type => "varchar", is_nullable => 1, size => 80 },
+  "sort3",
   { data_type => "varchar", is_nullable => 1, size => 80 },
   "altcontactfirstname",
   { data_type => "varchar", is_nullable => 1, size => 255 },

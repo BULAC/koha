@@ -686,6 +686,30 @@
             [% END %]
         </li>
     [% END %]
+        [% UNLESS nosort3 %]
+    <li>
+    [% IF ( mandatorysort3 ) %]
+    <label for="sort3" class="required">
+    [% ELSE %]
+    <label for="sort3">
+    [% END %]
+    Sort 3: </label>
+    [% PROCESS 'av-build-dropbox.inc' name="sort3", category="Bsort3", default=sort3, size = 20 %]
+    [% IF ( mandatorysort3 ) %]<span class="required">Required</span>[% END %]
+    </li>
+        [% END %]
+    [% IF ( Koha.Preference( 'NorwegianPatronDBEnable' ) == 1 ) %]
+        <li>
+            <label for="sort3">Sync with the Norwegian national patron database:</label>
+            [% IF ( sync == 0 ) %]
+                <input type="radio" id="sync" name="sync" value="1"> Yes
+                <input type="radio" id="sync" name="sync" value="0" checked> No
+            [% ELSE %]
+                <input type="radio" id="sync" name="sync" value="1" checked> Yes
+                <input type="radio" id="sync" name="sync" value="0"> No
+            [% END %]
+        </li>
+    [% END %]
 	</ol>
   </fieldset>
     [% UNLESS nodateenrolled &&  noopacnote && noborrowernotes %]

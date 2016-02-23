@@ -232,8 +232,10 @@ my $branchdetail = GetBranchDetail( $data->{'branchcode'});
 my ( $total, $accts, $numaccts) = GetMemberAccountRecords( $borrowernumber );
 my $lib1 = &GetSortDetails( "Bsort1", $data->{'sort1'} );
 my $lib2 = &GetSortDetails( "Bsort2", $data->{'sort2'} );
+my $lib3 = &GetSortDetails( "Bsort3", $data->{'sort3'} );
 $template->param( lib1 => $lib1 ) if ($lib1);
 $template->param( lib2 => $lib2 ) if ($lib2);
+$template->param( lib3 => $lib3 ) if ($lib3);
 
 # If printing a page, send the account informations to the template
 if ($print eq "page") {
