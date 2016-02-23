@@ -43,6 +43,9 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user({
     debug         => 1,
 });
 
+my $borrower = C4::Members::GetMember( borrowernumber => $loggedinuser );
+$template->param( BORROWER_INFO => $borrower );
+
 if ( $op eq 'request' ) {
     my $success = Koha::Borrower::Discharge::request({
         borrowernumber => $loggedinuser,

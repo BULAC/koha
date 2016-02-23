@@ -40,6 +40,9 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user({
         authnotrequired => ( C4::Context->preference("OpacPublic") ? 1 : 0 ),
     });
 
+my $borrower = C4::Members::GetMember( borrowernumber => $loggedinuser );
+$template->param( BORROWER_INFO => $borrower );
+
 $template->param(
     listsview => 1,
     print     => $query->param('print')

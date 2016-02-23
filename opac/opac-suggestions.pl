@@ -82,6 +82,9 @@ else {
     );
 }
 
+my $borrower = C4::Members::GetMember( borrowernumber => $borrowernumber );
+$template->param( BORROWER_INFO => $borrower );
+
 if ( $op eq 'else' ) {
     if ( C4::Context->preference("OPACViewOthersSuggestions") ) {
         if ( $borrowernumber ) {

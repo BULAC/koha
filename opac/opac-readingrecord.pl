@@ -51,6 +51,9 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
     }
 );
 
+my $borrower = C4::Members::GetMember( borrowernumber => $borrowernumber );
+$template->param( BORROWER_INFO => $borrower );
+
 # get borrower information ....
 my ( $borr ) = GetMemberDetails( $borrowernumber );
 

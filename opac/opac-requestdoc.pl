@@ -59,9 +59,8 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
     }
 );
 
-    my $borrower = GetMemberDetails( $borrowernumber );
-
-    $template->param (borrower => $borrower);
+my $borrower = GetMemberDetails( $borrowernumber );
+$template->param( BORROWER_INFO => $borrower );
 
     # check if this user can place a reserve, -1 means use sys pref, 0 means dont block, 1 means block
     if ( $borrower->{'BlockExpiredPatronOpacActions'} ) {

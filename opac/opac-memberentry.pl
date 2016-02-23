@@ -41,6 +41,9 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
     }
 );
 
+my $borrower = C4::Members::GetMember( borrowernumber => $borrowernumber );
+$template->param( BORROWER_INFO => $borrower );
+
 unless ( C4::Context->preference('PatronSelfRegistration') || $borrowernumber )
 {
     print $cgi->redirect("/cgi-bin/koha/opac-main.pl");

@@ -118,6 +118,9 @@ if ($is_ajax) {
 	});
 }
 
+my $borrower = C4::Members::GetMember( borrowernumber => $loggedinuser );
+$template->param( BORROWER_INFO => $borrower );
+
 if ($add_op) {
 	unless ($loggedinuser) {
 		push @errors, {+'login' => 1 };
