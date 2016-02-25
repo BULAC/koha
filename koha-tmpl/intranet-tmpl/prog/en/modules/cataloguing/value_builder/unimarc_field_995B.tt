@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<!-- Progilone B10 -->
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>UNIMARC_Field 995B builder</title>
+    <script type="text/javascript" src="[% themelang %]/js/pgl-callnumber.js"></script>
+</head>
+<body>
+	<form name="f_pop" action="plugin_launcher.pl">
+		<input type="hidden" name="plugin_name" value="unimarc_field_995B.pl" />
+		<input type="hidden" name="index" value="[% index %]" />
+		<input type="hidden" name="result" value="[% result %]" />
+		<input type="hidden" name="subscription" value="[% subscription %]" />
+		<input type="hidden" name="number" value="[% number %]" />
+
+		[% IF (op) %]
+			<input type="hidden" name="op" value="cancel" />
+			<input type="hidden" name="geo_index" value="[% geo_index %]" />
+			<input type="hidden" name="classification" value="[% classification %]" />
+			<input type="hidden" name="complement" value="[% complement %]" />
+			<input type="hidden" name="volume" value="[% volume %]" />
+			<input type="hidden" name="serial" value="[% serial %]" />
+
+			<table>
+				<tr>
+					<td>Free access callnumber</td>
+					<td><input type="text" name="callnumber" value="[% callnumber %]" readonly="readonly" size="40" /></td>
+			</table>
+
+			<div>
+				<input type="button" value="OK" onclick="report();"/>
+				<input type="submit" value="Cancel"/>
+			</div>
+		[% ELSE %]
+			<input type="hidden" name="op" value="compute" />
+
+			<div id="pluginCallnumber" name="pluginCallnumber" [% IF (freeInput) %]style="display: none;"[% END %] >
+				<table id="regularCallnumber" name="regularCallnumber" [% IF (serial) %]style="display: none;"[% END %]>
+					<tr>
+						<td>Geographical index *</td>
+						<td>
+							<select name="geo_index" size="1">
+								[% FOREACH geo IN geo_index_auth_values_hash %]
+									<option value="[% geo.value %]" [% geo.selected %] >[% geo.label %]</option>
+								[% END %]
+							</select>
+							<input type="hidden" name="mandatory" value="1" />
+						</td>
+					</tr>
+					<tr>
+                        <td>Classification index *</td>
+                        <td>
+                            <input type="text" maxlength="10" name="classification" value="[% classification %]"/>
+                            <input type="hidden" name="mandatory" value="1" />
+                        </td>
+					</tr>
+					<tr>
+						<td>Alphanumeric complement *</td>
+						<td>
+							<input type="text" maxlength="9" name="complement" value="[% complement %]"/>
+							<input type="hidden" name="mandatory" value="1" />
+						</td>
+					</tr>
+					<tr>
+						<td>Volume number</td>
+						<td><input type="text" maxlength="5" name="volume" value="[% volume %]"/></td>
+					</tr>
+				</table>
+
+				<table id="serialCallnumber" name="serialCallnumber" [% UNLESS (serial) %]style="display: none;"[% END %]>
+					<tr>
+						<td>Geographical index *</td>
+						<td>
+							<select name="serial_geo_index" size="1">
+								[% FOREACH geo IN geo_index_auth_values_hash %]
+									<option value="[% geo.value %]" [% geo.selected %] >[% geo.label %]</option>
+								[% END %]
+							</select>
+							<input type="hidden" name="mandatory" value="1" />
+						</td>
+					</tr>
+					<tr>
+						<td>Alphanumeric complement *</td>
+						<td>
+							<input type="text" maxlength="5" name="serial_complement" value="[% complement %]"/>
+							<input type="hidden" name="mandatory" value="1" />
+						</td>
+					</tr>
+				</table>
+
+				[% IF (subscription) %]
+	                <input type="hidden" name="serial" value="1" />
+	            [% ELSE %]
+					<br/>
+					<div>
+						<input type="checkbox" name="serial" id="serial" [% IF (serial) %]checked="checked"[% END %] onclick="toggleDisplay(this, 'regularCallnumber', true);toggleDisplay(this, 'serialCallnumber', false)"/>
+                        <label for="serial">Serial callnumber</label>
+					</div>
+				[% END %]
+			</div>
+
+			<br/>
+
+			<div>
+				<input type="checkbox" name="freeInput" id="freeInput" [% IF (freeInput) %]checked="checked"[% END %] onclick="toggleVisibility(this, 'freeCallnumber', false);toggleDisplay(this, 'pluginCallnumber', true);toggleDisplay(this, 'disabledFreeCallnumber', true);" />
+                <label for="freeCallnumber">Free input</label>
+				<input type="text" name="disabledFreeCallnumber" size="67" maxlength="255" id="disabledFreeCallnumber" disabled="disabled" [% IF (freeInput) %]style="display: none;"[% END %] value="[% freeCallnumber %]" />
+                <input type="text" name="freeCallnumber" size="67" maxlength="255" id="freeCallnumber" [% UNLESS (freeInput) %]style="visibility: hidden;"[% END %] value="[% freeCallnumber %]" />
+			</div>
+
+			<br/>
+
+			<div>
+				<input type="submit" value="OK" onclick="return check();"/>
+			</div>
+		[% END %]
+	</form>
+
+	<script type="text/javascript">
+		function check() {
+			var errors = 0;
+			var fields = findSubfieldsWithProperty("mandatory");
+			var isChecked = document.getElementById("serial").checked;
+
+			var isFreeInput = document.getElementById("freeInput").checked;
+			if (isFreeInput) {
+				return true;
+			}
+
+			for (var i = 0; i < fields.length; i++) {
+				var el = getInputSubfield(fields[i]);
+
+			    if (isChecked) {
+			        if (isParent('regularCallnumber', el)) {
+                        continue;
+			        }
+			    } else {
+			        if (isParent('serialCallnumber', el)) {
+                        continue;
+                    }
+                }
+
+				if (!el.value) {
+					errors++;
+					var label = fields[i].previousSibling.previousSibling;
+					label.style.backgroundColor="#FF0000";
+					label.style.fontWeight = "bold";
+				} else {
+					var label = fields[i].previousSibling.previousSibling;
+					label.style.backgroundColor="#FFFFFF";
+					label.style.fontWeight = "normal";
+				}
+			}
+
+			if (errors) {
+				return false;
+			}
+			return true;
+		}
+
+		function report() {
+			var doc = opener.document;
+
+			[% IF (subscription) %]
+				var field = doc.getElementsByName("[% index %]")[0]
+				field.value = document.f_pop.callnumber.value;
+			[% ELSE %]
+			    var field = doc.getElementById("[% index %]");
+			    field.value = document.f_pop.callnumber.value;
+			    reportToSubfield(doc, 'B', 'k', document.f_pop.callnumber.value);
+			[% END %]
+
+			window.close();
+			return false;
+		}
+	</script>
+</body>
+</html>

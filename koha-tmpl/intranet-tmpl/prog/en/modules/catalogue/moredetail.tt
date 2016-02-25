@@ -1,6 +1,14 @@
 [% INCLUDE 'doc-head-open.inc' %]
 <title>Koha &rsaquo; Catalog &rsaquo; Item details for [% title %] [% FOREACH subtitl IN subtitle %] [% subtitl.subfield %][% END %]</title>
 [% INCLUDE 'doc-head-close.inc' %]
+<script type="text/JavaScript">
+//<![CDATA[
+    function alertCallNumber() {
+        var text = _("The active callnumber can not be printed because it was not generated with the callnumber plugin.");
+        alert(text);
+    }
+//]]>
+</script>
 <style type="text/css">h3{padding-top: 1em; border-top: 2px solid #CCCCCC;}</style>
 [% INCLUDE 'browser-strings.inc' %]
 <!--[if lt IE 9]>
@@ -27,6 +35,7 @@
     <div id="yui-main">
     <div class="yui-b">
 [% INCLUDE 'cat-toolbar.inc' %]
+[% INCLUDE 'jasper.inc' %]
 
 <div id="catalogue_detail_biblio">
 
@@ -59,6 +68,42 @@
          [% IF ( CAN_user_editcatalogue_edit_items ) %]
          <a href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&amp;biblionumber=[% ITEM_DAT.biblionumber %]&amp;itemnumber=[% ITEM_DAT.itemnumber %]">[Edit Item]</a>
          [% END %]
+	               <form method="post" action="/cgi-bin/koha/catalogue/moredetail.pl">
+                                <input type="hidden" name="biblionumber" value="[% ITEM_DAT.biblionumber %]" />
+                                <input type="hidden" name="itemnumber" value ="[% ITEM_DAT.itemnumber %]" />
+                                <input type="hidden" name="barcode" value ="[% ITEM_DAT.barcode %]" />
+                                <input type="hidden" name="op" value ="print_barcode" />
+                                <input type="submit" class="submit" name="print_barcode" value="Barcode edition" />
+                        </form>
+
+                        <form method="post" action="/cgi-bin/koha/catalogue/moredetail.pl">
+                                <input type="hidden" name="biblionumber" value="[% ITEM_DAT.biblionumber %]" />
+                                <input type="hidden" name="itemnumber" value ="[% ITEM_DAT.itemnumber %]" />
+                                <input type="hidden" name="op" value ="print_callnumber" />
+
+                        [% IF (pluginCallnumber) %]
+                                <input type="submit" class="submit" name="print_callnumber" value="Callnumber edition" />
+                        [% ELSE %]
+			        <input type="submit" class="submit" name="print_callnumber" value="Callnumber edition" />
+                                <!-- <input type="submit" class="submit" name="print_callnumber" value="Callnumber edition" onclick="alertCallNumber();return false;" /> -->
+                        [% END %]
+
+                        </form>
+                        <!--
+                        <form method="post" action="/cgi-bin/koha/catalogue/moredetail.pl">
+                                <input type="hidden" name="biblionumber" value="[% ITEM_DAT.biblionumber %]" />
+                                <input type="hidden" name="itemnumber" value ="[% ITEM_DAT.itemnumber %]" />
+                                <input type="hidden" name="op" value ="print_return_ticket" />
+                                <input type="submit" class="submit" name="print_return_ticket" value="Return Ticket" />
+                        </form>
+
+                        <form method="post" action="/cgi-bin/koha/catalogue/moredetail.pl">
+                                <input type="hidden" name="biblionumber" value="[% ITEM_DAT.biblionumber %]" />
+                                <input type="hidden" name="itemnumber" value ="[% ITEM_DAT.itemnumber %]" />
+                                <input type="hidden" name="op" value ="print_taking_slip" />
+                                <input type="submit" class="submit" name="print_taking_slip" value="Taking Slip" />
+                        </form>
+                        -->
          [% END %][% END %]</h4>
             <ol class="bibliodetails">
             <li><span class="label">Home library:</span> [% ITEM_DAT.homebranchname %]&nbsp;</li>
@@ -261,4 +306,6 @@
 [% INCLUDE 'biblio-view-menu.inc' %]
 </div>
 </div>
+[% INCLUDE 'pgl-results-navigation-html.inc' %]
+[% INCLUDE 'pgl-back-results-html.inc' %]
 [% INCLUDE 'intranet-bottom.inc' %]

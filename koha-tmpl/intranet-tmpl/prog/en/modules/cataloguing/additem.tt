@@ -202,6 +202,12 @@ function confirm_deletion() {
 	<fieldset class="rows">
 	<ol>
         [% FOREACH ite IN item %]
+               [% IF ("$ite.tag$ite.subfield" == '995B' || "$ite.tag$ite.subfield" == '995g' || "$ite.tag$ite.subfield" == '995K' || "$ite.tag$ite.subfield" == '995z')  %]
+	         [% readonly = 'readonly' %]
+	       [% END %]
+               [% IF ("$ite.tag$ite.subfield" == '995B' || "$ite.tag$ite.subfield" == '995K' )  %]
+	         [% activate = "<input type=\"button\" value=\"Activate\" onclick=\"updateActiveCote('$ite.subfield')\"/>" %]
+	       [% END %]
                <li><div class="subfield_line" style="[% ite.visibility %]" id="subfield[% ite.tag %][% ite.subfield %][% ite.random %]">
                 [% IF ( ite.mandatory ) %]
                <label class="required">[% ite.subfield %] - [% ite.marc_lib %]</label>
@@ -231,7 +237,8 @@ function confirm_deletion() {
                     [% SET dopop = "Dopop('/cgi-bin/koha/authorities/auth_finder.pl?authtypecode=\"${mv.authtypecode}\"&index=${mv.id}','${mv.id}')" %]
                     <a href="#" class="buttonDot"  onclick="[%- dopop -%]; return false;" title="Tag editor">...</a>
                 [% ELSIF ( mv.type == 'text_plugin' ) %]
-                    <input type="text" id="[%- mv.id -%]" name="field_value" class="input_marceditor" size="50" maxlength="[%- mv.maxlength -%]" value="[%- mv.value -%]" />
+                    <input type="text" id="[%- mv.id -%]" name="field_value" class="input_marceditor" size="50" maxlength="[%- mv.maxlength -%]" value="[%- mv.value -%]" [% readonly %] />
+		    [% activate %]
                     [% IF ( mv.nopopup ) %]
                         <a href="#" id="buttonDot_[%- mv.id -%]" class="[%- mv.class -%]" title="No popup">...</a>
                     [% ELSE  %]
