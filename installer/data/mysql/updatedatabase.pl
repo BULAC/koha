@@ -776,7 +776,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
 $DBversion = "3.00.00.033";
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("INSERT INTO `userflags` VALUES(17,'staffaccess','Modify login / permissions for staff users',0)");
+    $dbh->do("INSERT INTO `userflags` VALUES(21,'staffaccess','Modify login / permissions for staff users',0)");
     print "Upgrade to $DBversion done (Adding permissions flag for staff member access modification.  )\n";
     SetVersion ($DBversion);
 }
@@ -6679,12 +6679,12 @@ if ( CheckVersion($DBversion) ) {
 
 $DBversion = "3.11.00.106";
 if ( CheckVersion($DBversion) ) {
-    $dbh->do("INSERT INTO userflags (bit, flag, flagdesc, defaulton) VALUES ('19', 'plugins', 'Koha plugins', '0')");
+    $dbh->do("INSERT INTO userflags (bit, flag, flagdesc, defaulton) VALUES ('23', 'plugins', 'Koha plugins', '0')");
     $dbh->do("INSERT INTO permissions (module_bit, code, description) VALUES
-              ('19', 'manage', 'Manage plugins ( install / uninstall )'),
-              ('19', 'tool', 'Use tool plugins'),
-              ('19', 'report', 'Use report plugins'),
-              ('19', 'configure', 'Configure plugins')
+              ('23', 'manage', 'Manage plugins ( install / uninstall )'),
+              ('23', 'tool', 'Use tool plugins'),
+              ('23', 'report', 'Use report plugins'),
+              ('23', 'configure', 'Configure plugins')
             ");
     $dbh->do("INSERT INTO systempreferences (variable,value,explanation,options,type) VALUES('UseKohaPlugins','0','Enable or disable the ability to use Koha Plugins.','','YesNo')");
 
@@ -6894,7 +6894,7 @@ if ( CheckVersion($DBversion) ) {
 $DBversion = "3.13.00.001";
 if ( CheckVersion($DBversion) ) {
     $dbh->do("INSERT INTO `systempreferences` (`variable`, `value`, `options`, `explanation`, `type`) VALUES ('UseCourseReserves', '0', NULL, 'Enable the course reserves feature.', 'YesNo')");
-    $dbh->do("INSERT INTO userflags (bit,flag,flagdesc,defaulton) VALUES ('18','coursereserves','Course Reserves','0')");
+    $dbh->do("INSERT INTO userflags (bit,flag,flagdesc,defaulton) VALUES ('22','coursereserves','Course Reserves','0')");
     $dbh->do("
 CREATE TABLE `courses` (
   `course_id` int(11) NOT NULL AUTO_INCREMENT,
@@ -6970,9 +6970,9 @@ ALTER TABLE `course_reserves`
 
     $dbh->do("
 INSERT INTO permissions (module_bit, code, description) VALUES
-  (18, 'manage_courses', 'Add, edit and delete courses'),
-  (18, 'add_reserves', 'Add course reserves'),
-  (18, 'delete_reserves', 'Remove course reserves')
+  (22, 'manage_courses', 'Add, edit and delete courses'),
+  (22, 'add_reserves', 'Add course reserves'),
+  (22, 'delete_reserves', 'Remove course reserves')
 ;
     ");
 
