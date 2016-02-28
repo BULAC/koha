@@ -374,6 +374,7 @@ function validate1(date) {
         <span class="problem"><a href="/cgi-bin/koha/members/member-password.pl?member=[% borrowernumber %]">Undefined</a></span>
     [% END %] 
     </li>
+    <li><span class="label">SCA enrolled by:</span>[% sca_enrolled_by  %]</li>
     [% IF ( borrowernotes ) %]<li><span class="label">Circulation note: </span>[% borrowernotes %]</li>[% END %]
     [% IF ( opacnote ) %]<li><span class="label">OPAC note:</span>[% opacnote %]</li>[% END %]
     [% IF Koha.Preference( 'NorwegianPatronDBEnable' ) == 1 %]
