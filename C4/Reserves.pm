@@ -2559,7 +2559,7 @@ sub IsItemOnHoldAndFound {
 sub EditReserves {
     my $deskcode = shift;
     my $itypes = GetDeskItypes($deskcode);
-    my $query = 'SELECT reserve_id, itemnumber FROM reserves WHERE found ="A"';
+    my $query = 'SELECT reserve_id, itemnumber, borrowernumber FROM reserves WHERE found ="A"';
     my $sth = C4::Context->dbh->prepare($query);
     my $ret = $sth->execute();
     return -1 if (! defined $ret);
@@ -2568,11 +2568,13 @@ sub EditReserves {
     while (my $row = $sth->fetchrow_arrayref ) {
         my $reserve_id = $row->[0];
 	my $itemnumber = $row->[1];
+	my $borrowernumber = $row->[2];
 	my $itemquery = 'SELECT itype FROM items WHERE itemnumber = ?';
 	my $itemsth = C4::Context->dbh->prepare($itemquery);
 	return -2 if (! defined $itemsth->execute($itemnumber));
 	my $itype = $itemsth->fetchall_arrayref->[0][0];
 	if ((grep {/^$itype$/} @{ $itypes }) || $itype eq '') {
+	    ModReserveAffect( $itemnumber, $borrowernumber, undef, $deskcode);
 	    ModReserveStatus($itemnumber, 'E');
 	    $EditedCount++;
 	    push @$EditedReserves, $reserve_id;
