@@ -53,7 +53,9 @@
                         [% IF ( SEARCH_RESULT.isbn ) %] [% SEARCH_RESULT.isbn |html %][% END %]
        </p>
 [% IF Koha.Preference( 'RequestOnOpac' ) == 1 %]
+<!--
 <p><a href="[% OPACBaseURL %]/cgi-bin/koha/opac-reserve.pl?biblionumber=[% SEARCH_RESULT.biblionumber %]">Place Hold on <i>[% SEARCH_RESULT.title %]</i></a></p>
+-->
 [% END %]
 						]]></description>
        <guid>[% OPACBaseURL %]/cgi-bin/koha/opac-detail.pl?biblionumber=[% SEARCH_RESULT.biblionumber %]</guid>

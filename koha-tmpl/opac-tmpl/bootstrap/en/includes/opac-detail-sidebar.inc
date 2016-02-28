@@ -3,7 +3,9 @@
         [% IF Koha.Preference( 'opacuserlogin' ) == 1 %]
             [% IF Koha.Preference( 'RequestOnOpac' ) == 1 %]
                 [% IF ( AllowOnShelfHolds OR ItemsIssued ) %]
+                    <!--
                     <li><a class="reserve" href="/cgi-bin/koha/opac-reserve.pl?biblionumber=[% biblionumber %]">Place hold</a></li>
+                    -->
                 [% END %]
             [% END %]
         [% END %]
