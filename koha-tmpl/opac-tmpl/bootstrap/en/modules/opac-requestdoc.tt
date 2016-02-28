@@ -61,12 +61,12 @@
 		[% END %]
 
 
-
+                [% IF (futureop == 'addbiblioanditem') %]
                 <li class="editable">
                     <label for="pubyear">publication year:</label>
                     <input id="pubyear" type="text" name="pubyear" value="" />
                 </li>
-
+                [% END %]
 
                 <li class="mandatory editable">
                     <label for="callnumber">Call number:</label>
@@ -74,8 +74,8 @@
                 </li>
 
                 <li class="editable ">
-                    <label for="numbers">Volum(s), Number(s): <span class="hint">Separate with commas. Note : you can ask for items in this range : [% item.enumchron %]</span></label>
-                    <textarea id="numbers" rows="2" name="numbers"></textarea>
+                    <label for="numbers">[% IF (futureop == 'additem')%]Year, [% END %]Volume(s), Number(s): [% IF (item.enumchron) %]<span class="hint">Separate with commas. Note : you can ask for items in this range : [% item.enumchron %]</span>[% END %]</label>
+                    <textarea id="numbers" rows="2" name="numbers" [% IF (futureop == 'additem')%]required[% END %]></textarea>
                 </li>
 
 
