@@ -673,6 +673,234 @@ msgstr "Ne pas mettre à jour automatiquement"
 msgid "authorities.pref#dontmerge# automatically update attached biblios when changing an authority record. If this is off, please ask your administrator to enable the merge_authority.pl cronjob."
 msgstr "les notices bibliographiques liées à une autorité quand on la modifie. Si vous souhaitez la mise à jour, demandez à votre administrateur d'installer le script merge_authority.pl en cron"
 
+# BULAC
+msgid "bulac.pref"
+msgstr ""
+
+# BULAC > Callnumber
+msgid "bulac.pref Callnumber"
+msgstr ""
+
+# BULAC > Circulation offline
+msgid "bulac.pref Circulation offline"
+msgstr ""
+
+# BULAC > Communication
+msgid "bulac.pref Communication"
+msgstr ""
+
+# BULAC > Duplication
+msgid "bulac.pref Duplication"
+msgstr ""
+
+# BULAC > Items
+msgid "bulac.pref Items"
+msgstr ""
+
+# BULAC > JasperReport
+msgid "bulac.pref JasperReport"
+msgstr ""
+
+# BULAC > SCA
+msgid "bulac.pref SCA"
+msgstr ""
+
+# BULAC > Spaces
+msgid "bulac.pref Spaces"
+msgstr ""
+
+# BULAC > Stocktaking
+msgid "bulac.pref Stocktaking"
+msgstr ""
+
+# BULAC > Communication
+msgid "bulac.pref#DelayBeforeDifferedStack# Number of days needed before a differed stack can be created"
+msgstr ""
+
+# BULAC > Items
+msgid "bulac.pref#DuplicateFields# (separate fields with |)"
+msgstr ""
+
+# BULAC > Items
+msgid "bulac.pref#DuplicateFields# List of subfield codes to keep when duplicating an item : "
+msgstr ""
+
+# BULAC > Duplication
+msgid "bulac.pref#DuplicationDeadlineExpiration# Duplication expiration delay (in days)."
+msgstr ""
+
+# BULAC > Duplication
+msgid "bulac.pref#DuplicationPublicationYear# Reproduction allowed for item published for more than"
+msgstr ""
+
+# BULAC > Duplication
+msgid "bulac.pref#DuplicationPublicationYear# years."
+msgstr ""
+
+# BULAC > Duplication
+msgid "bulac.pref#DuplicationStaffEmailAdress# Use"
+msgstr ""
+
+# BULAC > Duplication
+msgid "bulac.pref#DuplicationStaffEmailAdress# as the email address for the duplication staff of Koha."
+msgstr ""
+
+# BULAC > Duplication
+msgid "bulac.pref#DuplicationUrl# URL of duplication application."
+msgstr ""
+
+# BULAC > JasperReport
+msgid "bulac.pref#JasperServerPasswordConnection# Password connection."
+msgstr ""
+
+# BULAC > JasperReport
+msgid "bulac.pref#JasperServerUrl# Address IP of Jasper server."
+msgstr ""
+
+# BULAC > JasperReport
+msgid "bulac.pref#JasperServerUserConnection# ID user connection."
+msgstr ""
+
+# BULAC > SCA
+msgid "bulac.pref#ScaKey# Key for the sca : "
+msgstr ""
+
+# BULAC > SCA
+msgid "bulac.pref#ScaPassword# Connect to the sca with the password : "
+msgstr ""
+
+# BULAC > SCA
+msgid "bulac.pref#ScaUrl# URL of the SCA."
+msgstr ""
+
+# BULAC > SCA
+msgid "bulac.pref#ScaUser# Connect to the sca with the user : "
+msgstr ""
+
+# BULAC > Spaces
+msgid "bulac.pref#SpacesUrl# URL of space management application."
+msgstr ""
+
+# BULAC > Communication
+msgid "bulac.pref#StackRequestWaitingTime# Number of minutes the borrower has to wait to get his item at desk after a stack request"
+msgstr ""
+
+# BULAC > Callnumber
+msgid "bulac.pref#UseAdvancedCallNumberManagement# Don't use"
+msgstr ""
+
+# BULAC > Callnumber
+msgid "bulac.pref#UseAdvancedCallNumberManagement# Use"
+msgstr ""
+
+# BULAC > Callnumber
+msgid "bulac.pref#UseAdvancedCallNumberManagement# advanced callnumber management."
+msgstr ""
+
+# BULAC > Stocktaking
+msgid "bulac.pref#UseAdvancedCountInventory# Don't use"
+msgstr ""
+
+# BULAC > Stocktaking
+msgid "bulac.pref#UseAdvancedCountInventory# Use"
+msgstr ""
+
+# BULAC > Stocktaking
+msgid "bulac.pref#UseAdvancedCountInventory# advanced cumulative inventory."
+msgstr ""
+
+# BULAC > Stocktaking
+msgid "bulac.pref#UseAdvancedInventoryManagement# Don't use"
+msgstr ""
+
+# BULAC > Stocktaking
+msgid "bulac.pref#UseAdvancedInventoryManagement# Use"
+msgstr ""
+
+# BULAC > Stocktaking
+msgid "bulac.pref#UseAdvancedInventoryManagement# advanced inventory management."
+msgstr ""
+
+# BULAC > Callnumber
+msgid "bulac.pref#UseCallNumberActivationButton# Don't use"
+msgstr ""
+
+# BULAC > Callnumber
+msgid "bulac.pref#UseCallNumberActivationButton# Use"
+msgstr ""
+
+# BULAC > Callnumber
+msgid "bulac.pref#UseCallNumberActivationButton# callnumber activation buttons."
+msgstr ""
+
+# BULAC > Duplication
+msgid "bulac.pref#UseDuplication# Don't use"
+msgstr ""
+
+# BULAC > Duplication
+msgid "bulac.pref#UseDuplication# If ON, enables the duplication application (OPAC and Intranet)."
+msgstr ""
+
+# BULAC > Duplication
+msgid "bulac.pref#UseDuplication# Use"
+msgstr ""
+
+# BULAC > Circulation offline
+msgid "bulac.pref#UseOfflineCircManagement# Don't use"
+msgstr ""
+
+# BULAC > Circulation offline
+msgid "bulac.pref#UseOfflineCircManagement# Use"
+msgstr ""
+
+# BULAC > Circulation offline
+msgid "bulac.pref#UseOfflineCircManagement# advanced offline circulation management."
+msgstr ""
+
+# BULAC > Callnumber
+msgid "bulac.pref#UseOlimpLocation# Use the OLIMP Web Service from the URL"
+msgstr ""
+
+# BULAC > Callnumber
+msgid "bulac.pref#UseOlimpLocation# to retrieve item location."
+msgstr ""
+
+# BULAC > SCA
+msgid "bulac.pref#UseSCA# Disable"
+msgstr ""
+
+# BULAC > SCA
+msgid "bulac.pref#UseSCA# Enable"
+msgstr ""
+
+# BULAC > SCA
+msgid "bulac.pref#UseSCA# the connection to the SCA."
+msgstr ""
+
+# BULAC > Spaces
+msgid "bulac.pref#UseSpaces# Allow"
+msgstr ""
+
+# BULAC > Spaces
+msgid "bulac.pref#UseSpaces# Don't allow"
+msgstr ""
+
+# BULAC > Spaces
+msgid "bulac.pref#UseSpaces# Spaces booking."
+msgstr ""
+
+# BULAC > Communication
+msgid "bulac.pref#UseStackrequest# Disable"
+msgstr ""
+
+# BULAC > Communication
+msgid "bulac.pref#UseStackrequest# Enable"
+msgstr ""
+
+# BULAC > Communication
+msgid "bulac.pref#UseStackrequest# the advanced stack request management (OPAC and Intranet)."
+msgstr ""
+
 # Cataloging
 msgid "cataloguing.pref"
 msgstr "Catalogage"
@@ -1524,6 +1752,26 @@ msgstr "Confirmer les futures demandes de réservations (ne débutant pas  aprè
 # Circulation > Holds Policy
 msgid "circulation.pref#ConfirmFutureHolds# days from now) at checkin time. Note that this number of days will be used too in calculating the default end date for the Holds to pull-report. But it does not interfere with issuing, renewing or transferring books."
 msgstr "jours après la date courante) lors du retour. Notez que ce délai doit être utilisé également pour calculer la date de fin par défaut des réservations. Mais elle n'interfère pas avec les prêts, les renouvellements ni les transferts."
+
+# Circulation > Checkout Policy
+msgid "circulation.pref#ConsiderOnSiteCheckoutsAsNormalCheckouts# Consider"
+msgstr ""
+
+# Circulation > Checkout Policy
+msgid "circulation.pref#ConsiderOnSiteCheckoutsAsNormalCheckouts# Don't consider"
+msgstr ""
+
+# Circulation > Checkout Policy
+msgid "circulation.pref#ConsiderOnSiteCheckoutsAsNormalCheckouts# If disabled, both values will be checked separately."
+msgstr ""
+
+# Circulation > Checkout Policy
+msgid "circulation.pref#ConsiderOnSiteCheckoutsAsNormalCheckouts# If enabled, the number of checkouts allowed will be normal checkouts + on-site checkouts."
+msgstr ""
+
+# Circulation > Checkout Policy
+msgid "circulation.pref#ConsiderOnSiteCheckoutsAsNormalCheckouts# on-site checkouts as normal checkouts."
+msgstr ""
 
 # Circulation > Checkout Policy
 msgid "circulation.pref#DefaultLongOverdueChargeValue# <br>(Used when the longoverdue.pl script is called without the --charge parameter)"
@@ -4923,8 +5171,8 @@ msgid "patrons.pref#intranetreadinghistory# Don't allow"
 msgstr "Ne pas autoriser"
 
 # Patrons > General
-msgid "patrons.pref#intranetreadinghistory# staff to access a patron's checkout history (it is stored regardless)."
-msgstr "le personnel à avoir accès à l'historique des prêts des adhérents (qui est quoiqu'il en soit enregistré dans la base de données)."
+msgid "patrons.pref#intranetreadinghistory# staff to access a patron's checkout history (reading history is still stored, regardless of staff being allowed access or not)."
+msgstr ""
 
 # Patrons > General
 msgid "patrons.pref#minPasswordLength# Login passwords for staff and patrons must be at least"

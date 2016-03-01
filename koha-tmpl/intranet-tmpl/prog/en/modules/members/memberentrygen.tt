@@ -250,6 +250,9 @@
 <input type="hidden" name="check_member" value="[% check_member %]" />
 <input type="hidden" name="borrowernumber" value="[% UNLESS opduplicate %][% borrowernumber %][% END %]" />
 <input type="hidden" name="nodouble"  value="[% UNLESS opduplicate %][% nodouble %][% END %]" />
+<input type="hidden" name="old_category" value="[% categorycode %]" />
+<input type="hidden" name="old_cardnumber" value="[% cardnumber %]" />
+<input type="hidden" name="old_enrolled_by" value="[% sca_enrolled_by %]" />
 [% IF ( step ) %]<input type="hidden" name="step"  value="[% step %]" />[% END %]
 [% IF ( opadd ) %]<input type="hidden" name="op" value="insert" />
 [% ELSIF ( opduplicate ) %]

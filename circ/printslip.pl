@@ -10,7 +10,7 @@ use CAM::PDF;
 
 my $query=new CGI;
 
-checkauth($query, 0, {circulate => 1}, 'intranet');
+checkauth($query, 0, {circulate => "circulate_remaining_permissions"}, 'intranet');
 
 my $mimetype='application/pdf';
 my $reservesstr =  $query->param('reserves');
@@ -25,23 +25,26 @@ foreach my $reserve (@reserves) {
 my @tmppdffiles = map { "/tmp/bordereau_accompagnement-$_.pdf" } @reserves;
 
 my $mergepdfres;
+my $timestamp = localtime();
+$timestamp =~ s/ /_/g;
+my $fid = $timestamp . '-' . $$ ;
 eval {
-    $mergepdfres = `pdftk @tmppdffiles cat output /tmp/bordereau_accompagnement-${reservesstr}.pdf`;
+    $mergepdfres = `pdftk @tmppdffiles cat output /tmp/bordereau_accompagnement-${fid}.pdf`;
     open my $lol, '>', '/tmp/lol';
     print $lol $mergepdfres;
-    print $lol "pdftk @tmppdffiles cat output /tmp/bordereau_accompagnement-${reservesstr}.pdf";
+    print $lol "pdftk @tmppdffiles cat output /tmp/bordereau_accompagnement-${fid}.pdf";
 };
 die "error: $@: $mergepdfres" if $@;
 
 print $query->header(
     -expires=>'now',
     -type=>$mimetype,
-    -disposition=>"+inline:bordereau_accompagnement-${reservesstr}.pdf",
-    -filename=>'bordereau_accompagnement-borrower_${reservesstr}.pdf'
+    -disposition=>"+inline:bordereau_accompagnement-${fid}.pdf",
+    -filename=>'bordereau_accompagnement-borrower_${fid}.pdf'
     );
 
-open my $pdffh, '<', "/tmp/bordereau_accompagnement-${reservesstr}.pdf"
-    or die "Can't open /tmp/bordereau_accompagnement-${reservesstr}.pdf: $@";
+open my $pdffh, '<', "/tmp/bordereau_accompagnement-${fid}.pdf"
+    or die "Can't open /tmp/bordereau_accompagnement-${fid}.pdf: $@";
 binmode $pdffh;
 while (<$pdffh>) {
     print;

@@ -570,6 +570,8 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 50 },
   "privacy",
   { data_type => "integer", default_value => 1, is_nullable => 0 },
+  "sca_enrolled_by",
+  { data_type => "varchar", is_nullable => 0, size => 255 },
 );
 
 

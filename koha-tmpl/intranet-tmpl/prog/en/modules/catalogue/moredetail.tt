@@ -64,7 +64,7 @@
     [% FOREACH ITEM_DAT IN ITEM_DATA %]
     <div class="yui-g">
         <h3 id="item[% ITEM_DAT.itemnumber %]">Barcode [% ITEM_DAT.barcode %]  [% IF ( ITEM_DAT.notforloantext ) %][% ITEM_DAT.notforloantext %] [% END %]</h3>
-        <div class="listgroup"><h4>Item information [% IF ( CAN_user_editcatalogue_edit_catalogue ) %][% UNLESS ( ITEM_DAT.nomod ) %]
+        <div class="listgroup"><h4>Item information [% IF ( CAN_user_editcatalogue_edit_items ) %][% UNLESS ( ITEM_DAT.nomod ) %]
          [% IF ( CAN_user_editcatalogue_edit_items ) %]
          <a href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&amp;biblionumber=[% ITEM_DAT.biblionumber %]&amp;itemnumber=[% ITEM_DAT.itemnumber %]">[Edit Item]</a>
          [% END %]

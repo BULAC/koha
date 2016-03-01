@@ -776,7 +776,7 @@ if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
 
 $DBversion = "3.00.00.033";
 if (C4::Context->preference("Version") < TransformToNum($DBversion)) {
-    $dbh->do("INSERT INTO `userflags` VALUES(21,'staffaccess','Modify login / permissions for staff users',0)");
+    $dbh->do("INSERT INTO `userflags` VALUES(19,'staffaccess','Modify login / permissions for staff users',0)");
     print "Upgrade to $DBversion done (Adding permissions flag for staff member access modification.  )\n";
     SetVersion ($DBversion);
 }
