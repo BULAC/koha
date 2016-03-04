@@ -239,11 +239,11 @@ foreach my $biblionumber (@biblionumbers) {
         }
     }
 
-    if ( $holds_count ) {
-            $alreadyreserved = 1;
-            $biblioloopiter{warn} = 1;
-            $biblioloopiter{alreadyres} = 1;
-    }
+    #if ( $holds_count ) {
+            #$alreadyreserved = 1;
+            #$biblioloopiter{warn} = 1;
+            #$biblioloopiter{alreadyres} = 1;
+    #}
 
     $template->param(
         alreadyreserved => $alreadyreserved,
@@ -506,6 +506,8 @@ foreach my $biblionumber (@biblionumbers) {
                 my $item = GetItem($res->{itemnumber});
                 $reserve{'itemnumber'}  = $res->{'itemnumber'};
                 $reserve{'barcodenumber'}   = $item->{'barcode'};
+		$reserve{'itype'} = $item->{'itype'};
+		$reserve{'enumchron'} = $item->{'enumchron'};
                 $reserve{'item_level_hold'} = 1;
             }
         }

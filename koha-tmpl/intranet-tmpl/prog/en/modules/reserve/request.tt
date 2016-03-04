@@ -414,6 +414,7 @@ function checkMultiHold() {
         <a href="#" id="clear-date-to" class="clear-date">Clear date</a>
 	</li>
 
+        <!--
         [% UNLESS ( multi_hold ) %]
           <li> <label for="requestany">Place a hold on the next available item </label>
                <input type="checkbox" id="requestany" name="request" checked="checked" value="Any" />
@@ -421,9 +422,11 @@ function checkMultiHold() {
                <input type="hidden" name="alreadyreserved" value="[% alreadyreserved %]" />
           </li>
         [% END %]
+	-->
 
 </ol>
    [% UNLESS ( multi_hold ) %]
+        <!--
         <fieldset class="action">
             [% IF ( borrowernumber ) %]
                 [% IF ( override_required ) %]
@@ -435,6 +438,7 @@ function checkMultiHold() {
                 [% END %]
             [% END %]
         </fieldset>
+	-->
         [% FOREACH bibitemloo IN bibitemloop %]
           <ol>
             [% UNLESS ( item_level_itypes ) %]
@@ -443,7 +447,7 @@ function checkMultiHold() {
 
             [% IF ( bibitemloo.publicationyear ) %]<li><span class="label">Publication year:</span> [% bibitemloo.publicationyear %]</li>[% END %]
           </ol>
-
+        
         <h2 style="padding: 0 1em;">Place a hold on a specific item</h2>
         <table id="requestspecific">
             <thead>
@@ -773,6 +777,7 @@ function checkMultiHold() {
       [% IF ( reserveloo.constrainttypea ) %]
             [% IF ( reserveloo.item_level_hold ) %]
                 <i>Only item
+		[% reserveloo.enumchron %] ([% reserveloo.itype %])
                 <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% reserveloo.biblionumber %]">
                      [% IF ( reserveloo.barcodenumber ) %]
                          [% reserveloo.barcodenumber %]

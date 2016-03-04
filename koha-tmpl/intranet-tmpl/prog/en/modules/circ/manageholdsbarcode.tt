@@ -51,7 +51,7 @@
   <form action="[% script_name %]" method="post" id="add_item_barcode">
     <fieldset class="rows">
       <ol>
-        <li>Barcode: <input type='text' name='item_barcode' size='13' maxlength='13' required /></li>
+        <li>Barcode: <input type='text' name='item_barcode' size='14' maxlength='14' required /></li>
 	[% IF document.itype == 'DOC-TMP-MG' %]
         <li>Enumchron: <input type='text' name='enumchron' value='[% document.enumchron %]'/></li>
 	[% END %]

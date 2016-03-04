@@ -1283,6 +1283,7 @@ sub ModReserveFill {
     # fill in a reserve record....
     my $reserve_id = $res->{'reserve_id'};
     my $biblionumber = $res->{'biblionumber'};
+    my $itemnumber = $res->{'itemnumber'};
     my $borrowernumber    = $res->{'borrowernumber'};
     my $resdate = $res->{'reservedate'};
 
@@ -1290,18 +1291,18 @@ sub ModReserveFill {
     my $priority;
     my $query = "SELECT priority
                  FROM   reserves
-                 WHERE  biblionumber   = ?
+                 WHERE  itemnumber   = ?
                   AND   borrowernumber = ?
                   AND   reservedate    = ?";
     my $sth = $dbh->prepare($query);
-    $sth->execute( $biblionumber, $borrowernumber, $resdate );
+    $sth->execute( $itemnumber, $borrowernumber, $resdate );
     ($priority) = $sth->fetchrow_array;
 
     # update the database...
     $query = "UPDATE reserves
                   SET    found            = 'F',
                          priority         = 0
-                 WHERE  biblionumber     = ?
+                 WHERE  itemnumber     = ?
                     AND reservedate      = ?
                     AND borrowernumber   = ?
                 ";
@@ -1311,19 +1312,19 @@ sub ModReserveFill {
     # move to old_reserves
     $query = "INSERT INTO old_reserves
                  SELECT * FROM reserves
-                 WHERE  biblionumber     = ?
+                 WHERE  itemnumber     = ?
                     AND reservedate      = ?
                     AND borrowernumber   = ?
                 ";
     $sth = $dbh->prepare($query);
     $sth->execute( $biblionumber, $resdate, $borrowernumber );
     $query = "DELETE FROM reserves
-                 WHERE  biblionumber     = ?
+                 WHERE  itemnumber     = ?
                     AND reservedate      = ?
                     AND borrowernumber   = ?
                 ";
     $sth = $dbh->prepare($query);
-    $sth->execute( $biblionumber, $resdate, $borrowernumber );
+    $sth->execute( $itemnumber, $resdate, $borrowernumber );
 
     # now fix the priority on the others (if the priority wasn't
     # already sorted!)....
