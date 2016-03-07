@@ -288,6 +288,10 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_nullable => 1 },
   "marcxml",
   { data_type => "longtext", is_nullable => 1 },
+  "geolangcode",
+  { data_type => "varchar", is_nullable => 1, size => 4 },
+  "bulaclang",
+  { data_type => "varchar", is_nullable => 1, size => 64 },
 );
 
 =head1 PRIMARY KEY
