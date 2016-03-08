@@ -248,8 +248,9 @@ if ( $orderinfo->{quantity} ne '0' ) {
                 "biblio.copyrightdate"        => $$orderinfo{publicationyear} ? $$orderinfo{publicationyear}: "",
                 "biblioitems.itemtype"        => $$orderinfo{itemtype} ? $$orderinfo{itemtype} : "",
                 "biblioitems.editionstatement"=> $$orderinfo{editionstatement} ? $$orderinfo{editionstatement} : "",
+                "biblioitems.geolangcode"     => defined $$orderinfo{geolangcode} ? $$orderinfo{geolangcode} : "",
+		"biblioitems.bulaclang"       => $$orderinfo{bulaclang} ? $$orderinfo{bulaclang} : "",
             });
-
         C4::Acquisition::FillWithDefaultValues( $record );
 
         # create the record in catalogue, with framework ''

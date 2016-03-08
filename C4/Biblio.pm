@@ -3161,7 +3161,9 @@ sub _koha_modify_biblioitem_nonmarc {
         cn_sort         = ?,
         totalissues     = ?,
         ean             = ?,
-        agerestriction  = ?
+        agerestriction  = ?,
+        geolangcode     = ?,
+        bulaclang       = ?
         where biblioitemnumber = ?
         ";
     my $sth = $dbh->prepare($query);
@@ -3173,8 +3175,10 @@ sub _koha_modify_biblioitem_nonmarc {
         $biblioitem->{'pages'},            $biblioitem->{'bnotes'},           $biblioitem->{'size'},                  $biblioitem->{'place'},
         $biblioitem->{'lccn'},             $biblioitem->{'url'},              $biblioitem->{'biblioitems.cn_source'}, $biblioitem->{'cn_class'},
         $biblioitem->{'cn_item'},          $biblioitem->{'cn_suffix'},        $cn_sort,                               $biblioitem->{'totalissues'},
-        $biblioitem->{'ean'},              $biblioitem->{'agerestriction'},   $biblioitem->{'biblioitemnumber'}
-    );
+        $biblioitem->{'ean'},              $biblioitem->{'agerestriction'},   $biblioitem->{'geolangcode'},           $biblioitem->{'bulaclang'} ,
+	$biblioitem->{'biblioitemnumber'}
+	);
+ #   print "$biblioitem->{'geolangcode'}, $biblioitem->{'bulaclang'}\n";
     if ( $dbh->errstr ) {
         $error .= "ERROR in _koha_modify_biblioitem_nonmarc $query" . $dbh->errstr;
         warn $error;
@@ -3226,7 +3230,9 @@ sub _koha_add_biblioitem {
         cn_sort         = ?,
         totalissues     = ?,
         ean             = ?,
-        agerestriction  = ?
+        agerestriction  = ?,
+        geolangcode     = ?,
+        bulaclang       = ?
         ";
     my $sth = $dbh->prepare($query);
     $sth->execute(
@@ -3238,6 +3244,8 @@ sub _koha_add_biblioitem {
         $biblioitem->{'lccn'},             $biblioitem->{'marc'},             $biblioitem->{'url'},                   $biblioitem->{'biblioitems.cn_source'},
         $biblioitem->{'cn_class'},         $biblioitem->{'cn_item'},          $biblioitem->{'cn_suffix'},             $cn_sort,
         $biblioitem->{'totalissues'},      $biblioitem->{'ean'},              $biblioitem->{'agerestriction'}
+	,
+	$biblioitem->{'geolangcode'}, $biblioitem->{'bulaclang'},
     );
     my $bibitemnum = $dbh->{'mysql_insertid'};
 

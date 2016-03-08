@@ -99,6 +99,8 @@ my $budget_id       = $input->param('budget_id') || 0;
 my $title           = $input->param('title');
 my $author          = $input->param('author');
 my $publicationyear = $input->param('publicationyear');
+my $geolangcode     = $input->param('geolangcode');
+my $bulaclang     = $input->param('bulaclang');
 my $ordernumber          = $input->param('ordernumber') || '';
 our $biblionumber    = $input->param('biblionumber');
 our $basketno        = $input->param('basketno');
@@ -391,6 +393,8 @@ $template->param(
     isbn             => $data->{'isbn'},
     ean              => $data->{'ean'},
     seriestitle      => $data->{'seriestitle'},
+    geolangcode      => $data->{'geolangcode'},
+    bulaclang        => $data->{'bulaclang'},
     itemtypeloop     => \@itemtypes,
     quantity         => $quantity,
     quantityrec      => $quantity,

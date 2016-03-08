@@ -364,6 +364,15 @@ $(document).ready(function()
         </li>
         <li>
             [% IF ( biblionumber ) %]
+            <span class="label">Lang: </span>
+                <input type="hidden" name="bulaclang" id="bulaclang" value="[% bulaclang %]" />[% bulaclang %]
+            [% ELSE %]
+            <label for="publicationyear">Lang: </label>
+                <input type="text" size="4" name="bulaclang" id="bulaclang" value="[% bulaclang %]" />
+            [% END %]
+        </li>
+        <li>
+            [% IF ( biblionumber ) %]
             <span class="label">ISBN: </span>
                 <input type="hidden" name="isbn" id="ISBN" value="[% isbn %]" />[% isbn %]
             [% ELSE %]
