@@ -41,6 +41,11 @@ use C4::Members;
 use MARC::File::XML;
 use URI::Escape;
 
+use C4::Callnumber::FreeAccessCallnumber;
+use C4::Callnumber::StoreCallnumber;
+use C4::Callnumber::Utils;
+use C4::Callnumber::Callnumber;
+
 our $dbh = C4::Context->dbh;
 
 sub find_value {
