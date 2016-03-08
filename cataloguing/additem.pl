@@ -668,6 +668,7 @@ if ($op eq "additem") {
   LostItem($itemnumber,'MARK RETURNED');
     }
     $nextop="additem";
+    UpdateCallnumberrules($itemtosave, $itemnumber, $biblionumber);
 } elsif ($op eq "delinkitem"){
     my $analyticfield = '773';
 	if ($marcflavour  eq 'MARC21' || $marcflavour eq 'NORMARC'){
