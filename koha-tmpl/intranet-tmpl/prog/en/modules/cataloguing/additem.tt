@@ -202,8 +202,10 @@ function confirm_deletion() {
 	<fieldset class="rows">
 	<ol>
         [% FOREACH ite IN item %]
-               [% IF ("$ite.tag$ite.subfield" == '995B' || "$ite.tag$ite.subfield" == '995g' || "$ite.tag$ite.subfield" == '995K' || "$ite.tag$ite.subfield" == '995z')  %]
+               [% IF ("$ite.tag$ite.subfield" == '995B' || "$ite.tag$ite.subfield" == '995g' || "$ite.tag$ite.subfield" == '995K' || "$ite.tag$ite.subfield" == '995z' || "$ite.tag$ite.subfield" == '995k' ) %]
 	         [% readonly = 'readonly' %]
+               [% ELSE %]
+	         [% readonly = '' %]
 	       [% END %]
                [% IF ("$ite.tag$ite.subfield" == '995B' || "$ite.tag$ite.subfield" == '995K' )  %]
 	         [% activate = "<input type=\"button\" value=\"Activate\" onclick=\"updateActiveCote('$ite.subfield')\"/>" %]
@@ -246,7 +248,7 @@ function confirm_deletion() {
                     [% END %]
                     [%- mv.javascript -%]
                 [% ELSIF ( mv.type == 'text' ) %]
-                    <input type="text" id="[%- mv.id -%]" name="field_value" class="input_marceditor" size="50" maxlength="[%- mv.maxlength -%]" value="[%- mv.value -%]" />
+                    <input type="text" id="[%- mv.id -%]" name="field_value" class="input_marceditor" size="50" maxlength="[%- mv.maxlength -%]" value="[%- mv.value -%]" [% readonly %] />
                 [% ELSIF ( mv.type == 'textarea' ) %]
                     <textarea id="[%- mv.id -%]" name="field_value" class="input_marceditor" rows="5" cols="64" >[% mv.value %]</textarea>
                 [% END %]
