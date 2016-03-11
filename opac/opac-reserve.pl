@@ -44,10 +44,10 @@ my $maxreserves = C4::Context->preference("maxreserves");
 my $query = new CGI;
 
 # if RequestOnOpac (for placing holds) is disabled, leave immediately
-if ( ! C4::Context->preference('RequestOnOpac') ) {
-    print $query->redirect("/cgi-bin/koha/errors/404.pl");
-    exit;
-}
+#if ( ! C4::Context->preference('RequestOnOpac') ) {
+#    print $query->redirect("/cgi-bin/koha/errors/404.pl");
+#    exit;
+#}
 
 my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
     {
