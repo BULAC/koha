@@ -9,6 +9,7 @@
 <script type="text/javascript" src="[% interface %]/lib/shims/json2.min.js"></script>
 <![endif]-->
 <script type="text/javascript" src="[% interface %]/js/browser.js"></script>
+<script type="text/javascript" src="[% themelang %]/js/pgl-callnumber.js"></script>
 <script type="text/javascript">
 //<![CDATA[
     var browser = KOHA.browser('[% searchid %]', parseInt('[% biblionumber %]', 10));
@@ -93,6 +94,19 @@ function Dopop(link,i) {
 
 function confirm_deletion() {
     return confirm(_("Are you sure you want to delete this item?"));
+}
+
+//Progilone B10: Manage active callnumber
+function updateActiveCote(subfield) {
+        getInputSubfield(getDivSubfields(document, 'k')[0]).value = getInputSubfield(getDivSubfields(document, subfield)[0]).value;
+}
+
+//Progilone B10: Manage old callnumbers
+function splitRepeatableFields() {
+        var repeatableFields = findSubfieldsWithProperty('repeatable');
+        for (var i = 0; i < repeatableFields.length; i++) {
+                splitField(repeatableFields[i]);
+        }
 }
 
 //]]>
@@ -240,12 +254,12 @@ function confirm_deletion() {
                     <a href="#" class="buttonDot"  onclick="[%- dopop -%]; return false;" title="Tag editor">...</a>
                 [% ELSIF ( mv.type == 'text_plugin' ) %]
                     <input type="text" id="[%- mv.id -%]" name="field_value" class="input_marceditor" size="50" maxlength="[%- mv.maxlength -%]" value="[%- mv.value -%]" [% readonly %] />
-		    [% activate %]
                     [% IF ( mv.nopopup ) %]
                         <a href="#" id="buttonDot_[%- mv.id -%]" class="[%- mv.class -%]" title="No popup">...</a>
                     [% ELSE  %]
                         <a href="#" id="buttonDot_[%- mv.id -%]" class="[%- mv.class -%]" title="Tag editor">...</a>
                     [% END %]
+		    [% activate %]
                     [%- mv.javascript -%]
                 [% ELSIF ( mv.type == 'text' ) %]
                     <input type="text" id="[%- mv.id -%]" name="field_value" class="input_marceditor" size="50" maxlength="[%- mv.maxlength -%]" value="[%- mv.value -%]" [% readonly %] />
