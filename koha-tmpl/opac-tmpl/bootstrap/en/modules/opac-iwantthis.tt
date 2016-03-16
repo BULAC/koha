@@ -29,7 +29,7 @@
 	    <th>current status</th>
           </tr>
           <tr>
-            <td><a href="https://koha-test.bulac.fr/cgi-bin/koha/opac-detail.pl?biblionumber=[% item.biblionumber %]">[% item.title %]</a></td>
+            <td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=[% item.biblionumber %]">[% item.title %]</a></td>
             <td>[% item.author %]</td>
             <td>[% item.itemcallnumber %]</td>
             <td>
