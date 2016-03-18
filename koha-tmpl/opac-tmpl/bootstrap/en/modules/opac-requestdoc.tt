@@ -29,7 +29,7 @@
             <th>callnumber</th>
           </tr>
           <tr>
-            <td><a href="https://koha-test.bulac.fr/cgi-bin/koha/opac-detail.pl?biblionumber=[% biblio.biblionumber %]">[% biblio.title %]</a></td>
+            <td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=[% biblio.biblionumber %]">[% biblio.title %]</a></td>
             <td>[% biblio.author %]</td>
             <td>[% item.itemcallnumber %]</td>
           </tr>
