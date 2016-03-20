@@ -100,7 +100,8 @@ my $title           = $input->param('title');
 my $author          = $input->param('author');
 my $publicationyear = $input->param('publicationyear');
 my $geolangcode     = $input->param('geolangcode');
-my $bulaclang     = $input->param('bulaclang');
+my $bulaclang       = $input->param('bulaclang');
+my $bulaccountry    = $input->param('bulaccountry');
 my $ordernumber          = $input->param('ordernumber') || '';
 our $biblionumber    = $input->param('biblionumber');
 our $basketno        = $input->param('basketno');
@@ -209,7 +210,6 @@ else {    #modify order
 
 my $suggestion;
 $suggestion = GetSuggestionInfo($suggestionid) if $suggestionid;
-
 # get currencies (for change rates calcs if needed)
 my $active_currency = GetCurrency();
 my $default_currency;
@@ -241,7 +241,6 @@ for my $curr ( @rates ) {
         selected => $selected,
     }
 }
-
 # build branches list
 my $onlymine =
      C4::Context->preference('IndependentBranches')
@@ -395,6 +394,7 @@ $template->param(
     seriestitle      => $data->{'seriestitle'},
     geolangcode      => $data->{'geolangcode'},
     bulaclang        => $data->{'bulaclang'},
+    bulaccountry     => $data->{'bulaccountry'},
     itemtypeloop     => \@itemtypes,
     quantity         => $quantity,
     quantityrec      => $quantity,
