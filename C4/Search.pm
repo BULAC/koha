@@ -249,11 +249,10 @@ sub SimpleSearch {
                 $query = $QParser->target_syntax($servers[$i]);
                 $zoom_queries[$i] = new ZOOM::Query::PQF( $query, $zconns[$i]);
             } else {
-                $query =~ s/:/=/g;
+                $query =~ s/(\D):/$1=/g;
                 $zoom_queries[$i] = new ZOOM::Query::CCL2RPN( $query, $zconns[$i]);
             }
             $tmpresults[$i] = $zconns[$i]->search( $zoom_queries[$i] );
-
             # error handling
             my $error =
                 $zconns[$i]->errmsg() . " ("
@@ -1147,6 +1146,7 @@ sub getIndexes{
                     'Heading-use-subject-added-entry',
                     'Host-item',
                     'id-other',
+                    'ident',
                     'Illustration-code',
                     'Index-term-genre',
                     'Index-term-uncontrolled',
