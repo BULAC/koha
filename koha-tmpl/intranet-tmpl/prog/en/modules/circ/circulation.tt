@@ -84,7 +84,6 @@ $(document).ready(function() {
             );
         }
     });
-
     [% IF !( CircAutoPrintQuickSlip == 'clear' ) %]
         // listen submit to trigger qslip on empty checkout
         $('#mainform').bind('submit',function() {

@@ -474,9 +474,6 @@ function checkMultiHold() {
                     <td>
                 [% IF ( itemloo.available ) %]
                     <input type="radio" name="checkitem" value="[% itemloo.itemnumber %]" />
-                [% ELSIF ( itemloo.override ) %]
-                    <input type="radio" name="checkitem" class="needsoverride" value="[% itemloo.itemnumber %]" />
-                    <img src="[% interface %]/[% theme %]/img/famfamfam/silk/error.png" alt="Requires override of hold policy" />
                 [% ELSE %]
                     <input disabled="disabled" type="radio" name="checkitem" value="[% itemloo.itemnumber %]" />
                     <img src="[% interface %]/[% theme %]/img/famfamfam/silk/cross.png" alt="Cannot be put on hold" />

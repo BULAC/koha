@@ -510,7 +510,7 @@ sub CanItemBeReserved{
 
     # If an item is damaged and we don't allow holds on damaged items, we can stop right here
     return 'damaged' if ( $item->{damaged} && !C4::Context->preference('AllowHoldsOnDamagedItems') );
-
+    return 'notforloan' if ($item->{notforloan});
     #Check for the age restriction
     my ($ageRestriction, $daysToAgeRestriction) = C4::Circulation::GetAgeRestriction( $biblioData->{agerestriction}, $borrower );
     return 'ageRestricted' if $daysToAgeRestriction && $daysToAgeRestriction > 0;

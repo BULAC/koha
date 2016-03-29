@@ -98,7 +98,7 @@ $(document).ready(function () {
 <body id="circ_returns" class="circ">
 
 [% INCLUDE 'header.inc' %]
-[% INCLUDE 'checkin-search.inc' %]
+[% INCLUDE 'circ-search.inc' %]
 
 <div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a> &rsaquo; Check in</div>
 

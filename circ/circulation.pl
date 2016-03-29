@@ -187,7 +187,7 @@ our $todaysdate = C4::Dates->new->output('iso');
 
 # check and see if we should print
 if ( $barcode eq '' && $print eq 'maybe' ) {
-    $print = 'yes';
+    #$print = 'yes';
 }
 
 my $inprocess = ($barcode eq '') ? '' : $query->param('inprocess');
