@@ -3237,7 +3237,7 @@ sub _koha_add_biblioitem {
         geolangcode     = ?,
         bulaclang       = ?,
         bulaccountry    = ?,
-        bulacissn
+        bulacissn       = ?
         ";
     my $sth = $dbh->prepare($query);
     $sth->execute(
