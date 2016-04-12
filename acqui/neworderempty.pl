@@ -102,6 +102,7 @@ my $publicationyear = $input->param('publicationyear');
 my $geolangcode     = $input->param('geolangcode');
 my $bulaclang       = $input->param('bulaclang');
 my $bulaccountry    = $input->param('bulaccountry');
+my $bulacissn       = $input->param('bulacissn');
 my $ordernumber          = $input->param('ordernumber') || '';
 our $biblionumber    = $input->param('biblionumber');
 our $basketno        = $input->param('basketno');
@@ -395,6 +396,7 @@ $template->param(
     geolangcode      => $data->{'geolangcode'},
     bulaclang        => $data->{'bulaclang'},
     bulaccountry     => $data->{'bulaccountry'},
+    bulacissn        => $data->{'bulacissn'},
     itemtypeloop     => \@itemtypes,
     quantity         => $quantity,
     quantityrec      => $quantity,

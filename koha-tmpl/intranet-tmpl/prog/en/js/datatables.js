@@ -25,7 +25,7 @@ var dataTablesDefaults = {
     },
     "sDom": 'C<"top pager"ilpf>tr<"bottom pager"ip>',
     "aLengthMenu": [[10, 20, 50, 100, -1], [10, 20, 50, 100, window.MSG_DT_ALL || "All"]],
-    "iDisplayLength": 20
+    "iDisplayLength": -1
 };
 
 

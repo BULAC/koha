@@ -49,15 +49,16 @@
 	      <p>There is [% reservesbefore %] Hold(s) by other patrons before your own hold.</p>
 	        [% END %]
               [% ELSIF (canreserve) %]
+	        [% IF (allalreadyreserved) %]
+	    <p>All items currently reserved. You can <a href="opac-reserve.pl?biblionumbers=[% item.biblionumber %]">reserve the first item available</a></p>		
+		[% ELSE %]
 	    <p>You can <a href="opac-reserve.pl?place_reserve=1&biblionumbers=[% item.biblionumber %]%2F&selecteditems=[% item.biblionumber %]%2F[% item.itemnumber %]%2FBULAC%2F&reserve_mode=multi&single_bib
 =[% item.itemnumber %]&branch=BULAC&reqtype_[% item.itemnumber %]=Specific&checkitem_[% item.itemnumber %]
 =178213">reserve it</a> too.</p>
-	        [% IF (reservesbefore) %]
+	          [% IF (reservesbefore) %]
 	      <p>There is [% reservesbefore %] Hold(s) by other patrons before your own hold.</p>
-	        [% END %]
-
-              [% ELSIF (canreserve) %]
-
+	          [% END %]
+		[% END %]
               [% END %]
 
 	    [% ELSIF (selfreserve) %]
@@ -68,13 +69,21 @@
             [% ELSIF (reservesbefore) %]
 	    <p>This item is currently on hold.</p>
               [% IF (canreserve) %]
+	      	[% IF (allalreadyreserved) %]
+	    <p>All items currently reserved. You can <a href="opac-reserve.pl?biblionumbers=[% item.biblionumber %]">reserve the first item available</a>.</p>		
+		[% ELSE %]
 	    <p>You can <a href="opac-reserve.pl?place_reserve=1&biblionumbers=[% item.biblionumber %]%2F&selecteditems=[% item.biblionumber %]%2F[% item.itemnumber %]%2FBULAC%2F&reserve_mode=multi&single_bib
 =[% item.itemnumber %]&branch=BULAC&reqtype_[% item.itemnumber %]=Specific&checkitem_[% item.itemnumber %]
 =178213">reserve it</a> too.</p>
+                [% END %]
               [% END %]
-            [% ELSE %]
+          [% ELSIF (canreserve) %]
 	  <div class="panel panel-default">
 	  <div class="panel-body">
+	  canreserve: [% canreserve %]<br/>
+	  reservesbefore: [% reservesbefore %]<br/>
+	  coco: [% coco %]<br/>
+	  [% itemnumber %]<br/>
 	  [% IF (!selfreserve or !selfissue) %]
           [% SWITCH item.itype %]
           [% CASE 'RESERVE-MG' %]
@@ -99,11 +108,10 @@
         [% END %]
         </div>
         </div>
-	</div>
-          [% IF (not canreserve && (not selfissue || not selfreserve))  %]
+          [% ELSIF (not canreserve && (not selfissue || not selfreserve))  %]
 	      <p>You can't make a hold on this item.</p>
-          [% END %]
         [% END %]
+	</div>
 	[% END %]
         </div> <!-- /.container-fluid -->
     </div> <!-- /.row-fluid -->

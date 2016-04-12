@@ -196,7 +196,8 @@ $(document).ready(function () {
 [% END %]
 
 <div id="hold-found1" class="dialog message">
-        <h3>Hold found (item is already waiting):  <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% itembiblionumber %]">[% title |html %]</a></h3>
+        
+        <h3>Hold found (item is already waiting):  <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% itembiblionumber %]">[% title |html %]</a>, [% barcode %]</h3>
         [% IF ( reservenotes ) %]<h4>Notes: [% reservenotes %]</h4>[% END %]
         <h4>Hold for:</h4>
 			<ul>
@@ -213,9 +214,9 @@ $(document).ready(function () {
 		[% ELSE %]
 		<h4><strong>Hold at</strong> [% destbranchname %]</h4>
         [% END %]
+        [% IF (not waitpickup) %]
         <form method="post" action="returns.pl" class="confirm">
             <input type="submit" class="approve" value="Confirm" />
-            [% IF (waitpickup)  %]<input type="hidden" name="waitpickup" value="waitpickup" />[% END %]
             <input type="hidden" name="print_slip" value="0" />
             <input type="submit" value="Print and confirm" class="print" onclick="this.form.print_slip.value = 1; this.form.submit();" />
             [% FOREACH inputloo IN inputloop %]
@@ -234,6 +235,7 @@ $(document).ready(function () {
                 <input type="hidden" name="return_date_override" value="[% return_date_override %]" />
                 <input type="hidden" name="return_date_override_remember" value="[% return_date_override_remember %]" />
                 </form>
+          [% END %]
 	</div>
     [% END %]
 
@@ -361,9 +363,17 @@ $(document).ready(function () {
         [% END %]
 
 	<div id="hold-found2" class="dialog message">
+	[% IF (waitpickup) %]
+      <h3>You just put aside: <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% itembiblionumber %]">[% title |html %]</a>, [% barcode  %]</h3>
+        [% ELSE %]
       <h3>Hold found: <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% itembiblionumber %]">[% title |html %]</a></h3>
+        [% END %]
         [% IF ( reservenotes ) %]<h4>Notes: [% reservenotes %]</h4>[% END %]
+	[% IF (waitpickup) %]
+        <h5>Put aside for:</h5>
+	[% ELSE %]
         <h5>Hold for:</h5>
+	[% END %]
 		<ul>
             <li><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% borrowernumber %]">
                 [% borsurname %], [% borfirstname %]
@@ -381,6 +391,7 @@ $(document).ready(function () {
 		[% ELSE %]
 		<h4><strong>Hold at</strong> [% destbranchname %]</h4>
         [% END %]
+        [% IF (!waitpickup) %]
         <form method="post" action="returns.pl" class="confirm">
             <input type="hidden" name="print_slip" value="0" />
             [% IF ( transfertodo ) %]
@@ -405,11 +416,12 @@ $(document).ready(function () {
             <input type="hidden" name="return_date_override" value="[% return_date_override %]" />
             <input type="hidden" name="return_date_override_remember" value="[% return_date_override_remember %]" />
         </form>
+        [% END %]
 	</div>
     [% END %]
 [% END %]
 
-[% IF ( errmsgloop ) %]
+[% IF ( errmsgloop && !waitpickup ) %]
     <div class="dialog alert">
         <h3>Check in message</h3>
         [% FOREACH errmsgloo IN errmsgloop %]

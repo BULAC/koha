@@ -260,8 +260,11 @@ if ( $query->param('place_reserve') ) {
       # holdingbranch, force the value $rank and $found.
         my $rank = $biblioData->{rank};
         if ( $itemNum ne '' ) {
+	    my $alreadyreserved = IsItemReserved($itemNum);
             $canreserve = 1 if CanItemBeReserved( $borrowernumber, $itemNum ) eq 'OK';
-            $rank = '0' unless C4::Context->preference('ReservesNeedReturns');
+	    if (! $alreadyreserved) {
+	    $rank = '0' unless C4::Context->preference('ReservesNeedReturns');
+	    }
             my $item = GetItem($itemNum);
             if ( $item->{'holdingbranch'} eq $branch ) {
                 $found = 'W'
@@ -270,6 +273,9 @@ if ( $query->param('place_reserve') ) {
 		my @MGdocs = qw(CONSULT-MG PRETABL-MG RESERVE-MG);
 		if (grep { /$itype/ } @MGdocs) {
 		    $found = 'A';
+		}
+		if ($alreadyreserved) {
+		    $found = '';
 		}
             }
         }

@@ -3164,7 +3164,8 @@ sub _koha_modify_biblioitem_nonmarc {
         agerestriction  = ?,
         geolangcode     = ?,
         bulaclang       = ?,
-        bulaccountry    = ?
+        bulaccountry    = ?,
+        bulacissn       = ?
         where biblioitemnumber = ?
         ";
     my $sth = $dbh->prepare($query);
@@ -3177,7 +3178,7 @@ sub _koha_modify_biblioitem_nonmarc {
         $biblioitem->{'lccn'},             $biblioitem->{'url'},              $biblioitem->{'biblioitems.cn_source'}, $biblioitem->{'cn_class'},
         $biblioitem->{'cn_item'},          $biblioitem->{'cn_suffix'},        $cn_sort,                               $biblioitem->{'totalissues'},
         $biblioitem->{'ean'},              $biblioitem->{'agerestriction'},   $biblioitem->{'geolangcode'},           $biblioitem->{'bulaclang'} ,
-        $biblioitem->{'bulaccountry'},
+        $biblioitem->{'bulaccountry'},     $biblioitem->{'bulacissn'},
 	$biblioitem->{'biblioitemnumber'}
 	);
  #   print "$biblioitem->{'geolangcode'}, $biblioitem->{'bulaclang'}\n";
@@ -3235,7 +3236,8 @@ sub _koha_add_biblioitem {
         agerestriction  = ?,
         geolangcode     = ?,
         bulaclang       = ?,
-        bulaccountry    = ?
+        bulaccountry    = ?,
+        bulacissn
         ";
     my $sth = $dbh->prepare($query);
     $sth->execute(
@@ -3248,7 +3250,7 @@ sub _koha_add_biblioitem {
         $biblioitem->{'cn_class'},         $biblioitem->{'cn_item'},          $biblioitem->{'cn_suffix'},             $cn_sort,
         $biblioitem->{'totalissues'},      $biblioitem->{'ean'},              $biblioitem->{'agerestriction'}
 	,
-	$biblioitem->{'geolangcode'}, $biblioitem->{'bulaclang'}, $biblioitem->{'bulaccountry'}
+	$biblioitem->{'geolangcode'}, $biblioitem->{'bulaclang'}, $biblioitem->{'bulaccountry'}, $biblioitem->{'bulacissn'}
     );
     my $bibitemnum = $dbh->{'mysql_insertid'};
 

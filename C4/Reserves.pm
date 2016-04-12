@@ -143,6 +143,7 @@ BEGIN {
         IsItemOnHoldAndFound
         &EditReserves
         &ListReservesByStatus
+        IsItemReserved
     );
     @EXPORT_OK = qw( MergeHolds );
 }
@@ -275,6 +276,19 @@ sub GetReserve {
     my $sth = $dbh->prepare( $query );
     $sth->execute( $reserve_id );
     return $sth->fetchrow_hashref();
+}
+
+=head2 IsItemReserved
+=cut
+    
+sub IsItemReserved {
+    my $itemnumber = shift;
+    my $dbh = C4::Context->dbh;
+    my $query = "SELECT reserve_id FROM reserves WHERE itemnumber = ?";
+    my $sth = $dbh->prepare( $query );
+    $sth->execute( $itemnumber );
+    my $res = $sth->fetchrow_hashref();
+    return (defined $res->{'reserve_id'}) ? 1 : undef ;
 }
 
 =head2 GetReservesFromBiblionumber
@@ -2520,6 +2534,47 @@ sub CalculatePriority {
 
     return @row ? $row[0]+1 : 1;
 }
+
+=head2 CalculateItemPriority
+
+    my $p = CalculatePriority($biblionumber, $resdate);
+
+Calculate item priority for a new reserve on itemnumber, placing it at
+the end of the line of all holds whose start date falls before the
+current system time and that are neither on the hold shelf or in
+transit.
+
+After calculation of this priority, it is recommended to call
+_ShiftPriorityByDateAndPriority. Note that this is currently done in
+AddReserves.
+
+=cut
+
+sub CalculateItemPriority {
+    my ($itemnumber, $resdate) = @_;
+
+    my $sql = q{
+        SELECT COUNT(*) FROM reserves
+        WHERE itemnumber = ?
+        AND   priority > 0
+        AND   (found IS NULL OR found = '')
+    };
+    if( $resdate ) {
+        $sql.= ' AND ( reservedate <= ? )';
+    }
+    else {
+        $sql.= ' AND ( reservedate < NOW() )';
+    }
+    my $dbh = C4::Context->dbh();
+    my @row = $dbh->selectrow_array(
+        $sql,
+        undef,
+        $resdate ? ($itemnumber, $resdate) : ($itemnumber)
+    );
+
+    return @row ? $row[0]+1 : 1;
+}
+
 
 =head2 IsItemOnHoldAndFound
 

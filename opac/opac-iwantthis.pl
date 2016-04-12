@@ -61,12 +61,23 @@ if (C4::Context->userenv) {
 my $itemnumber = $input->param('itemnumber');
 my $biblionumber = $input->param('biblionumber');
 my $item = {};
-foreach my $candidate (GetItemsInfo($biblionumber)) {
+my @itemsinfo = GetItemsInfo($biblionumber);
+my $canreserve = 1
+    if (CanItemBeReserved( C4::Context->userenv->{'number'}, $itemnumber ) eq 'OK');
+my $allalreadyreserved = 1; #Next condition search if one is available and switch this one
+foreach my $candidate (@itemsinfo) {
     if ($candidate->{'itemnumber'} == $itemnumber) {
 	$item = $candidate;
-	last;
     }
+    my @reserves = GetReservesFromItemnumber($candidate->{'itemnumber'});
+   $allalreadyreserved = 0
+	if (! @reserves
+	    && CanItemBeReserved( C4::Context->userenv->{'number'}, $candidate->{'itemnumber'})
+	    && $candidate->{'holdingbranch'} == $homebranch);
 }
+
+open my $coco, '>>','/tmp/coco';
+say $coco $allalreadyreserved;
 
 #my $item = GetItem($itemnumber);
 #my $biblio = GetBiblio($item->{'biblionumber'});
@@ -80,11 +91,13 @@ my $selfissue;
 
 if (defined $allreserves) {
     foreach my $reserve (@$allreserves) {
-	if (C4::Context->userenv->{'number'} == $reserve->{'borrowernumber'}) {
+	if (C4::Context->userenv->{'number'} == $reserve->{'borrowernumber'}
+	    && $itemnumber == $reserve->{'itemnumber'}) {
 	    $selfreserve = 1;
 	    last;
+	} elsif ($itemnumber == $reserve->{'itemnumber'}) {
+	    $reservesbefore += 1;
 	}
-	$reservesbefore += 1;
     }
 }
 
@@ -98,14 +111,23 @@ if ($item->{'borrowernumber'} eq C4::Context->userenv->{'number'}) {
 
 my $op = $input->param('op');
 my $from = $input->param('op');
-my $canreserve = 1
-    if (CanItemBeReserved( C4::Context->userenv->{'number'}, $itemnumber ) eq 'OK');
-if (!$selfreserve && !$selfissue && $op eq 'reserve') {
+
+if (!$selfreserve && !$selfissue && $op eq 'reserve' && $canreserve) {
+    my $rank;
+    if ($allalreadyreserved && (! $item->{'enumchron'} || $item->{'ccode'} == 'REVUE')) {
+	$itemnumber = undef;
+	$rank = C4::Reserves::CalculatePriority($biblionumber);
+    }
+    elsif ($reserved) {
+	$rank = C4::Reserves::CalculateItemPriority($itemnumber);
+    }
+    elsif ($from == 'stacks') {
+	$rank = 0;
+    }
     my $found;
-    my $rank = 0;
     my $error;
     my $notes = "opac-iwantthis";
-    if (!$reservesbefore and $from = 'stacks') {
+    if (!$reservesbefore && $from == 'stacks') {
 	$found = 'A';
     }
     my $resid = AddReserve(
@@ -123,18 +145,19 @@ if (!$selfreserve && !$selfissue && $op eq 'reserve') {
 }
 
 $template->param(
-    item           => $item,
-    homebranch     => $homebranch,
-    reservesn      => $reservesn,
-    selfreserve    => $selfreserve,
-    reservesbefore => $reservesbefore,
-    isissued       => $isissued,
-    selfissue      => $selfissue,
-    canreserve     => $canreserve,
-    borroitem      => $item->{'borrowernumber'},
-    borrowenv      => C4::Context->userenv->{'number'},
-    biblionumber   => $biblionumber,
-    itemnumber     => $itemnumber,
+    item               => $item,
+    homebranch         => $homebranch,
+    reservesn          => $reservesn,
+    selfreserve        => $selfreserve,
+    reservesbefore     => $reservesbefore,
+    isissued           => $isissued,
+    selfissue          => $selfissue,
+    canreserve         => $canreserve,
+    borroitem          => $item->{'borrowernumber'},
+    borrowenv          => C4::Context->userenv->{'number'},
+    biblionumber       => $biblionumber,
+    itemnumber         => $itemnumber,
+    allalreadyreserved => $allalreadyreserved,
     );
 
 

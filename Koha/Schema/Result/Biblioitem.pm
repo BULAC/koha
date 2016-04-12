@@ -300,6 +300,8 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 64 },
   "bulaccountry",
   { data_type => "varchar", is_nullable => 1, size => 64 },
+  "bulacissn",
+  { data_type => "varchar", is_nullable => 1, size => 64 },
 );
 
 =head1 PRIMARY KEY

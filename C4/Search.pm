@@ -1147,6 +1147,7 @@ sub getIndexes{
                     'Host-item',
                     'id-other',
                     'ident',
+	            'idoth',
                     'Illustration-code',
                     'Index-term-genre',
                     'Index-term-uncontrolled',
