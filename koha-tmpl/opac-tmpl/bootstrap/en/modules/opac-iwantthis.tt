@@ -80,10 +80,6 @@
           [% ELSIF (canreserve) %]
 	  <div class="panel panel-default">
 	  <div class="panel-body">
-	  canreserve: [% canreserve %]<br/>
-	  reservesbefore: [% reservesbefore %]<br/>
-	  coco: [% coco %]<br/>
-	  [% itemnumber %]<br/>
 	  [% IF (!selfreserve or !selfissue) %]
           [% SWITCH item.itype %]
           [% CASE 'RESERVE-MG' %]

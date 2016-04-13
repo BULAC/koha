@@ -76,9 +76,6 @@ foreach my $candidate (@itemsinfo) {
 	    && $candidate->{'holdingbranch'} == $homebranch);
 }
 
-open my $coco, '>>','/tmp/coco';
-say $coco $allalreadyreserved;
-
 #my $item = GetItem($itemnumber);
 #my $biblio = GetBiblio($item->{'biblionumber'});
 my ($reserved, $nextreserve, $allreserves) = C4::Reserves::CheckReserves($itemnumber);
