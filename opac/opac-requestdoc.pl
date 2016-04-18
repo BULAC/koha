@@ -115,7 +115,7 @@ if ($op eq 'additem') {
 	my $found = 'A';
 	my $rank = 0;
 	my $error;
-	my $notes = "opac-requestdoc";
+	my $notes = "Périodique issue d'une notice générique\n Si vous ne le trouvez pas pensez à vérifier l'état des collections,\n les autres notices d'exemplaires et le magasin 21";
 	my $resid = AddReserve(
 	    $branch, C4::Context->userenv->{'number'},
 	    $biblionumber, 'a', [$biblionumber],
@@ -165,7 +165,7 @@ elsif ($op eq 'addbiblioanditem') {
 	my $found = 'A';
 	my $rank = 0;
 	my $error;
-	my $notes = "opac-requestdoc";
+	my $notes = "Demande de communication\ndepuis le fichier papier";
 	my $resid = AddReserve(
 	    $branch, C4::Context->userenv->{'number'},
 	    $biblionumber, 'a', [$biblionumber],
