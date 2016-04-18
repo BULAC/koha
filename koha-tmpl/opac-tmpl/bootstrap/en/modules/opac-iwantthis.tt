@@ -67,7 +67,7 @@
 	    <p>There is [% reservesbefore %] Hold(s) by other patrons on this item.</p>
 	      [% END %]
             [% ELSIF (reservesbefore) %]
-	    <p>This item is currently on hold.</p>
+	    <p>This item is currently on hold by [% reservesbefore %] patron(s).</p>
               [% IF (canreserve) %]
 	      	[% IF (allalreadyreserved) %]
 	    <p>All items currently reserved. You can <a href="opac-reserve.pl?biblionumbers=[% item.biblionumber %]">reserve the first item available</a>.</p>		
