@@ -308,11 +308,20 @@ if ($borrowernumber) {
 #
 if ($barcode) {
     # always check for blockers on issuing
-    my ( $error, $question, $alerts ) =
-    CanBookBeIssued( $borrower, $barcode, $datedue , $inprocess, undef, { onsite_checkout => $onsite_checkout } );
+    my ( $error, $question, $alerts, $messages ) = CanBookBeIssued(
+        $borrower,
+        $barcode, $datedue,
+        $inprocess,
+        undef,
+        {
+            onsite_checkout     => $onsite_checkout,
+        }
+    );
+
     my $blocker = $invalidduedate ? 1 : 0;
 
-    $template->param( alert => $alerts );
+    $template->param('alert' => $alerts );
+    $template->param('messages' => $messages );
 
     #  Get the item title for more information
     my $getmessageiteminfo = GetBiblioFromItemNumber(undef,$barcode);
@@ -381,8 +390,9 @@ if ($barcode) {
             }
         }
         unless($confirm_required) {
-            my $issue = AddIssue( $borrower, $barcode, $datedue, $cancelreserve, undef, undef, { onsite_checkout => $onsite_checkout, auto_renew => $session->param('auto_renew') } );
-            $template->param( issue => $issue );
+	    my $switch_onsite_checkout = exists $messages->{ONSITE_CHECKOUT_WILL_BE_SWITCHED};
+            my $issue = AddIssue( $borrower, $barcode, $datedue, $cancelreserve, undef, undef, { onsite_checkout => $onsite_checkout, auto_renew => $session->param('auto_renew'), switch_onsite_checkout => $switch_onsite_checkout, } );
+            $template->param('issue' => $issue);
             $session->clear('auto_renew');
             $inprocess = 1;
         }
