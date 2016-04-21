@@ -811,7 +811,9 @@ function verify_images() {
                     <td>
                         [% UNLESS item.cannot_be_edited %]
                             <a href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&biblionumber=[% item.biblionumber %]&itemnumber=[% item.itemnumber %]#edititem">Edit</a>
+			    <br/>
                         [% END %]
+			[% IF (item.itype == 'PER-GEN-MG')  %]<a href="/cgi-bin/koha/reserve/request-tmp-doc.pl?biblionumber=[% item.biblionumber %]&genitemnumber=[% item.itemnumber %]">Request item</a>[% END %]
                     </td>
                 [% END %]
                 </tr>

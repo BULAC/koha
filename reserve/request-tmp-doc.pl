@@ -66,8 +66,8 @@ my $cardnumber     = $input->param('cardnumber');
 my $title          = $input->param('title') || 'NA';
 my $author         = $input->param('author') || 'NA';
 my $itemcallnumber = $input->param('itemcallnumber');
-my $enumchron      = $input->param('enumchron') || 'NA';
-my $pubyear        = $input->param('pubyear') || 'NA';
+my $enumchron      = $input->param('enumchron');
+my $pubyear        = $input->param('pubyear');
 
 my $borrower;
 if ( $cardnumber ) {
@@ -75,17 +75,26 @@ if ( $cardnumber ) {
     $template->param('borrower' => $borrower);
 }
 
-if ( $biblionumber && $genitemnumber ) { #need to rerun with borrower number
-    $template->param('biblionumber' => $biblionumber);
-    $template->param('genitemnumber'   => $genitemnumber);
+if ( $biblionumber && $genitemnumber && ! $cardnumber ) { #need to rerun with borrower number
+    my $biblio = GetBiblio($biblionumber);
+    my $item   = GetItem($genitemnumber);
+    $template->param('biblio' => $biblio,
+		     'item'   => $item,
+		     'genitemnumber' => $genitemnumber,
+		     'biblionumber'  => $biblionumber,
+		     'enumchron'     => $enumchron,
+		    );
+
 }
-elsif ( $biblionumber && $genitemnumber && $cardnumber && $enumchron) { #make hold
+elsif ( $biblionumber && $genitemnumber && $cardnumber && $enumchron) { #make hold for periodic request
     my $biblio = GetBiblio($biblionumber);
     my $item   = GetItem($genitemnumber);
     $item->{'itype'} = 'DOC-TMP-MG';
     foreach my $key qw(replacementpricedate datelastseen timestamp) {
 	delete($item->{$key});
     }
+    my $genenumchron = $item->{'enumchron'};
+    $item->{'enumchron'} = $enumchron;
     my ($biblionumber, $biblioitemnumber, $itemnumber) = AddItem($item, $biblionumber);
     my $canitembereserved = CanItemBeReserved( $borrower->{'borrowernumber'}, $itemnumber ) ;
     if ($canitembereserved eq 'OK') {
@@ -101,8 +110,24 @@ elsif ( $biblionumber && $genitemnumber && $cardnumber && $enumchron) { #make ho
 	    $itemnumber, $found
 	    );
     }
-    $template->param('biblio' => $biblio);
-    $template->param('item' => $item);
+    $template->param('biblio' => $biblio,
+		     'item'   => $item,
+		     'genitemnumber' => $genitemnumber,
+		     'biblionumber'  => $biblionumber,
+		     'enumchron'     => $enumchron,
+		     'genenumchron'  => $genenumchron,
+		     'done'          => 'done',
+		    );
+}
+elsif ( $biblionumber && $genitemnumber && $cardnumber ) { #prepare form for periodic request
+    my $biblio = GetBiblio($biblionumber);
+    my $item   = GetItem($genitemnumber);
+    $template->param('biblio'        => $biblio,
+		     'item'          => $item,
+		     'biblionumber'  => $biblionumber,
+		     'genitemnumber' => $genitemnumber,
+		     'cardnumber'    => $cardnumber,
+	);
 }
 elsif ( $cardnumber && $itemcallnumber) { #make a card catalog request
 	my ($biblionumber, $biblioitemnumber) = AddBiblio (
@@ -128,10 +153,7 @@ elsif ( $cardnumber && $itemcallnumber) { #make a card catalog request
 	    , $biblionumber
 	    );
 	my $canitembereserved = CanItemBeReserved( $borrower->{'borrowernumber'}, $itemnumber ) ;
-	open my $dead, '>', '/tmp/dead';
-	print $dead "$borrower->{'borrowernumber'}, $canitembereserved\n";
 	if ($canitembereserved eq 'OK') {
-	    print $dead "WE'RE IN\n";
 	    my $found = 'A';
 	    my $rank = 0;
 	    my $error;

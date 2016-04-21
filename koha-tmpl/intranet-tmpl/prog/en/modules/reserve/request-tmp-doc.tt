@@ -43,8 +43,22 @@ $(document).ready(function() {
    <div id="bd">
 	<div id="yui-main">
 	<div class="yui-b">
-[% IF ( biblionumber && genitemnumber ) %]
-<h1>Ask a document from</h1>
+[% IF ( biblionumber && genitemnumber && biblio && ! enumchron) %]
+<h1>Request periodic from generic item</h1>
+
+<p>Request <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblionumber %]">[% biblio.title %]</a> in this range: [% item.enumchron %].</p>
+
+[% ELSIF ( biblionumber && genitemnumber && biblio && enumchron && done) %]
+
+<h1>Periodic item request done for patron <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% borrower.borrowernumber %]">[% borrower.firstname %] [% borrower.surname %] ([% borrower.cardnumber %])</a></h1>
+
+<p>Temporary periodic item: <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblionumber %]">[% biblio.title %]</a>[% IF (author) %], [% author %][% END %],
+[% enumchron %] [% itemcallnumber %] is on hold for patron <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% borrower.borrowernumber %]">[% borrower.firstname %] [% borrower.surname %] ([% borrower.cardnumber %])</a>.
+</p>
+
+<h1>Make another card catalog request</h1>
+
+<p>Request <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblionumber %]">[% biblio.title %]</a> in this range: [% genenumchron %].</p>
 
 [% ELSIF (reserveerror) %]
 <h1>Reserve error: [% reserveerror %]</h1>
@@ -71,8 +85,8 @@ $(document).ready(function() {
             <div class="yui-u first">
 
             <input type="hidden" name="genitemnumber" value="[% genitemnumber %]" />
+            <input type="hidden" name="biblionumber" value="[% biblionumber %]" />
 	    <input type="hidden" name="cardnumber" value="[% borrower.cardnumber %]" />
-	    <input type="hidden" name="op" value="[% futureop %]">
 
             <fieldset class="brief"><legend>Enter document info</legend>
             <ol>
@@ -99,9 +113,9 @@ $(document).ready(function() {
                     <input id="itemcallnumber" type="text" name="itemcallnumber" value="[% item.itemcallnumber %]" [% IF (item.itemcallnumber) %]readonly[% END %] required="required"/>
                 </li>
 
-                <li class="editable ">
-                    <label for="enumchron">[% IF (futureop == 'additem')%]Year, [% END %]Volume(s), Number(s): [% IF (item.enumchron) %]<span class="hint">Separate with commas. Note : you can ask for items in this range : [% item.enumchron %]</span>[% END %]</label>
-                    <textarea id="enumchron" rows="2" name="enumchron" [% IF (futureop == 'additem')%]required="required"[% END %]></textarea>
+                <li class="[% IF (genitemnumber) %]mandatory [% END %]editable">
+                    <label for="enumchron" [% IF (genitemnumber) %]class="required"[% END %]>[% IF (genitemnumber)%]Year, [% END %]Volume(s), Number(s): [% IF (genitemnumber) %]<span class="hint">Separate with commas. Note : you can ask for items in this range : [% genenumchron %]</span>[% END %]</label>
+                    <textarea id="enumchron" rows="2" name="enumchron" [% IF (genitemnumber)%]required="required"[% END %]></textarea>
                 </li>
 
 
@@ -117,7 +131,7 @@ $(document).ready(function() {
                 <input type="text" size="40" id="patron" class="focus" name="cardnumber" />
                 <input type="submit" value="Search" />
                 <input type="hidden" name="biblionumber" value="[% biblionumber %]" />
-		<input type="hidden" name="biblionumber" value="[% genitemnumber %]" />
+		<input type="hidden" name="genitemnumber" value="[% genitemnumber %]" />
             </fieldset>
     </form>
 [% END %]
