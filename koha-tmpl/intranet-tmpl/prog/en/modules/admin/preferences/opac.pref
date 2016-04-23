@@ -662,6 +662,11 @@ OPAC:
             - pref: PatronSelfRegistrationAdditionalInstructions
               type: textarea
               class: html
+        -
+            - "Enable the self registration for the following libraries:"
+            - pref: PatronSelfRegistrationLibraryList
+            - (separate branchcode with |).
+            - If empty, all libraries will be listed.
     Advanced Search Options:
         -
             - Show search options
