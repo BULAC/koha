@@ -63,12 +63,17 @@ if ( $action eq q{} ) {
 my $mandatory = GetMandatoryFields($action);
 my $hidden = GetHiddenFields($mandatory);
 
+my $branches = GetBranchesLoop();
+if ( my @libraries_to_display = split '\|', C4::Context->preference('PatronSelfRegistrationLibraryList') ) {
+    $branches = [ map { my $b = $_; grep( /^$b->{branchcode}$/, @libraries_to_display ) ? $b : () } @$branches ];
+}
+
 $template->param(
     action            => $action,
     hidden            => $hidden,
     mandatory         => $mandatory,
     member_titles     => GetTitles() || undef,
-    branches          => GetBranchesLoop(),
+    branches          => $branches,
     OPACPatronDetails => C4::Context->preference('OPACPatronDetails'),
 );
 
