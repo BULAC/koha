@@ -28,6 +28,7 @@ use C4::Form::MessagingPreferences;
 use Koha::Borrower::Modifications;
 use C4::Branch qw(GetBranchesLoop);
 use C4::Scrubber;
+use Email::Valid;
 
 my $cgi = new CGI;
 my $dbh = C4::Context->dbh;
@@ -84,11 +85,13 @@ if ( $action eq 'create' ) {
     %borrower = DelEmptyFields(%borrower);
 
     my @empty_mandatory_fields = CheckMandatoryFields( \%borrower, $action );
+    my $invalid_form_fields = CheckForInvalidFields(\%borrower);
 
-    if (@empty_mandatory_fields) {
+    if (@empty_mandatory_fields || @$invalid_form_fields ) {
         $template->param(
             empty_mandatory_fields => \@empty_mandatory_fields,
-            borrower               => \%borrower
+            borrower               => \%borrower,
+	    invalid_form_fields     => $invalid_form_fields,
         );
     }
     elsif (
@@ -296,6 +299,43 @@ sub CheckMandatoryFields {
     }
 
     return @empty_mandatory_fields;
+}
+
+sub CheckForInvalidFields {
+    my $minpw = C4::Context->preference('minPasswordLength');
+    my $borrower = shift;
+    my @invalidFields;
+    if ($borrower->{'email'}) {
+        unless ( Email::Valid->address($borrower->{'email'}) ) {
+            push(@invalidFields, "email");
+        } elsif ( C4::Context->preference("PatronSelfRegistrationEmailMustBeUnique") ) {
+	    my $query = 'SELECT count(*) FROM borrowers where email = ?';
+	    my $dbh = C4::Context->dbh;
+	    my $sth = $dbh->prepare($query);
+	    $sth->execute($borrower->{'email'});
+            my $patrons_with_same_email = $sth->fetchrow_array();
+            if ( $patrons_with_same_email ) {
+                push @invalidFields, "duplicate_email";
+            }
+        }
+    }
+    if ($borrower->{'emailpro'}) {
+        push(@invalidFields, "emailpro") if (!Email::Valid->address($borrower->{'emailpro'}));
+    }
+    if ($borrower->{'B_email'}) {
+        push(@invalidFields, "B_email") if (!Email::Valid->address($borrower->{'B_email'}));
+    }
+    if ( $borrower->{'password'} ne $borrower->{'password2'} ){
+        push(@invalidFields, "password_match");
+    }
+    if ( $borrower->{'password'}  && $minpw && (length($borrower->{'password'}) < $minpw) ) {
+       push(@invalidFields, "password_invalid");
+    }
+    if ( $borrower->{'password'} ) {
+       push(@invalidFields, "password_spaces") if ($borrower->{'password'} =~ /^\s/ or $borrower->{'password'} =~ /\s$/);
+    }
+
+    return \@invalidFields;
 }
 
 sub ParseCgiForBorrower {

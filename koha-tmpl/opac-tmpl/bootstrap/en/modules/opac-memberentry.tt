@@ -50,6 +50,36 @@
                     <div class="alert">You have not filled out all required fields. Please fill in all missing fields and resubmit.</div>
                 [% END %]
 
+                [% IF invalid_form_fields %]
+                    <div class="alert alert-error"><strong>The following fields contain invalid information:</strong>
+                        <ul>
+                            [% FOREACH field IN invalid_form_fields %]
+                                [% IF field == "email" %]<li>Contact information: <a href="#borrower_email">primary email address</a></li>[% END %]
+                                [% IF field == "emailpro" %]<li>Contact information: <a href="#borrower_emailpro">secondary email address</a></li>[% END %]
+                                [% IF field == "B_email" %]<li>Alternate address information: <a href="#borrower_B_email">email address</a></li>[% END %]
+                                [% IF field == "password_match" %]<li>Passwords do not match! <a href="#password">password</a></li>[% END %]
+                                [% IF field == "password_invalid" %]<li>Password does not meet minimum requirements! <a href="#password">password</a></li>[% END %]
+                                [% IF field == "password_spaces" %]<li>Password contains leading and/or trailing spaces! <a href="#password">password</a></li>[% END %]
+                                [% IF field == "duplicate_email" %]
+                                    <li>This email address already exists in our database.</li>
+                                [% END %]
+                            [% END %]
+                        </ul>
+                        Please correct the errors and resubmit.
+                    </div>
+                [% END %]
+
+                [% IF cardnumber_wrong_length || cardnumber_already_exists %]
+                    <div class="alert alert-error">
+                        [% IF cardnumber_wrong_length %]
+                        <strong>The entered <a href="#borrower_cardnumber">card number</a> is the wrong length.</strong>
+                        [% ELSIF cardnumber_already_exists %]
+                        <strong>The entered <a href="#borrower_cardnumber">card number</a> is already in use.</strong>
+                        [% END %]
+                        Please correct this and resubmit.
+                    </div>
+                [% END %]
+
                 [% IF failed_captcha %]
                     <div class="alert">You typed in the wrong characters in the box before submitting. Please try again.</div>
                 [% END %]
