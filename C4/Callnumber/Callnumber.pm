@@ -91,12 +91,12 @@ sub UpdateCallnumberrules {
     if ( $branchdetail && $branchdetail->{'branchcallnumberauto'} ) {
 
 		if ( length( $subfieldK ) == 0 || C4::Callnumber::StoreCallnumber::IsRetroCallnumber( $subfieldK ) ) {
-			_updateOlimpEndCallnumber( $subfieldK, 1 );
+			#_updateOlimpEndCallnumber( $subfieldK, 1 );
 		} elsif ( $subfieldK ne $old_subfieldK ) {
 			my $callnumber = _updateStoreCallnumber( $itemnumber, $field );
 			if ( $subfieldk eq $subfieldK ) {
 				$field->update( 'k' => $callnumber );
-				_updateOlimpEndCallnumber( $callnumber, 1 );
+				#_updateOlimpEndCallnumber( $callnumber, 1 );
 			}
 		}
 
@@ -104,7 +104,7 @@ sub UpdateCallnumberrules {
 			my $callnumber = _updateFreeAccessCallnumber( $itemnumber, $field, $biblionumber );
 			if ( $subfieldk eq $subfieldB ) {
 				$field->update( 'k' => $callnumber );
-				_updateOlimpEndCallnumber( $callnumber, 0 );
+				#_updateOlimpEndCallnumber( $callnumber, 0 );
 			}
 	}
 
@@ -112,11 +112,11 @@ sub UpdateCallnumberrules {
 	#Check if a callnumber has changed, if yes auto update the active callnumber if it does not match
 	if ($old_subfieldK ne $subfieldK && $subfieldk eq $old_subfieldK) {
 		$field->update( 'k' => $subfieldK );
-		_updateOlimpEndCallnumber( $subfieldK, 1 );
+		#_updateOlimpEndCallnumber( $subfieldK, 1 );
 	}
 	if ($old_subfieldB ne $subfieldB && $subfieldk eq $old_subfieldB) {
             $field->update( 'k' => $subfieldB );
-            _updateOlimpEndCallnumber( $subfieldB, 0 );
+            #_updateOlimpEndCallnumber( $subfieldB, 0 );
         }
     }
 
@@ -298,18 +298,18 @@ sub UpdateSerialCallnumberRule {
 
 sub _updateOlimpEndCallnumber {
 
-	my ( $callnumber, $isStoreCallnumber) = @_;
+    # 	my ( $callnumber, $isStoreCallnumber) = @_;
 
-	my $useOLIMP = (C4::Context->preference('UseOlimpLocation') or '');
+    # 	my $useOLIMP = (C4::Context->preference('UseOlimpLocation') or '');
 
-    if ( $useOLIMP ) {
-	if ( $isStoreCallnumber ) {
-		C4::Callnumber::OlimpWS::UpdateStoreEndCallnumber( $callnumber );
-	} else {
-		C4::Callnumber::OlimpWS::UpdateFreeAccessEndCallnumber( $callnumber );
-	}
-    }
-
+    # if ( $useOLIMP ) {
+    # 	if ( $isStoreCallnumber ) {
+    # 		C4::Callnumber::OlimpWS::UpdateStoreEndCallnumber( $callnumber );
+    # 	} else {
+    # 		C4::Callnumber::OlimpWS::UpdateFreeAccessEndCallnumber( $callnumber );
+    # 	}
+    # }
+    1;
 }
 
 sub GetCallnumberParts {
