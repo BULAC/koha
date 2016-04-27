@@ -73,6 +73,8 @@
               <xsl:text> ; </xsl:text>
               <xsl:value-of select="."/>
             </xsl:when>
+            <xsl:when test="@code='6'"></xsl:when>
+            <xsl:when test="@code='7'"></xsl:when>
             <xsl:otherwise>
               <xsl:text>, </xsl:text>
               <xsl:value-of select="."/>
