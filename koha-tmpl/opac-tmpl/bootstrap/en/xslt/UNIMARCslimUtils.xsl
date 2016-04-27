@@ -192,6 +192,8 @@
                 </xsl:if>
                 <xsl:value-of select="."/>
               </xsl:when>
+	      <xsl:when test="@code='6'"></xsl:when>
+	      <xsl:when test="@code='7'"></xsl:when>
               <xsl:otherwise>
                 <xsl:if test="position()>1">
                   <xsl:text>, </xsl:text>
