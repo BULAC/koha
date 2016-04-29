@@ -138,6 +138,12 @@
                 <xsl:text> ; </xsl:text>
                 <xsl:value-of select="."/>
               </xsl:when>
+	      <xsl:when test="@code='6'">
+              </xsl:when>
+	      <xsl:when test="@code='7'">
+              </xsl:when>
+	      <xsl:when test="@code='v'">
+              </xsl:when>
               <xsl:otherwise>
                 <xsl:if test="position()>1">
                   <xsl:text>, </xsl:text>
@@ -363,7 +369,7 @@
                   </xsl:attribute>
                 </xsl:otherwise>
               </xsl:choose>
-              <xsl:for-each select="marc:subfield[@code='a' or @code='b' or @code='4' or @code='c' or @code='d' or @code='f' or @code='g' or @code='p']">
+              <xsl:for-each select="marc:subfield[@code='a' or @code='b' or @code='c' or @code='d' or @code='f' or @code='g' or @code='p']">
                 <xsl:choose>
                   <xsl:when test="@code='9'">
                   </xsl:when>
@@ -378,16 +384,19 @@
             </a>
             <xsl:if test="$IdRef">
               <xsl:if test="marc:subfield[@code=3]">
-                <xsl:text> </xsl:text>
-                <a>
+		<span style="font-size: 75%; font-weight: bolder;">
+                <xsl:text> [</xsl:text><a>
                   <xsl:attribute name="href">
                     <xsl:text>/cgi-bin/koha/opac-idref.pl?unimarc3=</xsl:text>
                     <xsl:value-of select="marc:subfield[@code=3]"/>
                   </xsl:attribute>
-                  <xsl:attribute name="title">IdRef</xsl:attribute>
+                  <xsl:attribute name="title">IdRef: Lien avec les autorités du Sudoc</xsl:attribute>
+		  <xsl:attribute name="style">font-weight: bolder</xsl:attribute>
                   <xsl:attribute name="rel">gb_page_center[600,500]</xsl:attribute>
-                  <xsl:text>Idref</xsl:text>
+                  <xsl:text>IdRef (sudoc)</xsl:text>
                 </a>
+		<xsl:text>]</xsl:text>
+		</span>
               </xsl:if>
             </xsl:if>
             <xsl:if test="not(position() = last())">
