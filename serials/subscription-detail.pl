@@ -156,7 +156,8 @@ $template->param(
     irregular_issues => scalar @irregular_issues,
     default_bib_view => $default_bib_view,
     (uc(C4::Context->preference("marcflavour"))) => 1,
-    show_acquisition_details => defined $tmpl_infos->{ordered_exists} || defined $tmpl_infos->{spent_exists} ? 1 : 0,
+    #    show_acquisition_details => defined $tmpl_infos->{ordered_exists} || defined $tmpl_infos->{spent_exists} ? 1 : 0,
+    show_acquisition_details => 1 ,
     basketno => $order->{basketno},
     %$tmpl_infos,
 );
