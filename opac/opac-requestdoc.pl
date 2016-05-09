@@ -78,6 +78,7 @@ $template->param( BORROWER_INFO => $borrower );
     my $branch = $query->param('branch') || $borrower->{'branchcode'} || C4::Context->userenv->{branch} || '' ;
 
 my $op = $query->param('op');
+my @errors;
 
 $template->param(op => $op);
 
@@ -110,23 +111,29 @@ if ($op eq 'additem') {
     $item->{'pubyear'} = $query->param('years');
     $item->{'notforloan'} = 0;
     $biblionumber, $biblioitemnumber, $itemnumber = AddItem($item, $biblionumber);
-    my $canitembereserved = CanItemBeReserved( C4::Context->userenv->{'number'}, $itemnumber );
-    if ($canitembereserved == 'OK') {
-	my $found = 'A';
-	my $rank = 0;
-	my $error;
-	my $notes = "Périodique issue d'une notice générique\n Si vous ne le trouvez pas pensez à vérifier l'état des collections,\n les autres notices d'exemplaires et le magasin 21";
-	my $resid = AddReserve(
-	    $branch, C4::Context->userenv->{'number'},
-	    $biblionumber, 'a', [$biblionumber],
-	    $rank, C4::Dates->new()->output(), '',
-	    $notes, $item->{'title'},
-	    $itemnumber, $found
-	    );
+    my $canitembereserved;
+    if ($itemnumber) {
+	$canitembereserved = CanItemBeReserved( C4::Context->userenv->{'number'}, $itemnumber );
+	if ($canitembereserved eq 'OK') {
+	    my $found = 'A';
+	    my $rank = 0;
+	    my $notes = "Périodique issue d'une notice générique\n Si vous ne le trouvez pas pensez à vérifier l'état des collections,\n les autres notices d'exemplaires et le magasin 21";
+	    my $resid = AddReserve(
+		$branch, C4::Context->userenv->{'number'},
+		$biblionumber, 'a', [$biblionumber],
+		$rank, C4::Dates->new()->output(), '',
+		$notes, $item->{'title'},
+		$itemnumber, $found
+		);
+	} else {
+	    push @errors, $canitembereserved;
+	}
+    }
+    else {
+	push @errors, 'PROBLEM_CREATING_ITEM';
     }
     $template->param (
 	itemnumber => $itemnumber,
-	error => $canitembereserved,
 	);
 }
 elsif ($op eq 'addbiblioanditem') {
@@ -164,7 +171,6 @@ elsif ($op eq 'addbiblioanditem') {
     if ($canitembereserved == 'OK') {
 	my $found = 'A';
 	my $rank = 0;
-	my $error;
 	my $notes = "Demande de communication\ndepuis le fichier papier";
 	my $resid = AddReserve(
 	    $branch, C4::Context->userenv->{'number'},
@@ -178,7 +184,6 @@ elsif ($op eq 'addbiblioanditem') {
 	biblio => $biblio,
 	item => $item,
 	itemnumber => $itemnumber,
-	error => $canitembereserved,
 	op => $op,
 	);
 }
@@ -199,6 +204,10 @@ else {
 	    pastop => $pastop,
 	    );
     }
+}
+
+if (@errors) {
+    $template->param (errors => \@errors);
 }
 
 output_html_with_http_headers $query, $cookie, $template->output;

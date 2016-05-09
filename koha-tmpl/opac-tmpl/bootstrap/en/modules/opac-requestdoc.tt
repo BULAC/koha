@@ -19,7 +19,7 @@
               </div>
           </div>
 	  <div class='span10'>
-[% IF (op == 'addbiblioanditem' || op == 'additem') %]
+[% IF ((op == 'addbiblioanditem' || op == 'additem') && ! errors) %]
 <h1>[% biblio.title %][% IF (biblio.author) %], [% biblio.author %],[% END %] [% itemnumber %] est réservé à votre nom</h1>
 
           <table class="table table-bordered table-striped">
@@ -34,6 +34,25 @@
             <td>[% item.itemcallnumber %]</td>
           </tr>
           </table>
+[% ELSIF ((op == 'addbiblioanditem' || op == 'additem') && errors) %]
+<h1>We have a problem reserving [% biblio.title %][% IF (biblio.author) %], [% biblio.author %],[% END %] [% itemnumber %] for you</h1>
+<div class="alert">
+ 
+ <div class="panel panel-default">
+ <div class="panel-body">
+ [% FOREACH error IN errors %]
+   <ul>
+   [% SWITCH error %]
+   [% CASE 'PROBLEM_CREATING_ITEM' %]
+   <li>Error: can't create the item, this is not normal, please report this problem to a librarian. While we fix this problem, we will be able to provide you the document you need.</li>
+   [% CASE %]
+   <li>Error: <b>[% error %]</b>.</li>
+   [% END %]
+   </ul>
+ [% END %]
+</div>
+</div>
+</div>
 
 [% ELSIF (futureop) %]
 <h1>Item from stack request [% IF (futureop == 'additem')%](periodic)[% END %]</h1>
