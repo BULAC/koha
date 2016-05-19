@@ -76,11 +76,22 @@ if (defined $checkitem && $checkitem ne ''){
     $rank[0] = '0' unless C4::Context->preference('ReservesNeedReturns');
     my $item = $checkitem;
     $item = GetItem($item);
+    my $alreadyreserved  = IsItemReserved($item->{'itemnumber'});
+    my $alreadyissued    = IsItemIssued($item->{'itemnumber'});
     if ( $item->{'holdingbranch'} eq $branch ){
+	open my $coco ,'>>','/tmp/coco';
+	print $coco "res: $alreadyreserved, iss: $alreadyissued\n";
+	close $coco;
         $found = 'W' unless C4::Context->preference('ReservesNeedReturns');
 	my $itype = $item->{'itype'};
 	my @MGdocs = qw(CONSULT-MG PRETABL-MG RESERVE-MG);
-	if (grep { /$itype/ } @MGdocs) {
+	if ($alreadyreserved) {
+	    $rank[0] = C4::Reserves::CalculateItemPriority($item->{'itemnumber'});
+	}
+	if ($alreadyreserved || $alreadyissued) {
+	    $found = '';
+	}
+	elsif (grep { /$itype/ } @MGdocs) {
 	    $found = 'A';
 	}
     }

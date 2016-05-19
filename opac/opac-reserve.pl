@@ -261,9 +261,13 @@ if ( $query->param('place_reserve') ) {
         my $rank = $biblioData->{rank};
         if ( $itemNum ne '' ) {
 	    my $alreadyreserved = IsItemReserved($itemNum);
+	    my $alreadyissued    = IsItemIssued($itemNum);
             $canreserve = 1 if CanItemBeReserved( $borrowernumber, $itemNum ) eq 'OK';
 	    if (! $alreadyreserved) {
-	    $rank = '0' unless C4::Context->preference('ReservesNeedReturns');
+		$rank = '0' unless C4::Context->preference('ReservesNeedReturns');
+	    }
+	    else {
+		$rank = C4::Reserves::CalculateItemPriority($itemNum);
 	    }
             my $item = GetItem($itemNum);
             if ( $item->{'holdingbranch'} eq $branch ) {
@@ -271,11 +275,11 @@ if ( $query->param('place_reserve') ) {
 		    unless C4::Context->preference('ReservesNeedReturns');
 		my $itype = GetItemItype($itemNum);
 		my @MGdocs = qw(CONSULT-MG PRETABL-MG RESERVE-MG);
-		if (grep { /$itype/ } @MGdocs) {
-		    $found = 'A';
-		}
-		if ($alreadyreserved) {
+		if ($alreadyreserved || $alreadyissued) {
 		    $found = '';
+		}
+		elsif (grep { /$itype/ } @MGdocs) {
+		    $found = 'A';
 		}
             }
         }

@@ -2631,7 +2631,7 @@ sub EditReserves {
 	my $itype = $itemsth->fetchall_arrayref->[0][0];
 	if ((grep {/^$itype$/} @{ $itypes }) || $itype eq '') {
 	    ModReserveAffect( $itemnumber, $borrowernumber, undef, $deskcode);
-	    ModReserveStatus($itemnumber, 'E');
+	    ModResStatusByResID($reserve_id, 'E');
 	    $EditedCount++;
 	    push @$EditedReserves, $reserve_id;
 	}
@@ -2661,6 +2661,31 @@ sub ListReservesByStatus {
 	push @{ $res }, $row;
     }
     return $res;
+}
+
+=head2 ModResStatusByResID
+
+  ModReserveStatus($reserve_id, $newstatus);
+
+Update the reserve status for the reserve.
+
+$reserve_id is the reserve id the reserve is on
+
+$newstatus is the new status.
+
+=cut
+
+sub ModResStatusByResID {
+
+    #first : check if we have a reservation for this item .
+    my ($reserve_id, $newstatus) = @_;
+    my $dbh = C4::Context->dbh;
+
+    #    my $query = "UPDATE reserves SET found = ?, waitingdate = NOW() WHERE itemnumber = ? AND (found IS NULL OR found = 'A') AND (priority = 0 OR found = 'A')";
+        my $query = "UPDATE reserves SET found = ?, waitingdate = NOW() WHERE reserve_id = ?";
+    my $sth_set = $dbh->prepare($query);
+    $sth_set->execute( $newstatus, $reserve_id );
+
 }
 
 =head1 AUTHOR
