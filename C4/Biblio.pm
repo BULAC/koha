@@ -3164,8 +3164,7 @@ sub _koha_modify_biblioitem_nonmarc {
         agerestriction  = ?,
         geolangcode     = ?,
         bulaclang       = ?,
-        bulaccountry    = ?,
-        bulacissn       = ?
+        bulaccountry    = ?
         where biblioitemnumber = ?
         ";
     my $sth = $dbh->prepare($query);
@@ -3178,10 +3177,10 @@ sub _koha_modify_biblioitem_nonmarc {
         $biblioitem->{'lccn'},             $biblioitem->{'url'},              $biblioitem->{'biblioitems.cn_source'}, $biblioitem->{'cn_class'},
         $biblioitem->{'cn_item'},          $biblioitem->{'cn_suffix'},        $cn_sort,                               $biblioitem->{'totalissues'},
         $biblioitem->{'ean'},              $biblioitem->{'agerestriction'},   $biblioitem->{'geolangcode'},           $biblioitem->{'bulaclang'} ,
-        $biblioitem->{'bulaccountry'},     $biblioitem->{'bulacissn'},
+        $biblioitem->{'bulaccountry'},
 	$biblioitem->{'biblioitemnumber'}
 	);
- #   print "$biblioitem->{'geolangcode'}, $biblioitem->{'bulaclang'}\n";
+
     if ( $dbh->errstr ) {
         $error .= "ERROR in _koha_modify_biblioitem_nonmarc $query" . $dbh->errstr;
         warn $error;
@@ -3236,8 +3235,7 @@ sub _koha_add_biblioitem {
         agerestriction  = ?,
         geolangcode     = ?,
         bulaclang       = ?,
-        bulaccountry    = ?,
-        bulacissn       = ?
+        bulaccountry    = ?
         ";
     my $sth = $dbh->prepare($query);
     $sth->execute(
@@ -3250,7 +3248,7 @@ sub _koha_add_biblioitem {
         $biblioitem->{'cn_class'},         $biblioitem->{'cn_item'},          $biblioitem->{'cn_suffix'},             $cn_sort,
         $biblioitem->{'totalissues'},      $biblioitem->{'ean'},              $biblioitem->{'agerestriction'}
 	,
-	$biblioitem->{'geolangcode'}, $biblioitem->{'bulaclang'}, $biblioitem->{'bulaccountry'}, $biblioitem->{'bulacissn'}
+	$biblioitem->{'geolangcode'}, $biblioitem->{'bulaclang'}, $biblioitem->{'bulaccountry'}
     );
     my $bibitemnum = $dbh->{'mysql_insertid'};
 

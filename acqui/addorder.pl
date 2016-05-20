@@ -251,7 +251,7 @@ if ( $orderinfo->{quantity} ne '0' ) {
                 "biblioitems.geolangcode"     => defined $$orderinfo{geolangcode} ? $$orderinfo{geolangcode} : "",
 		"biblioitems.bulaclang"       => $$orderinfo{bulaclang} ? $$orderinfo{bulaclang} : "",
 		"biblioitems.bulaccountry"       => $$orderinfo{bulaccountry} ? $$orderinfo{bulaccountry} : "",
-		"biblioitems.bulacissn"       => $$orderinfo{bulacissn} ? $$orderinfo{bulacissn} : "",
+		"biblioitems.issn"       => $$orderinfo{issn} ? $$orderinfo{issn} : "",
             });
         C4::Acquisition::FillWithDefaultValues( $record );
 

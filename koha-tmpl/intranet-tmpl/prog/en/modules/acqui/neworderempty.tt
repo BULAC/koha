@@ -389,13 +389,13 @@ $(document).ready(function()
                 <input type="text" size="50" name="isbn" id="ISBN" value="[% isbn %]" />
             [% END %]
         </li>
-        <li>
+	<li>
             [% IF ( biblionumber ) %]
             <span class="label">ISSN: </span>
-                <input type="hidden" name="bulacissn" id="bulacissn" value="[% bulacissn %]" />[% bulacissn %]
+                <input type="hidden" name="issn" id="ISSN" value="[% issn %]" />[% isbn %]
             [% ELSE %]
-            <label for="country">Country: </label>
-                <input type="text" size="4" name="bulacissn" id="bulacissn" value="[% bulacissn %]" />
+            <label for="ISSN">ISSN: </label>
+                <input type="text" size="50" name="issn" id="ISSN" value="[% issn %]" />
             [% END %]
         </li>
         [% IF (UNIMARC) %]
