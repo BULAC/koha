@@ -22,7 +22,7 @@
   <xsl:variable name="leader6" select="substring($leader,7,1)"/>
   <xsl:variable name="leader7" select="substring($leader,8,1)"/>
   <xsl:variable name="biblionumber"
-   select="marc:datafield[@tag=090]/marc:subfield[@code='a']"/>
+   select="marc:controlfield[@tag=001]"/>
   <xsl:variable name="isbn"
    select="marc:datafield[@tag=010]/marc:subfield[@code='a']"/>
   <xsl:variable name="BiblioDefaultView" select="marc:sysprefs/marc:syspref[@name='BiblioDefaultView']"/>
