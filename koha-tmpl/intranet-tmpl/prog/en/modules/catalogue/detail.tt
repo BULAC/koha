@@ -814,7 +814,7 @@ function verify_images() {
 			    <br/>
                 [% END %]
                         [% END %]
-			[% IF (item.itype == 'PER-GEN-MG')  %]<a href="/cgi-bin/koha/reserve/request-tmp-doc.pl?biblionumber=[% item.biblionumber %]&genitemnumber=[% item.itemnumber %]">Request item</a>[% END %]
+			<a href="/cgi-bin/koha/circ/iwantthis.pl?biblionumber=[% item.biblionumber %]&itemnumber=[% item.itemnumber %]">Get</a>
                     </td>
                 </tr>
             [% END %]

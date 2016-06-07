@@ -79,9 +79,6 @@ if (defined $checkitem && $checkitem ne ''){
     my $alreadyreserved  = IsItemReserved($item->{'itemnumber'});
     my $alreadyissued    = IsItemIssued($item->{'itemnumber'});
     if ( $item->{'holdingbranch'} eq $branch ){
-	open my $coco ,'>>','/tmp/coco';
-	print $coco "res: $alreadyreserved, iss: $alreadyissued\n";
-	close $coco;
         $found = 'W' unless C4::Context->preference('ReservesNeedReturns');
 	my $itype = $item->{'itype'};
 	my @MGdocs = qw(CONSULT-MG PRETABL-MG RESERVE-MG);
@@ -98,6 +95,9 @@ if (defined $checkitem && $checkitem ne ''){
 }
 
 if ($type eq 'str8' && $borrower){
+
+    # + 1 is an ugly hack, won't work properly otherwise: it swapps patrons priority
+    $rank[0] = C4::Reserves::CalculatePriority($biblionumber) + 1;
 
     foreach my $biblionumber (keys %bibinfos) {
         my $count=@bibitems;
@@ -149,7 +149,8 @@ if ($type eq 'str8' && $borrower){
     } else {
         print $input->redirect("request.pl?biblionumber=$biblionumber");
     }
-} elsif ($borrower eq ''){
+}else{
+# elsif ($borrower eq ''){
 	print $input->header();
 	print "Invalid borrower number please try again";
 # Not sure that Dump() does HTML escaping. Use firebug or something to trace
