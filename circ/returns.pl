@@ -92,7 +92,7 @@ if ( $query->param('print_slip') ) {
     $template->param(
         print_slip     => 1,
         borrowernumber => $query->param('borrowernumber'),
-        biblionumber   => $query->param('biblionumber'),
+        itemnumber     => $query->param('itemnumber'),
     );
 }
 

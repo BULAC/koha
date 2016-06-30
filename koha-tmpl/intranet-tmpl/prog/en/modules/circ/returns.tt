@@ -22,7 +22,7 @@ function Dopop(link) {
 $(document).ready(function () {
 
     [% IF print_slip %]
-        Dopop('printhold?borrowernumber=[% borrowernumber %]&itemnumber=[% itemnumber %]');
+        Dopop('printhold.pl?borrowernumber=[% borrowernumber %]&itemnumber=[% itemnumber %]');
     [% END %]
 
     $("#return_date_override").datetimepicker({
