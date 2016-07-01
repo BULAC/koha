@@ -68,17 +68,6 @@ already available in the digital catalog.</p>
 </div>
 [% END %]
 
-[% IF (futureop != 'additem')%]
-<div class="alert">
-
-<p> Please note this form is for request of documents that <b>are
-not</b> present is this digital catalog but only in our legacy card
-catalog. Please make sure the document you're requesting is not
-already available in the digital catalog.</p>
-
-</div>
-[% END %]
-
             <form id="stackrqform" action="/cgi-bin/koha/opac-requestdoc.pl" method="post">
 
             <div class="yui-u first">
