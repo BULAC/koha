@@ -1327,7 +1327,11 @@
                             [% END %]
                         </td>
                     [% END  # /IF ShowCourseReservesHeader %]
-	            <td><a href="opac-iwantthis.pl?biblionumber=[% ITEM_RESULT.biblionumber %]&itemnumber=[% ITEM_RESULT.itemnumber %]">I want this</a></td>
+		        <td>
+		    [% IF (borrower.categorycode != selfregcategory) %]
+	            <a href="opac-iwantthis.pl?biblionumber=[% ITEM_RESULT.biblionumber %]&itemnumber=[% ITEM_RESULT.itemnumber %]">I want this</a>
+		    [% END %]
+		        </td>
                 </tr>
             [% END %]
         </tbody>

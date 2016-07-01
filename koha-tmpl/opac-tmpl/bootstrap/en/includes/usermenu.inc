@@ -24,13 +24,14 @@
 	        <a href="/cgi-bin/koha/opac-spaces.pl?op=invitation">my invitations</a></li>
 	           </li>
 	      [% END %]
+	      [% IF BORROWER_INFO.categorycode != '11PREINS' %]
                 [% IF ( cardcatalogrequest ) %]
                     <li class="active">
                 [% ELSE %]
                     <li>
                 [% END %]
 	        <a href="/cgi-bin/koha/opac-requestdoc.pl?futureop=addbiblioanditem">card catalog request</a></li>
-	           </li>
+	       [% END %]
 
             [% IF ( OPACFinesTab ) %]
                 [% IF ( accountview ) %]
