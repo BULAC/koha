@@ -148,7 +148,7 @@
 		    <td>[% reserveloo.barcode %]</td>
 		    <td>[% reserveloo.reserve_barcode %]</td>
                     <td>
-		        <span onClick="window.open('printslip.pl?reserves=[% reserveloo.reserve_id %]')">ReEdit</span>
+		        <button onClick="window.open('printslip.pl?reserves=[% reserveloo.reserve_id %]')" type="button">ReEdit</button>
                     </td>
                 </tr>
                 [% END %]</tbody>

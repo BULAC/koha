@@ -122,6 +122,7 @@ foreach my $num (@getreserves) {
         C4::Context->preference('ReservesMaxPickUpDelay'));
     my $calcDate = Date_to_Days( $waiting_year, $waiting_month, $waiting_day );
 
+    $getreserv{'reserve_id'}       = $num->{'reserve_id'};
     $getreserv{'itemtype'}       = $itemtypeinfo->{'description'};
     $getreserv{'title'}          = $gettitle->{'title'};
     $getreserv{'subtitle'}       = GetRecordValue('subtitle', GetMarcBiblio($gettitle->{'biblionumber'}), GetFrameworkCode($gettitle->{'biblionumber'}));
@@ -139,7 +140,7 @@ foreach my $num (@getreserves) {
     $getreserv{'borrowername'}      = $getborrower->{'surname'};
     $getreserv{'borrowerfirstname'} = $getborrower->{'firstname'};
     $getreserv{'borrowerphone'}     = $getborrower->{'phone'};
-
+    
     my $borEmail = GetFirstValidEmailAddress( $borrowernum );
 
     if ( $borEmail ) {
