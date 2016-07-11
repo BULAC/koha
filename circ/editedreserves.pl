@@ -72,6 +72,13 @@ my $deskitypes = GetDeskItypes($curdesk);
 my $default = C4::Context->userenv->{'branch'};
 my $userenv_desk = C4::Context->userenv->{'desk'} || '';
 
+my $desks  = GetDesks(C4::Context->userenv->{"branch"});
+my $currentdesk = C4::Context->userenv->{"deskcode"};
+if (@$desks && ! $currentdesk) {
+    print $input->redirect("/cgi-bin/koha/circ/selectdesk.pl");
+}
+
+
 if ($op eq 'editall') {
     my ($EditedCount, $EditedReserves) = EditReserves($curdesk);
     $template->param(EditedCount    => $EditedCount);

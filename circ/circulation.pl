@@ -44,6 +44,7 @@ use C4::Context;
 use CGI::Session;
 use C4::Members::Attributes qw(GetBorrowerAttributes);
 use C4::Spaces;
+use C4::Desks;
 use Koha::Borrower::Debarments qw(GetDebarments IsDebarred);
 use Koha::DateUtils;
 use Koha::Database;
@@ -98,6 +99,12 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user (
         flagsrequired   => { circulate => 'circulate_remaining_permissions' },
     }
 );
+
+my $desks  = GetDesks(C4::Context->userenv->{"branch"});
+my $currentdesk = C4::Context->userenv->{"deskcode"};
+if (@$desks && ! $currentdesk) {
+    print $query->redirect("/cgi-bin/koha/circ/selectdesk.pl");
+}
 
 my $branches = GetBranches();
 

@@ -23,6 +23,7 @@ use C4::Auth;
 use C4::Output;
 use C4::Context;
 use C4::Koha;
+use C4::Desks;
 
 my $query = new CGI;
 my ($template, $loggedinuser, $cookie, $flags) = get_template_and_user(
@@ -34,6 +35,12 @@ my ($template, $loggedinuser, $cookie, $flags) = get_template_and_user(
         flagsrequired   => { circulate => "circulate_remaining_permissions" },
     }
 );
+
+my $desks  = GetDesks(C4::Context->userenv->{"branch"});
+my $currentdesk = C4::Context->userenv->{"deskcode"};
+if (@$desks && ! $currentdesk) {
+    print $query->redirect("/cgi-bin/koha/circ/selectdesk.pl");
+}
 
 # Checking if there is a Fast Cataloging Framework
 my $fa = getframeworkinfo('FA');

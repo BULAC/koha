@@ -44,6 +44,7 @@ use C4::Members;
 use C4::Branch; # GetBranches GetBranchName
 use C4::Koha;   # FIXME : is it still useful ?
 use C4::RotatingCollections;
+use C4::Desks;
 use Koha::DateUtils;
 use Koha::Calendar;
 
@@ -59,6 +60,12 @@ my ( $template, $librarian, $cookie ) = get_template_and_user(
         flagsrequired   => { circulate => "circulate_remaining_permissions" },
     }
     );
+
+my $desks  = GetDesks(C4::Context->userenv->{"branch"});
+my $currentdesk = C4::Context->userenv->{"deskcode"};
+if (@$desks && ! $currentdesk) {
+    print $query->redirect("/cgi-bin/koha/circ/selectdesk.pl");
+}
 
 my $redirect_bcode = $query->param('barcode');
 if ($redirect_bcode =~ /^123/) {
