@@ -164,6 +164,8 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 1 },
   "branchcode",
   { data_type => "varchar", is_foreign_key => 1, is_nullable => 1, size => 10 },
+  "deskcode",
+  { data_type => "varchar", is_nullable => 1, size => 10 },
   "notificationdate",
   { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 1 },
   "reminderdate",

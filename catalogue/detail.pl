@@ -228,7 +228,7 @@ foreach my $item (@items) {
     }
 
     # checking for holds
-    my ($reservedate,$reservedfor,$expectedAt,undef,$wait) = GetReservesFromItemnumber($item->{itemnumber});
+    my ($reservedate,$reservedfor,$expectedAt,undef,$wait, $deskcode) = GetReservesFromItemnumber($item->{itemnumber});
     my $ItemBorrowerReserveInfo = C4::Members::GetMember( borrowernumber => $reservedfor);
     
     if (C4::Context->preference('HidePatronName')){
@@ -245,6 +245,7 @@ foreach my $item (@items) {
         $item->{Reservedcardnumber}             = $ItemBorrowerReserveInfo->{'cardnumber'};
         # Check waiting status
         $item->{waitingdate} = $wait;
+	$item->{deskcode} = $deskcode;
     }
 
 

@@ -501,6 +501,7 @@ foreach my $biblionumber (@biblionumbers) {
             # set found to 1 if reserve is waiting for patron pickup
             $reserve{'found'} = 1 if $res->{'found'} eq 'W';
             $reserve{'intransit'} = 1 if $res->{'found'} eq 'T';
+	    $reserve{'deskcode'} = $res->{'deskcode'};
         } elsif ($res->{priority} > 0) {
             if (defined($res->{itemnumber})) {
                 my $item = GetItem($res->{itemnumber});

@@ -709,6 +709,9 @@ function verify_images() {
                                 at[% ELSE %]for delivery at
                             [% END %]
                             [% item.ExpectedAtLibrary %]
+			    [% IF item.deskcode %]
+			    , [% item.deskcode %],
+			    [% END %]
                             [% IF ( item.waitingdate ) %]
                                 since [% item.waitingdate | $KohaDates %]
                             [% ELSE %]

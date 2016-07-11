@@ -740,6 +740,7 @@ function checkMultiHold() {
     	[% IF ( reserveloo.atdestination ) %]
             [% IF ( reserveloo.found ) %]
                 Item waiting at <b> [% reserveloo.wbrname %]</b> <input type="hidden" name="pickup" value="[% reserveloo.wbrcode %]" />
+		[% IF reserveloo.deskcode %], [% reserveloo.deskcode %][% END %]
             [% ELSE %]
                 Waiting to be pulled <input type="hidden" name="pickup" value="[% reserveloo.wbrcode %]" />
             [% END %]

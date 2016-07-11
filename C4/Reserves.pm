@@ -324,6 +324,7 @@ sub GetReservesFromBiblionumber {
     my $query = "
         SELECT  reserve_id,
                 branchcode,
+                deskcode,
                 timestamp AS rtimestamp,
                 priority,
                 biblionumber,
@@ -431,6 +432,7 @@ sub GetReservesFromItemnumber {
         $r->get_column('branchcode'),
         $r->reserve_id(),
         $r->waitingdate(),
+        $r->deskcode(),
     );
 }
 
