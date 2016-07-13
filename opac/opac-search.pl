@@ -577,10 +577,11 @@ if ($tag) {
         ($error, $results_hashref, $facets) = getRecords($query,$simple_query,\@sort_by,\@servers,$results_per_page,$offset,$expanded_facet,$branches,$itemtypes,$query_type,$scan,1);
     };
 }
+
 # This sorts the facets into alphabetical order
 if ($facets) {
-    foreach my $f (@$facets) {
-        $f->{facets} = [ sort { uc($a->{facet_label_value}) cmp uc($b->{facet_label_value}) } @{ $f->{facets} } ];
+    foreach my $f (@$facets) { 
+       $f->{facets} = [ sort { uc($a->{facet_label_value}) cmp uc($b->{facet_label_value}) } @{ $f->{facets} } ];
     }
     @$facets = sort {$a->{expand} cmp $b->{expand}} @$facets;
 }
@@ -904,7 +905,6 @@ for my $facet ( @$facets ) {
         $entry->{active} = grep { $_->{input_value} eq qq{$index:$value} } @limit_inputs;
     }
 }
-
 
 $template->param(
             #classlist => $classlist,

@@ -580,6 +580,32 @@ sub getRecords {
                                       GetKohaAuthorisedValueLib( 'LOC',
                                         $one_facet, $opac );
                                 }
+                                if ( $link_value =~ /ccode/ ) {
+                                    $facet_label_value =
+                                      GetKohaAuthorisedValueLib( 'CCODE',
+                                        $one_facet, $opac );
+                                }
+                                if ( $link_value =~ /ln/ ) {
+                                    $facet_label_value =
+					GetKohaAuthorisedValueLib( 'LANG',
+								   $one_facet, $opac );
+                                }
+                                if ( $link_value =~ /country-heading/ ) {
+                                    $facet_label_value =
+                                      GetKohaAuthorisedValueLib( 'COUNTRY',
+                                        $one_facet, $opac );
+                                }
+                                if ( $link_value =~ /igeo/ ) {
+                                    $facet_label_value =
+                                      GetKohaAuthorisedValueLib( 'BULAC_GEO',
+                                        $one_facet, $opac );
+                                }
+                                if ( $link_value =~ /ical/ ) {
+                                    $facet_label_value =
+                                      GetKohaAuthorisedValueLib( '',
+                                        $one_facet, $opac );
+                                }
+
 
                 # but we're down with the whole label being in the link's title.
                                 push @this_facets_array,
@@ -811,7 +837,6 @@ sub _get_facet_from_result_set {
         $facet_value =~ s/\Q$internal_sep\E/$sep/ if defined $sep;
         $facets->{ $facet_value } = $term->getAttribute( 'occur' );
     }
-
     return $facets;
 }
 

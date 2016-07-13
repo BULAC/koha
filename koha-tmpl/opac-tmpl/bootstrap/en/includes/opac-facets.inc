@@ -14,7 +14,7 @@
                 </ul>
                 [% IF ( related ) %] <li>(related searches: [% FOREACH relate IN related %][% relate.related_search %][% END %])</li>[% END %]
             </li>
-
+	    <p><b>Note</b> that filters are calculated only on the first 5000 results.</p>
             [% FOREACH facets_loo IN facets_loop %]
                 [% IF facets_loo.facets.size > 0 %]
                     <li id="[% facets_loo.type_id %]">
@@ -23,7 +23,12 @@
                         [% IF facets_loo.type_label_Topics %]<h5 id="facet-topics">Topics</h5>[% END %]
                         [% IF facets_loo.type_label_Places %]<h5 id="facet-places">Places</h5>[% END %]
                         [% IF facets_loo.type_label_Series %]<h5 id="facet-series">Series</h5>[% END %]
-                        [% IF facets_loo.type_label_ItemTypes %]<h5 id="facet-itemtypes">Item types</h5>[% END %]
+                        [% IF facets_loo.type_label_LoanCategory %]<h5 id="facet-itemtypes">Loan Category</h5>[% END %]
+			[% IF facets_loo.type_label_Ccode %]<h5 id="facet-ccode">Document Types</h5>[% END %]
+			[% IF facets_loo.type_label_Igeo %]<h5 id="facet-igeo">Bulac geo-linguistic index</h5>[% END %]
+			[% IF facets_loo.type_label_Icla %]<h5 id="facet-itemtypes">Dewey</h5>[% END %]
+			[% IF facets_loo.type_label_Lang %]<h5 id="facet-lang">Item lang</h5>[% END %]
+			[% IF facets_loo.type_label_Country %]<h5 id="facet-lang">Country</h5>[% END %]
                         [% UNLESS singleBranchMode %]
                             [% IF ( facets_loo.type_label_HomeLibrary ) %]<span id="facet-home-libraries">Home libraries</span>[% END %]
                             [% IF ( facets_loo.type_label_HoldingLibrary ) %]<span id="facet-holding-libraries">Holding libraries</span>[% END %]

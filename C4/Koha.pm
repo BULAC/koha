@@ -737,41 +737,45 @@ sub getFacets {
     my $facets;
     if ( C4::Context->preference("marcflavour") eq "UNIMARC" ) {
         $facets = [
-            {
-                idx   => 'su-to',
-                label => 'Topics',
-                tags  => [ qw/ 600ab 601ab 602a 604at 605a 606ax 610a / ],
-                sep   => ' - ',
-            },
-            {
-                idx   => 'su-geo',
-                label => 'Places',
-                tags  => [ qw/ 607a / ],
-                sep   => ' - ',
-            },
-            {
-                idx   => 'su-ut',
-                label => 'Titles',
-                tags  => [ qw/ 500a 501a 503a / ],
+	    {
+		idx   => 'igeo',
+		label => 'Igeo',
+		tags  => [qw/ 686a /],
+		sep   => ' - ',
+	    },
+	    {
+
+		idx   => 'icla',
+		label => 'Icla',
+		tags  => [qw / 686c /],
+		sep   => ' - ',
+		    
+	    },
+	    {
+                idx   => 'itype',
+                label => 'LoanCategory',
+                tags  => [ qw/ 995y / ],
                 sep   => ', ',
             },
-            {
-                idx   => 'au',
-                label => 'Authors',
-                tags  => [ qw/ 700ab 701ab 702ab / ],
-                sep   => C4::Context->preference("UNIMARCAuthorsFacetsSeparator"),
-            },
-            {
-                idx   => 'se',
-                label => 'Series',
-                tags  => [ qw/ 225a / ],
+	    {
+                idx   => 'ccode',
+                label => 'Ccode',
+                tags  => [ qw/ 995r / ],
                 sep   => ', ',
             },
-            {
-                idx  => 'location',
-                label => 'Location',
-                tags        => [ qw/ 995e / ],
-            }
+	    {
+                idx   => 'ln',
+                label => 'Lang',
+                tags  => [ qw/ 101a / ],
+                sep   => ', ',
+            },
+	    {
+                idx   => 'country-heading',
+                label => 'Country',
+                tags  => [ qw/ 102a / ],
+                sep   => ', ',
+            },
+
             ];
 
             unless ( C4::Context->preference("singleBranchMode")
