@@ -150,6 +150,9 @@ $template->param( "checked" => 1 ) if ( defined($nodouble) && $nodouble eq 1 );
 ( $borrower_data = GetMember( 'borrowernumber' => $borrowernumber ) ) if ( $op eq 'modify' or $op eq 'save' or $op eq 'duplicate' );
 my $categorycode  = $input->param('categorycode') || $borrower_data->{'categorycode'};
 my $category_type = $input->param('category_type') || '';
+if ($op eq 'modify' and $borrower_data->{'categorycode'} eq '11PREINS') {
+    $borrower_data->{'dateexpiry'} = '';
+}
 unless ($category_type or !($categorycode)){
     my $borrowercategory = GetBorrowercategory($categorycode);
     $category_type    = $borrowercategory->{'category_type'};
