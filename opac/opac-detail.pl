@@ -477,7 +477,11 @@ if ($hideitems) {
 }
 } else {
     # Or not
-    @items = @all_items;
+    for my $itm (@all_items) {
+	unless  ( $itm->{'itype'} eq 'DOC-TMP-MG' ) {
+	    push @items, $itm ;
+	}
+    }
 }
 
 my $branches = GetBranches();
