@@ -75,6 +75,9 @@ if ( $cardnumber ) {
     $template->param('borrower' => $borrower);
 }
 
+my $dt = DateTime->now + DateTime::Duration->new(days => C4::Context->preference('ReservesMaxPickUpDelay'));
+my $expdate = $dt->mdy('/');    
+
 if ( $biblionumber && $genitemnumber && ! $cardnumber ) { #need to rerun with borrower number
     my $biblio = GetBiblio($biblionumber);
     my $item   = GetItem($genitemnumber);
@@ -105,7 +108,7 @@ elsif ( $biblionumber && $genitemnumber && $cardnumber && $enumchron) { #make ho
 	AddReserve(
 	    $branch, $borrower->{'borrowernumber'},
 	    $biblionumber, 'a', [$biblionumber],
-	    $rank, C4::Dates->new()->output(), '',
+	    $rank, C4::Dates->new()->output(), $expdate,
 	    $notes, $item->{'title'},
 	    $itemnumber, $found
 	    );
@@ -161,7 +164,7 @@ elsif ( $cardnumber && $itemcallnumber) { #make a card catalog request
 	    AddReserve(
 		$branch, $borrower->{'borrowernumber'},
 		$biblionumber, 'a', [$biblionumber],
-		$rank, C4::Dates->new()->output(), '',
+		$rank, C4::Dates->new()->output(), $expdate,
 		$notes, $title,
 		$itemnumber, $found
 		);

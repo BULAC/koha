@@ -104,6 +104,9 @@ if ($genitemnumber || $itemnumber) {
 	);
 }
 
+my $dt = DateTime->now + DateTime::Duration->new(days => C4::Context->preference('ReservesMaxPickUpDelay'));
+my $expdate = $dt->mdy('/');
+
 if ($op eq 'additem') {
     my $itemnumber;
     my $biblioitemnumber;
@@ -121,7 +124,7 @@ if ($op eq 'additem') {
 	    my $resid = AddReserve(
 		$branch, C4::Context->userenv->{'number'},
 		$biblionumber, 'a', [$biblionumber],
-		$rank, C4::Dates->new()->output(), '',
+		$rank, C4::Dates->new()->output(), $expdate,
 		$notes, $item->{'title'},
 		$itemnumber, $found
 		);
@@ -175,7 +178,7 @@ elsif ($op eq 'addbiblioanditem') {
 	my $resid = AddReserve(
 	    $branch, C4::Context->userenv->{'number'},
 	    $biblionumber, 'a', [$biblionumber],
-	    $rank, C4::Dates->new()->output(), '',
+	    $rank, C4::Dates->new()->output(), $expdate,
 	    $notes, $item->{'title'},
 	    $itemnumber, $found
 	    );

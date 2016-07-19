@@ -127,10 +127,12 @@ if (!$selfreserve && !$selfissue && $op eq 'reserve' && $canreserve) {
     if (!$reservesbefore && $from == 'stacks') {
 	$found = 'A';
     }
+    my $dt = DateTime->now + DateTime::Duration->new(days => C4::Context->preference('ReservesMaxPickUpDelay'));
+    my $expdate = $dt->mdy('/');
     my $resid = AddReserve(
 	$homebranch, C4::Context->userenv->{'number'},
 	$biblionumber, 'a', [$biblionumber],
-	$rank, C4::Dates->new()->output(), '',
+	$rank, C4::Dates->new()->output(), $expdate,
 	$notes, $item->{'title'},
 	$itemnumber, $found
 	);
