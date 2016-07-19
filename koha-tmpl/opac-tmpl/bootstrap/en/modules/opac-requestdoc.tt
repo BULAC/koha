@@ -86,7 +86,7 @@ already available in the digital catalog.</p>
                 [% IF (futureop == 'addbiblioanditem') %]
                 <li class="editable">
                     <label for="author">Author:</label>
-                    <input id="author" type="text" name="author" value="[% biblio.author %]" [% IF (biblio.author) %]readonly[% END %] required/>
+                    <input id="author" type="text" name="author" value="[% biblio.author %]" [% IF (biblio.author) %]readonly[% END %] />
                 </li>
 		[% END %]
 
