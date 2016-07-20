@@ -134,12 +134,10 @@ if (!$selfreserve && !$selfissue && $op eq 'reserve' && $canreserve) {
 	$found = 'A';
     }
     
-    my $dt = DateTime->now + DateTime::Duration->new(days => C4::Context->preference('ReservesMaxPickUpDelay'));
-    my $expdate = $dt->mdy('/');    
     my $resid = AddReserve(
 	$homebranch, $borrower->{'borrowernumber'},
 	$biblionumber, 'a', [$biblionumber],
-	$rank, C4::Dates->new()->output(), $expdate,
+	$rank, C4::Dates->new()->output(), '',
 	$notes, $item->{'title'},
 	$itemnumber, $found
 	);

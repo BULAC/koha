@@ -487,6 +487,11 @@
 
                         [% IF ( reserves_count ) %]
                             <div id="opac-user-holds">
+			    <div class="alert">
+			    <p>
+			    Document requested from stacks or put aside will be expired seven days after the date in the "placed on" column.
+			    </p>
+			    </div>
                                 <table id="holdst" class="table table-bordered table-striped">
                                     <caption>Holds <span class="count">([% reserves_count %] total)</span></caption>
                                     <!-- RESERVES TABLE ROWS -->
@@ -494,7 +499,6 @@
                                         <tr>
                                             <th class="anti-the">Title</th>
                                             <th class="psort">Placed on</th>
-                                            <th>Expires on</th>
                                             <th>Pick up location</th>
                                             [% IF ( showpriority ) %]
                                                 <th>Priority</th>
@@ -536,17 +540,6 @@
                                                     <span class="tdlabel">Hold date:</span>
                                                     [% RESERVE.reservedate | $KohaDates %]
                                                 </span>
-                                            </td>
-                                            <td class="expirationdate">
-                                                [% IF ( RESERVE.expirationdate ) %]
-                                                    <span>
-                                                        <span class="tdlabel">Expiration:</span>
-                                                        [% RESERVE.expirationdate | $KohaDates %]
-                                                    </span>
-                                                [% ELSE %]
-                                                    <span class="tdlabel">Expiration:</span>
-                                                    Never expires
-                                                [% END %]
                                             </td>
                                             <td class="branch">
                                                 <span class="tdlabel">Pick up location:</span>
