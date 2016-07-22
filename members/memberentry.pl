@@ -151,11 +151,11 @@ $template->param( "checked" => 1 ) if ( defined($nodouble) && $nodouble eq 1 );
 my $categorycode  = $input->param('categorycode') || $borrower_data->{'categorycode'};
 my $category_type = $input->param('category_type') || '';
 my $selfreg_default_category = C4::Context->preference('PatronSelfRegistrationDefaultCategory');
-if ($op eq 'modify' and $borrower_data->{'categorycode'} eq $selfreg_default_category) {
+if ($op eq 'modify' && $borrower_data->{'categorycode'} eq $selfreg_default_category) {
     $borrower_data->{'dateexpiry'} = '';
 }
 ## Prevent preins category from having a cardnumber
-if ($op eq 'save' && $borrower_data->{'categorycode'} eq $selfreg_default_category && $cardnumber) {
+if ($op eq 'save' && $categorycode eq $selfreg_default_category && $cardnumber) {
     $nok = 1;
     my $borrowercategory = GetBorrowercategory($selfreg_default_category);
     my $category_name = $borrowercategory->{'description'}; 
@@ -184,7 +184,6 @@ if ( $op eq 'insert' || $op eq 'modify' || $op eq 'save' || $op eq 'duplicate' )
             $newdata{$key} =~ s/\"/&quot;/g unless $key eq 'borrowernotes' or $key eq 'opacnote';
         }
     }
-
     my $dateobject = C4::Dates->new();
     my $syspref = $dateobject->regexp();		# same syspref format for all 3 dates
     my $iso     = $dateobject->regexp('iso');	#
