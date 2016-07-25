@@ -1,5 +1,5 @@
 <div id="advsearch">
-    <form action="/cgi-bin/koha/serials/serials-search.pl" method="get">
+    <form action="" method="get">
         <fieldset class="brief">
             <a id="unfold_advsearch" style="cursor:pointer" onclick="$('#advsearch_form').slideToggle(400);">Advanced search</a>
             <div id="advsearch_form" style="display:none">
@@ -11,10 +11,6 @@
               <li>
                 <label for="title">Title:</label>
                 <input type="text" id="title" name="title_filter" value="[% title_filter %]" />
-              </li>
-	      <li>
-                <label for="callnumber">Callnumber:</label>
-                <input type="text" id="callnumber" name="callnumber_filter" value="[% callnumber_filter %]" />
               </li>
               [% IF Koha.Preference( 'marcflavour' ) == "UNIMARC" %]
               <li>
