@@ -33,13 +33,13 @@
                         <h1>Registration Complete!</h1>
 
                         <p>You have successfully registered your new account.</p>
-                        [% IF Koha.Preference('PatronSelfRegistrationPrefillForm') %]
                             <p>To log in, use the following credentials:</p>
 
                             <p id="patron-userid-p">
                                 <span id="patron-userid-label">Username:</span>
                                 <span id="patron-userid">[% borrower.userid %]</span>
                             </p>
+                        [% IF Koha.Preference('PatronSelfRegistrationPrefillForm;') %]
                             <p id="patron-password-p">
                                 <span id="patron-password-label">Password:</span>
                                 <span id="patron-password">[% password_cleartext %]<span>

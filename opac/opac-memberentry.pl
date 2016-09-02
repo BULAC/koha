@@ -85,7 +85,7 @@ if ( $action eq 'create' ) {
     %borrower = DelEmptyFields(%borrower);
 
     my @empty_mandatory_fields = CheckMandatoryFields( \%borrower, $action );
-    my $invalidformfields = CheckForInvalidFields(\%borrower);
+    my $invalid_form_fields = CheckForInvalidFields(\%borrower);
     delete $borrower{'password2'};
 
     if (@empty_mandatory_fields || @$invalid_form_fields ) {
