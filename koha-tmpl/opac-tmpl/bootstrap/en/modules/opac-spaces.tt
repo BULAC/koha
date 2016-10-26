@@ -6,12 +6,15 @@
 </head>
 [% INCLUDE 'bodytag.inc' bodyid='opac-main' %]
 [% INCLUDE 'masthead.inc' %]
-        [% IF BORROWER_INFO.categorycode != '11PREINS' %]
+        [% IF patron_authorised %]
 	[% IF (booking) %]
 		<iframe src="[% SpacesUrl %]/espaces/booking/bookingList.seam?kohaSessionId=[% kohaSessionId %]" id="framecontent"></iframe>
 	[% ELSIF (invitation) %]
 			<iframe src="[% SpacesUrl %]/espaces/booking/invitationList.seam?kohaSessionId=[% kohaSessionId %]" id="framecontent"></iframe>
 	[% END %]
+	[% ELSE %]
+	<h1>Forbidden</h1>
+	<p>Please finish your inscription to access this page</p>
         [% END %]
 
 </html>
