@@ -38,7 +38,7 @@ my ( $template, $borrowernumber, $cookie ) = &get_template_and_user(
 
 my $patselfregcat = C4::Context->preference('PatronSelfRegistrationDefaultCategory');
 my $patron = GetMember( 'borrowernumber' => $borrowernumber );
-my $patron_authorised =  ($patselfregcat = $patron->{'categorycode'}) ? 0 : 1 ;
+my $patron_authorised =  ($patselfregcat == $patron->{'categorycode'}) ? 0 : 1 ;
 $template->param(patron_authorised => $patron_authorised );
 
 my $op = $query->param( 'op' );
