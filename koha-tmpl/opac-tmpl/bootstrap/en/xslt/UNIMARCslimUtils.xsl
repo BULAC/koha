@@ -108,7 +108,6 @@
         <span class="label">
         <xsl:value-of select="$label"/>: </span>
         <xsl:for-each select="marc:datafield[@tag=$tag]">
-          <xsl:call-template name="addClassRtl" />
           <xsl:for-each select="marc:subfield">
             <xsl:choose>
               <xsl:when test="@code='a'">
@@ -169,7 +168,6 @@
         <span class="label">
         <xsl:value-of select="$label"/>: </span>
         <xsl:for-each select="marc:datafield[@tag=$tag]">
-          <xsl:call-template name="addClassRtl" />
           <xsl:for-each select="marc:subfield">
             <xsl:if test="position()>1">
               <xsl:text>, </xsl:text>
@@ -189,7 +187,6 @@
       <span class="label">Publication: </span>
       <xsl:for-each select="marc:datafield[@tag=210]">
         <span>
-          <xsl:call-template name="addClassRtl" />
           <xsl:for-each select="marc:subfield">
             <xsl:choose>
               <xsl:when test="@code='c' or @code='g'">

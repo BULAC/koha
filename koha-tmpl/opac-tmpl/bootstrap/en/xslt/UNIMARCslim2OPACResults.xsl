@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!DOCTYPE stylesheet [<!ENTITY nbsp "&#160;" >]>
+<!DOCTYPE stylesheet [
+<!ENTITY nbsp "&#160;" >
+<!ENTITY rlm "&#8207;" >
+<!ENTITY lrm "&#8206;" >
+]>
+
 
 <xsl:stylesheet version="1.0"
   xmlns:marc="http://www.loc.gov/MARC21/slim"
@@ -32,13 +37,24 @@
 
   <xsl:if test="marc:datafield[@tag=200]">
     <xsl:for-each select="marc:datafield[@tag=200]">
-        <xsl:call-template name="addClassRtl" />
+      <xsl:variable name="lang" select="marc:subfield[@code=7]"/>
+	 <div>
+	   <xsl:attribute name="class">
+	     <xsl:choose>
+	       <xsl:when test="$lang = 'Hébreu' or $lang = 'Arabe'">
+		 <xsl:value-of select="'titleresultsrtl'"/>
+	       </xsl:when>
+	       <xsl:otherwise>
+		 <xsl:value-of select="'titleresults'"/>
+	       </xsl:otherwise>
+	     </xsl:choose>
+	   </xsl:attribute>
         <xsl:for-each select="marc:subfield">
           <xsl:choose>
             <xsl:when test="@code='a'">
               <xsl:variable name="title" select="."/>
               <xsl:variable name="ntitle"
-                select="translate($title, '&#x0088;&#x0089;&#x0098;&#x009C;','')"/>
+			    select="translate($title, '&#x0088;&#x0089;&#x0098;&#x009C;','')"/>
               <a>
                 <xsl:attribute name="href">
                   <xsl:call-template name="buildBiblioDefaultViewURL">
@@ -51,36 +67,57 @@
                 <xsl:attribute name="class">title</xsl:attribute>
                 <xsl:value-of select="$ntitle" />
               </a>
+	      <xsl:text>&#8206;</xsl:text>
             </xsl:when>
             <xsl:when test="@code='b'">
+	      <xsl:if test="$lang = 'Hébreu' or $lang = 'Arabe'">
+		<br/>
+	      </xsl:if>
               <xsl:text> [</xsl:text>
               <xsl:value-of select="."/>
               <xsl:text>]</xsl:text>
             </xsl:when>
             <xsl:when test="@code='d'">
+	      <xsl:if test="$lang = 'Hébreu' or $lang = 'Arabe'">
+		<br/>
+	      </xsl:if>
               <xsl:text> = </xsl:text>
               <xsl:value-of select="."/>
             </xsl:when>
             <xsl:when test="@code='e'">
-              <xsl:text> : </xsl:text>
+	      <xsl:choose>
+	      <xsl:when test="$lang = 'Hébreu' or $lang = 'Arabe'">
+		<br/>
+	      </xsl:when>
+	      <xsl:otherwise>
+		<xsl:text> : </xsl:text>
+	      </xsl:otherwise>
+	      </xsl:choose>
               <xsl:value-of select="."/>
             </xsl:when>
             <xsl:when test="@code='f'">
-              <xsl:text> / </xsl:text>
+	      <br/>
               <xsl:value-of select="."/>
             </xsl:when>
             <xsl:when test="@code='g'">
+	      <xsl:if test="$lang = 'Hébreu' or $lang = 'Arabe'">
+		<br/>
+	      </xsl:if>
               <xsl:text> ; </xsl:text>
               <xsl:value-of select="."/>
             </xsl:when>
             <xsl:when test="@code='6'"></xsl:when>
             <xsl:when test="@code='7'"></xsl:when>
             <xsl:otherwise>
+	      <xsl:if test="$lang = 'Hébreu' or $lang = 'Arabe'">
+		<br/>
+	      </xsl:if>
               <xsl:text>, </xsl:text>
               <xsl:value-of select="."/>
-            </xsl:otherwise>
-          </xsl:choose>
+              </xsl:otherwise>
+            </xsl:choose>
         </xsl:for-each>
+	 </div>
     </xsl:for-each>
   </xsl:if>
 

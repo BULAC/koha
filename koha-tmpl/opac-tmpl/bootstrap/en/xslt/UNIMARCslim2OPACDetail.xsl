@@ -25,7 +25,8 @@
 
   <xsl:if test="marc:datafield[@tag=200]">
     <xsl:for-each select="marc:datafield[@tag=200]">
-      <h1 class="title">
+      <div class="titledetail">
+      <h1 class="title" dir="auto">
         <xsl:call-template name="addClassRtl" />
         <xsl:for-each select="marc:subfield">
           <xsl:choose>
@@ -49,8 +50,6 @@
               <xsl:value-of select="."/>
             </xsl:when>
             <xsl:when test="@code='f'">
-              <xsl:text> / </xsl:text>
-              <xsl:value-of select="."/>
             </xsl:when>
             <xsl:when test="@code='g'">
               <xsl:text> ; </xsl:text>
@@ -65,6 +64,12 @@
           </xsl:choose>
         </xsl:for-each>
       </h1>
+      <xsl:if test="marc:subfield[@code='f']">
+	<h2 class='title' dir='auto'>
+	  <xsl:value-of select="marc:subfield[@code='f']"/>
+	</h2>
+      </xsl:if>
+      </div>
     </xsl:for-each>
   </xsl:if>
 
