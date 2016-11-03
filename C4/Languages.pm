@@ -254,6 +254,7 @@ sub getLanguages {
             push @languages_loop, $language_subtag_registry;
         }
     }
+    @languages_loop = sort { $a->{'description'} cmp $b->{description} } @languages_loop;
     return \@languages_loop;
 }
 
