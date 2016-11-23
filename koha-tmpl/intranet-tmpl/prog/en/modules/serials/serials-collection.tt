@@ -15,6 +15,26 @@
 
 <div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/serials/serials-home.pl">Serials</a> &rsaquo; Serial collection information for  <i>[% bibliotitle %]</i></div>
 
+[% IF ( delete ) %]
+ <div class="yui-g">
+ <div id="circ_needsconfirmation" class="dialog alert">
+   <h3>Are you sure delete <b> [% serialnumber %] </b> selected serials</h3>
+   <form action="/cgi-bin/koha/serials/serials-collection.pl/#">
+           <h5>Delete associated items <input type="radio" name="delitems" value="Yes">Yes
+           <input type="radio" name="delitems" value="No" checked>No</h5>
+           <h5>Number of items available <b>: [% countitems %] </b> </h5>
+           <input type="hidden" name="subscriptionid" value="[% subscriptionid %]" />
+           <input type="hidden" name="serialsid" value="[% serialsid %]" />
+           <input type="hidden" name="confdelete" value="1" />
+           <input type="submit" class="approve" value="Yes, delete"/>
+       </form>
+       <form action=""/cgi-bin/koha/serials/serials-collection.pl/#">
+           <input type="hidden" name="subscriptionid" value="[% subscriptionid %]" />
+           <input type="submit" class="deny" value="No, don't delete"/>
+       </form>
+   </div>
+ </div>
+ [% END %]
 <div id="doc3" class="yui-t2">
    
    <div id="bd">
@@ -120,6 +140,7 @@
                     <div class="btn-group"><input type="button" value="Multi receiving" href="#multi_receiving" class="btn btn-default btn-sm" data-toggle="modal"></div>
                 [% END %]
             [% END %]
+            <input type="button" value="Delete selected issues" onclick="javascript:deleteIssues([% subscriptionidlist %])"/>
         </p>
     [% END %]
       <span class="checkall">
@@ -161,12 +182,20 @@
                     disabled
                   [% ELSE %]
                     [% IF ( serial.subscriptionexpired ) %]
-                    <input type="checkbox" name="serialid" value="[% serial.serialid %]" disabled="disabled" />
+                       <input type="checkbox" name="serialid" value="[% serial.serialid %]" disabled="disabled" />
                     [% ELSE %]
                       [% IF ( serial.checked ) %]
-                    <input type="checkbox" class="checkboxed" name="serialid" checked="checked" value="[% serial.serialid %]" />
+                         [% IF ( delete ) %]
+                            <input type="checkbox" class="checkboxed" name="serialid" value="[% serial.serialid %]" [% IF ( delete ) %] readonly [% END %] [% IF serialsid.grep("${serial.serialid}").size %] checked [% END %] />
+                         [% ELSE %]
+                            <input type="checkbox" class="checkboxed" name="serialid" checked="checked" value="[% serial.serialid %]" />
+                         [% END %]
                       [% ELSE %]
-                    <input type="checkbox" class="checkboxed" name="serialid" value="[% serial.serialid %]" />
+                         [% IF ( delete ) %]
+                            <input type="checkbox" class="checkboxed" name="serialid" value="[% serial.serialid %]" [% IF ( delete ) %] readonly [% END %] [% IF serialsid.grep("${serial.serialid}").size %] checked [% END %] />
+                         [% ELSE %]
+                            <input type="checkbox" class="checkboxed" name="serialid" value="[% serial.serialid %]" />
+                         [% END %]
                       [% END %]
                     [% END %]
                   [% END %]
@@ -278,6 +307,54 @@
     [% Asset.js("lib/jquery/plugins/jquery.checkboxes.min.js") %]
 
     <script type="text/javascript">
+        function generateReceive(subscriptionid) {
+            if(nbissues=prompt(_("How many issues do you want to receive ?"))){
+                document.location = 'serials-collection.pl?op=gennext&subscriptionid='+subscriptionid+'&nbissues='+nbissues;
+            }
+        }
+
+        function deleteIssues(subscriptionid) {
+            var serialnumber=0;
+            var serials="";
+            var serialids = document.edition.serialid;
+            for(i=0;i<serialids.length;i++){
+                if (serialids[i].checked==true){
+                    if (serials.length==0){
+                        serials+=serialids[i].value;
+                    }else{
+                        serials+="!"+serialids[i].value;
+                    }
+                    serialnumber ++;
+                }
+            }
+            if(serialnumber==0){
+                alert("No serials selected");
+            }else{
+                document.location = 'serials-collection.pl?subscriptionid='+subscriptionid+'&op=delete&serialsid='+serials+'&serialnumber='+serialnumber;
+            }
+        }
+
+        function addsubscriptionid() {
+            var tab=new Array();
+            var serialids = document.edition.serialid;
+            for (i=0; i<serialids.length; i++){
+              if (serialids[i].checked == true){
+                var found=false;
+                for (var val in tab){
+                  if (tab[val] == document.getElementsByName("subs")[i].getAttribute('val')){found = true;}
+                }
+                if (found == false){
+                  tab=tab.concat((document.getElementsByName("subs")[i].getAttribute('val')));
+                }
+              }
+            }
+            var string="";
+            for (var val in tab){
+              string = string + tab[val] + ",";
+            }
+            string=string.substring(0,string.length -1);
+            document.edition.subscriptionid.value=string;
+        }
 
         function print_slip(subscriptionid,issue){
             var myurl = 'routing-preview.pl?ok=1&subscriptionid='+subscriptionid+'&issue='+issue;

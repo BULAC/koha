@@ -24,6 +24,7 @@ use CGI qw ( -utf8 );
 use C4::Auth;
 use C4::Koha;
 use C4::Serials;
+use C4::Items;
 use C4::Letters;
 use C4::Output;
 use C4::Context;
@@ -50,11 +51,19 @@ my ($template, $loggedinuser, $cookie)
 my $biblionumber = $query->param('biblionumber');
 my @subscriptionid = $query->multi_param('subscriptionid');
 
+my $serialsid=$query->param('serialsid');
+my $serialnumber=$query->param('serialnumber');
+my $confdelete=$query->param('confdelete');
+my $delitems=$query->param('delitems');
 @subscriptionid= uniq @subscriptionid;
 @subscriptionid= sort @subscriptionid;
 my $subscriptiondescs;
 my $subscriptions;
-
+my $delete;
+my $countitems=0;
+my @ids=split("!",$serialsid);
+my @serialitemsinformation=GetSerialItemsInformations(@ids);
+my $subscriptionid = $subscriptionid[0];
 if($op eq 'gennext' && @subscriptionid){
     my $subscriptionid = $subscriptionid[0];
     my $sth = $dbh->prepare("
@@ -106,6 +115,23 @@ if($op eq 'gennext' && @subscriptionid){
     print $query->redirect('/cgi-bin/koha/serials/serials-collection.pl?subscriptionid='.$subscriptionid);
 }
 
+if($op eq 'delete'){
+    $delete=1;
+    foreach my $line (@serialitemsinformation){
+        $countitems+=$line->{'countitems'};
+    }
+}
+if($confdelete){
+    for my $id(@ids){
+        ModSerialStatus($id,"","","","",6);
+    }
+    if($delitems eq "Yes"){
+        foreach my $line (@serialitemsinformation){
+            DelItem($line);
+        }
+    }
+print $query->redirect('/cgi-bin/koha/serials/serials-collection.pl?subscriptionid='.$subscriptionid);
+}
 my $subscriptioncount;
 my ($location, $callnumber);
 if (@subscriptionid){
@@ -177,6 +203,11 @@ $template->param(
           callnumber	       => $callnumber,
           uc(C4::Context->preference("marcflavour")) => 1,
           serialsadditems   => $subscriptiondescs->[0]{'serialsadditems'},
-          );
+          subscriptionid =>$subscriptionid,
+          delete =>$delete,
+          serialsid =>$serialsid,
+          serialnumber =>$serialnumber,
+          countitems =>$countitems,
+      );
 
 output_html_with_http_headers $query, $cookie, $template->output;
