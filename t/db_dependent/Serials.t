@@ -17,13 +17,14 @@ use C4::Items;
 use Koha::DateUtils;
 use Koha::Acquisition::Booksellers;
 use t::lib::Mocks;
+use Test::More tests => 50;
 use t::lib::TestBuilder;
-use Test::More tests => 48;
 
 BEGIN {
     use_ok('C4::Serials');
 }
 
+my $builder = t::lib::TestBuilder->new;
 my $dbh = C4::Context->dbh;
 
 # Start transaction
@@ -350,6 +351,50 @@ subtest "Do not generate an expected if one already exists" => sub {
     #try if create or not another serial with status is expected
     @serialsByStatus = C4::Serials::findSerialsByStatus( 1, $subscriptionid );
     is( @serialsByStatus, 1, "ModSerialStatus delete corectly serial expected and not create another if exists" );
+};
+
+subtest "Test GetSerialItemsInformations " => sub {
+    plan tests => 4;
+    is (C4::Serials::GetSerialItemsInformations(),0,"test GetSerialItemsInformation with nothing parameters ");
+    my $branchcode = $builder->build({ source => 'Branch' })->{ branchcode };
+    my $itemtype   = $builder->build({ source => 'Itemtype' })->{ itemtype };
+    my %item_infos = (
+        homebranch    => $branchcode,
+        holdingbranch => $branchcode,
+        itype         => $itemtype
+    );
+    my $biblionumber1 = AddBiblio(MARC::Record->new, '');
+    my $itemnumber1 = AddItem({ barcode => '0101', %item_infos }, $biblionumber1);
+    my $itemnumber2 = AddItem({ barcode => '0102', %item_infos }, $biblionumber1);
+    my $itemnumber3 = AddItem({ barcode => '0103', %item_infos }, $biblionumber1);
+    my $itemnumber4 = AddItem({ barcode => '0104', %item_infos }, $biblionumber1);
+    my @serialid = ($serials[0]->{serialid},$serials[1]->{serialid});
+    is (C4::Serials::GetSerialItemsInformations(@serialid),0,"test GetSerialItemsInformation with array of serialid and none have items");
+    subtest "Test with 2 serials and each have one item" => sub {
+        plan tests => 5;
+        AddItem2Serial($serialid[0],$itemnumber1);
+        my @result = C4::Serials::GetSerialItemsInformations(@serialid);
+        is (scalar @result, 1 , "GetSerialItemsInformation return right length of array using 1 serial with 1 item");
+        is (@result[0]->{countitems}, 1 , "GetSerialItemsInformation return right number items of serial1");
+        AddItem2Serial($serialid[1],$itemnumber3);
+        @result = C4::Serials::GetSerialItemsInformations(@serialid);
+        is (scalar @result, 2 , "GetSerialItemsInformation return right length of array using 2 serials and each have 1 item");
+        is (@result[0]->{countitems}, 1 , "GetSerialItemsInformation return right number items of serial1");
+        is (@result[1]->{countitems}, 1 , "GetSerialItemsInformation return right number items of serial2");
+    };
+    subtest "Test with 2 serials and each have 2 items" => sub {
+        plan tests => 6;
+        AddItem2Serial($serialid[0],$itemnumber2);
+        my @result = C4::Serials::GetSerialItemsInformations(@serialid);
+        is (scalar @result, 2 , "GetSerialItemsInformation return right length of array using 2 serials ");
+        is (@result[0]->{countitems}, 2 , "GetSerialItemsInformation return right number items of serial1");
+        is (@result[1]->{countitems}, 1 , "GetSerialItemsInformation return right number items of serial2");
+        AddItem2Serial($serialid[1],$itemnumber4);
+        @result = C4::Serials::GetSerialItemsInformations(@serialid);
+        is (scalar @result, 2 , "GetSerialItemsInformation return right length of array using 2 serials and each have 2 items ");
+        is (@result[0]->{countitems}, 2 , "GetSerialItemsInformation return right number items of serial1");
+        is (@result[1]->{countitems}, 2 , "GetSerialItemsInformation return right number items of serial2");
+    };
 };
 
 $dbh->rollback;
