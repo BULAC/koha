@@ -1807,6 +1807,7 @@ biblios:
         sort: 0
         suggestible: 0
     type: string
+    facet_order: 1
   bgf-number:
     label: bgf-number
     mappings:
@@ -1887,6 +1888,7 @@ biblios:
        sort: ~
        suggestible: ''
     type: ''
+    facet_order: 7
   control-number:
     label: control-number
     mappings:
@@ -2075,6 +2077,7 @@ biblios:
         sort: ~
         suggestible: ''
     type: string
+    facet_order: 8
   homebranch:
     label: HomeLibrary
     mappings:
@@ -2094,6 +2097,7 @@ biblios:
         sort: ~
         suggestible: ''
     type: string
+    facet_order: 9
   identifier-standard:
     label: identifier-standard
     mappings:
@@ -2268,6 +2272,7 @@ biblios:
         sort: ~
         suggestible: ''
     type: string
+    facet_order: 2
   lc-cardnumber:
     label: lc-cardnumber
     mappings:
@@ -2387,6 +2392,7 @@ biblios:
         sort: ~
         suggestible: ''
     type: ''
+    facet_order: 3
   material-type:
     label: material-type
     mappings:
@@ -2618,6 +2624,7 @@ biblios:
         sort: ~
         suggestible: ''
     type: string
+    facet_order: 5
   su-geo:
     label: su-geo
     mappings:
@@ -2637,6 +2644,7 @@ biblios:
         sort: ~
         suggestible: ''
     type: string
+    facet_order: 4
   subject:
     label: subject
     mappings:
@@ -2861,6 +2869,7 @@ biblios:
         sort: ~
         suggestible: '1'
     type: string
+    facet_order: 6
   suppress:
     label: suppress
     mappings:
