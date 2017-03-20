@@ -1301,7 +1301,7 @@ take care of the waiting status
 =cut
 
 sub ModReserveAffect {
-    my ( $itemnumber, $borrowernumber, $transferToDo, $reserve_id ) = @_;
+    my ( $itemnumber, $borrowernumber, $transferToDo, $reserve_id, $deskcode ) = @_;
     my $dbh = C4::Context->dbh;
 
     # we want to attach $itemnumber to $borrowernumber, find the biblionumber
@@ -1326,6 +1326,7 @@ sub ModReserveAffect {
     $reserve_id = $hold->id();
 
     my $already_on_shelf = $hold->found && $hold->found eq 'W';
+    my $from_stacks      = ($hold->found && $hold->{found} eq 'E' || $hold->found && $hold->{found} eq 'A') ? 1 : 0;
 
     # If we affect a reserve that has to be transferred, don't set to Waiting
     my $query;
@@ -1338,6 +1339,17 @@ sub ModReserveAffect {
             }
         );
     }
+    elsif ($deskcode) {
+        $hold->set(
+            {
+                priority    => 0,
+                itemnumber  => $itemnumber,
+                found       => 'W',
+                waitingdate => dt_from_string(),
+                deskcode    => $deskcode,
+            }
+        );
+    }
     else {
         # affect the reserve to Waiting as well.
         $hold->set(
@@ -1346,6 +1358,7 @@ sub ModReserveAffect {
                 itemnumber  => $itemnumber,
                 found       => 'W',
                 waitingdate => dt_from_string(),
+                deskcode    => $deskcode,
             }
         );
     }

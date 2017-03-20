@@ -1,0 +1,78 @@
+[% USE AuthorisedValues %]
+[% USE Branches %]
+[% INCLUDE 'doc-head-open.inc' %]
+<title>Koha &rsaquo; Ajoutez un code à barre</title>
+[% INCLUDE 'doc-head-close.inc' %]
+<link rel="stylesheet" type="text/css" href="[% themelang %]/css/datatables.css" />
+</head>
+<body id="admin_desks" class="admin">
+[% INCLUDE 'header.inc' %]
+[% INCLUDE 'circ-search.inc' %]
+
+<div id="breadcrumbs">
+         <a href="/cgi-bin/koha/mainpage.pl">Home</a>
+&rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a>
+&rsaquo; Reserve barcode management
+</div>
+
+<div id="doc" class="yui-t7">
+  <div id="bd">
+    <div id="yui-main">
+      <div class="yui-b">
+[% SWITCH reserve_status %]
+[% CASE 'done' %]
+
+
+<h1>Reservation done</h1>
+
+[% CASE 'active' %]
+  <table>
+     <thead><tr>
+                    <th>Title</th>
+		    <th>Author</th>
+                    <th>Patron</th>
+		    <th>Call Number</th>
+                    <th>Enumeration</th>
+		    <th>Item Barcode</th>
+		    <th>Reserve Barcode</th>
+      </tr></thead>
+      <tbody><tr>
+        <td>[% document.title %]</td>
+	<td>[% document.author %]</td>
+	<td>[% document.borrowernumber %]</td>
+	<td>[% document.itemcallnumber %]</td>
+	<td>[% document.enumchron %]</td>
+	<td>[% document.item_barcode %]</td>
+	<td>[% reserve_barcode %]</td>
+     </tr></tbody>
+   </table>
+  [% IF not document.barcode %]
+  <div>
+  <form action="[% script_name %]" method="post" id="add_item_barcode">
+    <fieldset class="rows">
+      <ol>
+        <li>Barcode: <input type='text' name='item_barcode' size='14' maxlength='14' required /></li>
+	[% IF document.itype == 'DOC-TMP-MG' %]
+        <li>Enumchron: <input type='text' name='enumchron' value='[% document.enumchron %]'/></li>
+	[% END %]
+      </ol>
+  <input type="hidden" name="op" value="mod_item"/>
+  <input type="hidden" name="reserve_barcode" value="[% reserve_barcode %]"/>
+  </fieldset>
+  <fieldset class="action">
+  <input type="submit" value="Save and check in">
+  </fieldset>
+  </form>
+  </div>
+  [% END  %]
+[% CASE 'notfound' %]
+  <div class="dialog alert">
+  No reserve attach to  [% reserve_barcode %]
+  </div>
+[% END %]
+
+</div>
+</div>
+</div>
+</div>
+[% INCLUDE 'intranet-bottom.inc' %]

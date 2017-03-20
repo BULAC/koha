@@ -1,0 +1,224 @@
+[% USE Koha %]
+[% USE Branches %]
+[% INCLUDE 'doc-head-open.inc' %]
+<title>Koha &rsaquo; Circulation &rsaquo; Holds &rsaquo; I Want this [% title |html %]</title>
+[% INCLUDE 'doc-head-close.inc' %]
+<link rel="stylesheet" type="text/css" href="[% themelang %]/css/datatables.css" />
+[% INCLUDE 'datatables.inc' %]
+[% INCLUDE 'calendar.inc' %]
+<script type="text/javascript">
+    // <![CDATA[
+var patron_homebranch = "[% borrower_branchname |replace("'", "\'") |replace('"', '\"') |replace('\n', '\\n') |replace('\r', '\\r') %]";
+$(document).ready(function() {
+    [% IF AutoResumeSuspendedHolds %]
+        $(".suspend_until_datepicker, .datepickerfrom, .datepickerto").datepicker("option", "minDate", 1);
+    [% END %]
+
+    var table = $("#table_borrowers").dataTable($.extend(true, {}, dataTablesDefaults, {
+        "aoColumnDefs": [
+            { "aTargets": [ 0 ], "bSortable": false, "bSearchable": false },
+        ],
+        "aaSorting": [[ 2, "asc" ]],
+        "sDom": "t",
+        "iDisplayLength": -1
+    }));
+    $(table).find('tbody tr').filter(':has(:radio:checked)').end().click(function(event) {
+        $('#table_borrowers tbody tr').removeClass('selected');
+        $(this).addClass('selected');
+        if (event.target.type !== 'radio') {
+            $(':radio', this).attr('checked', 'true')
+        }
+    });
+    var my_table = $("#requestspecific").dataTable($.extend(true, {}, dataTablesDefaults, {
+        'bPaginate': false,
+        "sDom": '<"top pager"ilf>t',
+        "aoColumnDefs": [
+            { "sType": "title-string", "aTargets" : [ "title-string" ] }
+        ]
+    }));
+
+    //Override fieldset styling for dataTables search box
+    $("div.top.pager").css("margin-left","1em");
+    $(".dataTables_filter label").css({
+        "width":"auto",
+        "margin-right":"0em"
+    });
+[% UNLESS ( borrowernumber || borrowers || noitems ) %]
+    [% IF ( CircAutocompl ) %]
+    $( "#patron" ).autocomplete({
+        source: "/cgi-bin/koha/circ/ysearch.pl",
+        minLength: 3,
+        select: function( event, ui ) {
+            $( "#patron" ).val( ui.item.cardnumber );
+            $( "#holds_patronsearch" ).submit();
+            return false;
+        }
+    })
+    .data( "ui-autocomplete" )._renderItem = function( ul, item ) {
+        return $( "<li></li>" )
+        .data( "ui-autocomplete-item", item )
+        .append( "<a>" + item.surname + ", " + item.firstname +
+                 " (" + item.cardnumber + ") <small>" + item.address +
+                 " " + item.city + " " + item.zipcode + " " +
+                 item.country + "</small></a>" )
+        .appendTo( ul );
+    };
+    [% END %]
+[% END %]
+
+});
+
+// ]]>
+</script>
+</head>
+[% INCLUDE 'header.inc' %]
+[% INCLUDE 'circ-search.inc' %]
+
+<div class="main">
+    <ul class="breadcrumb">
+        <li><a href="#">Home</a></li>
+    </ul>
+  [% UNLESS borrowernumber OR noitems %]
+    [% IF ( messageborrower ) %]
+      <div class="dialog alert"><h3>Patron not found</h3><p>No patron with this name, please, try another</p> </div>
+    [% END %]
+    <form  id="holds_patronsearch" action="iwantthis.pl" method="post">
+        [% UNLESS borrowers %]
+            <fieldset class="brief">
+                <label for="patron">Patron: </label>
+                <div class="hint">Enter patron card number or partial name:</div>
+                <input type="text" size="40" id="patron" class="focus" name="findborrower" />
+                <input type="submit" value="Search" />
+                <input type="hidden" name="biblionumber" value="[% biblionumber %]" />
+		<input type="hidden" name="itemnumber" value="[% itemnumber %]" />
+            </fieldset>
+        [% ELSE %]
+          <fieldset>
+            <table id="table_borrowers">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Name</th>
+                        <th>cardnumber</th>
+                        <th>Category</th>
+                        <th>Library</th>
+                        <th>Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    [% FOREACH borrower IN borrowers %]
+                    <tr>
+                        <td><input type="radio" name="borrowernumber" value="[% borrowernumber %]" /></td>
+                        <td>[% borrower.surname %], [% borrower.firstname %]</td>
+                        <td>[% borrower.cardnumber %]</td>
+                        <td>[% borrower.categorycode %]</td>
+                        <td>[% borrower.branchcode %]</td>
+                        <td>[% borrower.address %]</td>
+                    </tr>
+                    [% END %]
+                </tbody>
+            </table>
+            <input type="hidden" name="biblionumber" value="[% biblionumber %]" />
+            <fieldset class="action"><input type="submit" value="Select" /></fieldset>
+          </fieldset>
+
+        [% END %]
+        [% IF ( multi_hold ) %]
+            <input type="hidden" name="multi_hold" value="[% multi_hold %]"/>
+            <input type="hidden" name="biblionumbers" value="[% biblionumbers %]"/>
+        [% END %]
+    </form>
+   [% END %]
+   [% IF (borrowernumber) %]
+    <div class="container-fluid">
+        <div class="row-fluid">
+          <h2>How to get: [% item.title %]</h2>
+	  <p>For patron <b>[% firstname %] [% surname %] ([% cardnumber %])</b></p>
+          <table class="table table-bordered table-striped">
+          <tr>
+            <th>title</th>
+            <th>author</th>
+            <th>Callnumber</th>
+	    <th>current status</th>
+          </tr>
+          <tr>
+            <td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% item.biblionumber %]">[% item.title %]</a></td>
+            <td>[% item.author %]</td>
+            <td>[% item.itemcallnumber %]</td>
+            <td>
+	    </td>
+          </tr>
+          </table>
+          [% IF (homebranch == item.holdingbranch) %]
+            <div class="alert">
+	    [% IF (selfissue)  %]
+            <p>This item is checked out to <b>[% firstname %] [% surname %] ([% cardnumber %])</b>, thank you to return it before: <b>[% item.datedue %].</b></p>
+	    [% ELSIF (isissued) %]
+	    <p>This item is currently checked out, it should be checked in again before: [% item.datedue %].</p>
+	      [% IF (selfreserve) %]
+	      <p>This item is on hold for <b>[% firstname %] [% surname %] ([% cardnumber %])</b>.<p>
+                [% IF (reservesbefore) %]
+	      <p>There is [% reservesbefore %] Hold(s) by other patrons before <b>[% firstname %] [% surname %] ([% cardnumber %])</b>r own hold.</p>
+	        [% END %]
+              [% ELSIF (canreserve) %]
+	        [% IF (allalreadyreserved) %]
+	    <p>All items currently reserved. <b>[% firstname %] [% surname %] ([% cardnumber %])</b> can <a href="/cgi-bin/koha/reserve/placerequest.pl?request=any&biblionumber=[% item.biblionumber %]&borrowernumber=[% borrowernumber %]&type=str8&pickup=[% branchcode %]">reserve the first item available NOT</a></p>
+		[% ELSE %]
+	    <p><b>[% firstname %] [% surname %] ([% cardnumber %])</b> can <a href="/cgi-bin/koha/reserve/placerequest.pl?biblionumber=[% item.biblionumber %]&checkitem=[% item.itemnumber %]&borrowernumber=[% borrowernumber %]&type=str8">reserve it</a> too.</p>
+	          [% IF (reservesbefore) %]
+	      <p>There is [% reservesbefore %] Hold(s) by other patrons before <b>[% firstname %] [% surname %] ([% cardnumber %])</b>r own hold.</p>
+	          [% END %]
+		[% END %]
+              [% END %]
+
+	    [% ELSIF (selfreserve) %]
+	    <p>This item is on hold for <b>[% firstname %] [% surname %] ([% cardnumber %])</b>.<p>
+	      [% IF (reservesbefore) %]
+	    <p>There is [% reservesbefore %] Hold(s) by other patrons on this item.</p>
+	      [% END %]
+            [% ELSIF (reservesbefore) %]
+	    <p>This item is currently on hold by [% reservesbefore %] patron(s).</p>
+              [% IF (canreserve) %]
+		[% IF (allalreadyreserved) %]
+	    <p>All items currently reserved. <b>[% firstname %] [% surname %] ([% cardnumber %])</b> can <a href="/cgi-bin/koha/reserve/placerequest.pl?request=any&biblionumber=[% item.biblionumber %]&borrowernumber=[% borrowernumber %]&type=str8&pickup=[% branchcode %]">reserve the first item available</a>.</p>
+		[% ELSE %]
+	    <p><b>[% firstname %] [% surname %] ([% cardnumber %])</b> can <a href="/cgi-bin/koha/reserve/placerequest.pl?biblionumber=[% item.biblionumber %]&checkitem=[% item.itemnumber %]&borrowernumber=[% borrowernumber %]&type=str8">reserve it</a> too.</p>
+                [% END %]
+              [% END %]
+          [% ELSIF (canreserve) %]
+	  <div class="panel panel-default">
+	  <div class="panel-body">
+	  [% IF (!selfreserve or !selfissue) %]
+          [% SWITCH item.itype %]
+          [% CASE 'RESERVE-MG' %]
+            <p>Item from rare book section currently in stacks, <b>[% firstname %] [% surname %] ([% cardnumber %])</b> can <a href="iwantthis.pl?biblionumber=[% item.biblionumber %]&itemnumber=[% item.itemnumber %]&op=reserve&from=stacks&findborrower=[% cardnumber %]">request it</a> and retreive it, for in house use, inside rare book section only when it's open (from monday to saturday between 2pm and 8pm).
+	    </p>
+          [% CASE 'CONSULT-MG' %]
+            <p>Item currently in stacks, <b>[% firstname %] [% surname %] ([% cardnumber %])</b> can <a href="iwantthis.pl?biblionumber=[% item.biblionumber %]&itemnumber=[% item.itemnumber %]&op=reserve&from=stacks&findborrower=[% cardnumber %]">request it</a> and retreive it, for in house use only, from library desks when the library is open.
+	    </p>
+          [% CASE 'CONSULT-LA' %]
+            <p><b>[% firstname %] [% surname %] ([% cardnumber %])</b> can get this item by yourself in the library for in house use only.</p>
+          [% CASE 'PRETABL-MG' %]
+            <p>Item currently in stacks, <b>[% firstname %] [% surname %] ([% cardnumber %])</b> can <a href="iwantthis.pl?biblionumber=[% item.biblionumber %]&itemnumber=[% item.itemnumber %]&op=reserve&from=stacks&findborrower=[% cardnumber %]">request it</a> and retreive it from library desks when the library is open.
+	    </p>
+          [% CASE 'PRETABL-LA' %]
+            <p><b>[% firstname %] [% surname %] ([% cardnumber %])</b> can get this item by yourself in the library.</p>
+          [% CASE 'PER-GEN-LA' %]
+            <p><b>[% firstname %] [% surname %] ([% cardnumber %])</b> can get the last ten years of this serial by yourself in the library, for in house use only.</p>
+          [% CASE 'PER-GEN-MG' %]
+            <p><b>[% firstname %] [% surname %] ([% cardnumber %])</b> can request a particual document from this series by filling a<a href="/cgi-bin/koha/reserve/request-tmp-doc.pl?futureop=additem&biblionumber=[% biblionumber %]&genitemnumber=[% itemnumber %]"> document request</a>.</p>
+          [% END %]
+
+        [% END %]
+        </div>
+        </div>
+          [% ELSIF (not canreserve && (not selfissue || not selfreserve))  %]
+	      <p><b>[% firstname %] [% surname %] ([% cardnumber %])</b> can't make a hold on this item.</p>
+        [% END %]
+	</div>
+	[% END %]
+        </div> <!-- /.container-fluid -->
+    </div> <!-- /.row-fluid -->
+</div> <!-- /.main -->
+[% END %]
+[% BLOCK jsinclude %][% END %]

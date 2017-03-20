@@ -645,6 +645,10 @@ if ( not $viewallitems and @items > $max_items_to_display ) {
 } else {
   my $allow_onshelf_holds;
   my $borrower = GetMember( 'borrowernumber' => $borrowernumber );
+$template->param(
+    borrower        => $borrower,
+    selfregcategory => C4::Context->preference('PatronSelfRegistrationDefaultCategory'),
+    );
   for my $itm (@items) {
     $itm->{holds_count} = $item_reserves{ $itm->{itemnumber} };
     $itm->{priority} = $priority{ $itm->{itemnumber} };

@@ -1,0 +1,118 @@
+[% USE Koha %]
+[% USE Branches %]
+[% INCLUDE 'doc-head-open.inc' %]
+<title>[% IF ( LibraryNameTitle ) %][% LibraryNameTitle %][% ELSE %]Koha online[% END %] catalog</title>
+[% INCLUDE 'doc-head-close.inc' %]
+[% BLOCK cssinclude %][% END %]
+</head>
+[% INCLUDE 'bodytag.inc' bodyid='opac-main' %]
+[% INCLUDE 'masthead.inc' %]
+
+<div class="main">
+    <ul class="breadcrumb">
+        <li><a href="#">Home</a></li>
+    </ul>
+    <div class="container-fluid">
+        <div class="row-fluid">
+	   <div class="span2">
+              <div id="navigation">
+                [% INCLUDE 'navigation.inc' IsPatronPage=1 %]
+              </div>
+          </div>
+	  <div class='span10'>
+          <h2>How to get: [% item.title %]</h2>
+	  <p>canreserve : [% canreserve %]</p>
+          <table class="table table-bordered table-striped">
+          <tr>
+            <th>title</th>
+            <th>author</th>
+            <th>Callnumber</th>
+	    <th>current status</th>
+          </tr>
+          <tr>
+            <td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=[% item.biblionumber %]">[% item.title %]</a></td>
+            <td>[% item.author %]</td>
+            <td>[% item.itemcallnumber %]</td>
+            <td>
+	    [% INCLUDE 'item-status-schema-org.inc' item = item %][% INCLUDE 'item-status.inc' item = item %]
+	    </td>
+          </tr>
+          </table>
+          [% IF (homebranch == item.holdingbranch) %]
+            <div class="alert">
+	    [% IF (selfissue)  %]
+            <p>This item is checked out to you, thank you to return it before: <b>[% item.datedue %].</b></p>
+	    [% ELSIF (isissued) %]
+	    <p>This item is currently checked out, it should be checked in again before: [% item.datedue %].</p>
+	      [% IF (selfreserve) %]
+	      <p>This item is on hold for you.<p>
+                [% IF (reservesbefore) %]
+	      <p>There is [% reservesbefore %] Hold(s) by other patrons before your own hold.</p>
+	        [% END %]
+              [% ELSIF (canreserve) %]
+	        [% IF (allalreadyreserved) %]
+	    <p>All items currently reserved. You can <a href="opac-reserve.pl?biblionumbers=[% item.biblionumber %]">reserve the first item available</a></p>
+		[% ELSE %]
+	    <p>You can <a href="opac-reserve.pl?place_reserve=1&biblionumbers=[% item.biblionumber %]%2F&selecteditems=[% item.biblionumber %]%2F[% item.itemnumber %]%2F[% homebranch %]%2F&reserve_mode=multi&single_bib
+=[% item.itemnumber %]&branch=[% homebranch %]&reqtype_[% item.itemnumber %]=Specific&checkitem_[% item.itemnumber %]
+=178213">reserve it</a> too.</p>
+	          [% IF (reservesbefore) %]
+	      <p>There is [% reservesbefore %] Hold(s) by other patrons before your own hold.</p>
+	          [% END %]
+		[% END %]
+              [% END %]
+
+	    [% ELSIF (selfreserve) %]
+	    <p>This item is on hold for you.<p>
+	      [% IF (reservesbefore) %]
+	    <p>There is [% reservesbefore %] Hold(s) by other patrons on this item.</p>
+	      [% END %]
+            [% ELSIF (reservesbefore) %]
+	    <p>This item is currently on hold by [% reservesbefore %] patron(s).</p>
+              [% IF (canreserve) %]
+		[% IF (allalreadyreserved) %]
+	    <p>All items currently reserved. You can <a href="opac-reserve.pl?biblionumbers=[% item.biblionumber %]">reserve the first item available</a>.</p>
+		[% ELSE %]
+	    <p>You can <a href="opac-reserve.pl?place_reserve=1&biblionumbers=[% item.biblionumber %]%2F&selecteditems=[% item.biblionumber %]%2F[% item.itemnumber %]%2F[% homebranch %]%2F&reserve_mode=multi&single_bib
+=[% item.itemnumber %]&branch=[% homebranch %]&reqtype_[% item.itemnumber %]=Specific&checkitem_[% item.itemnumber %]
+=178213">reserve it</a> too.</p>
+                [% END %]
+              [% END %]
+          [% ELSIF (canreserve) %]
+	  <div class="panel panel-default">
+	  <div class="panel-body">
+	  [% IF (!selfreserve or !selfissue) %]
+          [% SWITCH item.itype %]
+          [% CASE 'RESERVE-MG' %]
+            <p>Item from rare book section currently in stacks, you can <a href="opac-iwantthis.pl?biblionumber=[% item.biblionumber %]&itemnumber=[% item.itemnumber %]&op=reserve&from=stacks">request it</a> and retreive it, for in house use, inside rare book section only when it's open (from monday to saturday between 2pm and 8pm).
+	    </p>
+          [% CASE 'CONSULT-MG' %]
+            <p>Item currently in stacks, you can <a href="opac-iwantthis.pl?biblionumber=[% item.biblionumber %]&itemnumber=[% item.itemnumber %]&op=reserve&from=stacks">request it</a> and retreive it, for in house use only, from library desks when the library is open.
+	    </p>
+          [% CASE 'CONSULT-LA' %]
+            <p>You can get this item by yourself in the library for in house use only. Don't mind to ask if you have difficulties finding it.</p>
+          [% CASE 'PRETABL-MG' %]
+            <p>Item currently in stacks, you can <a href="opac-iwantthis.pl?biblionumber=[% item.biblionumber %]&itemnumber=[% item.itemnumber %]&op=reserve&from=stacks">request it</a> and retreive it from library desks when the library is open.
+	    </p>
+          [% CASE 'PRETABL-LA' %]
+            <p>You can get this item by yourself in the library. Don't mind to ask if you have difficulties finding it.</p>
+          [% CASE 'PER-GEN-LA' %]
+            <p>You can get the last ten years of this serial by yourself in the library, for in house use only. Don't mind to ask if you have difficulties finding it.</p>
+          [% CASE 'PER-GEN-MG' %]
+            <p>You can request a particual document from this series by filling a<a href="opac-requestdoc.pl?futureop=additem&biblionumber=[% biblionumber %]&genitemnumber=[% itemnumber %]"> document request</a>.</p>
+          [% END %]
+
+        [% END %]
+        </div>
+        </div>
+          [% ELSIF (not canreserve && (not selfissue || not selfreserve))  %]
+	      <p>You can't make a hold on this item.</p>
+        [% END %]
+	</div>
+	[% END %]
+        </div> <!-- /.container-fluid -->
+    </div> <!-- /.row-fluid -->
+</div> <!-- /.main -->
+
+[% INCLUDE 'opac-bottom.inc' %]
+[% BLOCK jsinclude %][% END %]

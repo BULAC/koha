@@ -1,0 +1,122 @@
+[% USE Koha %]
+[% USE Branches %]
+[% INCLUDE 'doc-head-open.inc' %]
+<title>[% IF ( LibraryNameTitle ) %][% LibraryNameTitle %][% ELSE %]Koha online[% END %] Request document</title>
+[% INCLUDE 'doc-head-close.inc' %]
+[% BLOCK cssinclude %][% END %]
+</head>
+[% INCLUDE 'bodytag.inc' bodyid='opac-main' %]
+[% INCLUDE 'masthead.inc' %]
+<div class="main">
+    <ul class="breadcrumb">
+        <li><a href="#">Home</a></li>
+    </ul>
+    <div class="container-fluid">
+        <div class="row-fluid">
+	   <div class="span2">
+              <div id="navigation">
+                [% INCLUDE 'navigation.inc' IsPatronPage=1 %]
+              </div>
+          </div>
+	  <div class='span10'>
+[% IF ((op == 'addbiblioanditem' || op == 'additem') && ! errors) %]
+<h1>[% biblio.title %][% IF (biblio.author) %], [% biblio.author %],[% END %] [% itemnumber %] est réservé à votre nom</h1>
+
+          <table class="table table-bordered table-striped">
+          <tr>
+	    <th>title</th>
+            <th>author</th>
+            <th>callnumber</th>
+          </tr>
+          <tr>
+            <td><a href="/cgi-bin/koha/opac-detail.pl?biblionumber=[% biblio.biblionumber %]">[% biblio.title %]</a></td>
+            <td>[% biblio.author %]</td>
+            <td>[% item.itemcallnumber %]</td>
+          </tr>
+          </table>
+[% ELSIF ((op == 'addbiblioanditem' || op == 'additem') && errors) %]
+<h1>We have a problem reserving [% biblio.title %][% IF (biblio.author) %], [% biblio.author %],[% END %] [% itemnumber %] for you</h1>
+<div class="alert">
+
+ <div class="panel panel-default">
+ <div class="panel-body">
+ [% FOREACH error IN errors %]
+   <ul>
+   [% SWITCH error %]
+   [% CASE 'PROBLEM_CREATING_ITEM' %]
+   <li>Error: can't create the item, this is not normal, please report this problem to a librarian. While we fix this problem, we will be able to provide you the document you need.</li>
+   [% CASE %]
+   <li>Error: <b>[% error %]</b>.</li>
+   [% END %]
+   </ul>
+ [% END %]
+</div>
+</div>
+</div>
+
+[% ELSIF (futureop) %]
+<h1>Stack request [% IF (futureop == 'additem')%](periodical)[% ELSE %](legacy card catalog)[% END %]</h1>
+
+[% IF (futureop != 'additem')%]
+<div class="alert">
+
+<p> Please note this form is for request of documents that <b>are
+not</b> present is this digital catalog but only in our legacy card
+catalog. Please make sure the document you're requesting is not
+already available in the digital catalog.</p>
+
+</div>
+[% END %]
+
+            <form id="stackrqform" action="/cgi-bin/koha/opac-requestdoc.pl" method="post">
+
+            <div class="yui-u first">
+
+            <input type="hidden" name="genitemnumber" value="[% item.itemnumber %]" />
+            <input type="hidden" name="biblionumber" value="[% biblio.biblionumber %]" />
+	    <input type="hidden" name="op" value="[% futureop %]">
+
+            <fieldset class="brief"><legend>Item</legend>
+            <ol>
+                <li class="mandatory editable">
+                    <label for="title">Title:</label>
+                    <input id="title" type="text" name="title" value="[% biblio.title %]" [% IF (biblio.title) %]readonly[% END %] required/>
+                </li>
+
+                [% IF (futureop == 'addbiblioanditem') %]
+                <li class="editable">
+                    <label for="author">Author:</label>
+                    <input id="author" type="text" name="author" value="[% biblio.author %]" [% IF (biblio.author) %]readonly[% END %] />
+                </li>
+		[% END %]
+
+
+                [% IF (futureop == 'addbiblioanditem') %]
+                <li class="editable">
+                    <label for="pubyear">publication year:</label>
+                    <input id="pubyear" type="text" name="pubyear" value="" />
+                </li>
+                [% END %]
+
+                <li class="mandatory editable">
+                    <label for="callnumber">Call number:</label>
+                    <input id="callnumber" type="text" name="callnumber" value="[% item.itemcallnumber %]" [% IF (item.itemcallnumber) %]readonly[% END %] required/>
+                </li>
+
+                <li class="editable ">
+                    <label for="numbers">[% IF (futureop == 'additem')%]Year, [% END %]Volume(s), Number(s): [% IF (item.enumchron) %]<span class="hint">Separate with commas. Note : you can ask for items in this range : [% item.enumchron %]</span>[% END %]</label>
+                    <textarea id="numbers" rows="2" name="numbers" [% IF (futureop == 'additem')%]required[% END %]></textarea>
+                </li>
+
+
+            </ol>
+
+             </fieldset>
+	     <input type="submit" value="Submit">
+[% END %]
+        </div>
+</div>
+</div>
+</div>
+[% INCLUDE 'opac-bottom.inc' %]
+[% BLOCK jsinclude %][% END %]
