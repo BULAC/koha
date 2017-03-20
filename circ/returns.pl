@@ -47,6 +47,7 @@ use C4::Members;
 use C4::Members::Messaging;
 use C4::Koha;   # FIXME : is it still useful ?
 use C4::RotatingCollections;
+use C4::Desks;
 use Koha::AuthorisedValues;
 use Koha::DateUtils;
 use Koha::Calendar;
@@ -63,6 +64,36 @@ my ( $template, $librarian, $cookie ) = get_template_and_user(
         flagsrequired   => { circulate => "circulate_remaining_permissions" },
     }
 );
+
+my $sessionID = $query->cookie("CGISESSID");
+my $session = get_session($sessionID);
+
+my $desks  = GetDesks(C4::Context->userenv->{"branch"});
+my $currentdesk = $query->param('deskcode') || $session->param('deskcode');
+
+
+if (@$desks && ! $currentdesk) {
+    print $query->redirect("/cgi-bin/koha/circ/selectdesk.pl");
+}
+
+my $redirect_bcode = $query->param('barcode');
+if ($redirect_bcode =~ /^123/) {
+    print $query->redirect("manageholdsbarcode.pl?reserve_barcode=$redirect_bcode");
+    exit;
+}
+
+my $waitpickup = $query->param('waitpickup');
+my $wpbarcode = $query->param('barcode');
+if ($waitpickup && $wpbarcode) {
+    print $query->redirect("makeitwaitpickup.pl?barcode=$wpbarcode");
+    exit;
+}
+elsif ($waitpickup) {
+    $template->param('waitpickup' => 1);
+}
+elsif ($query->param('checkwaitpickup')) {
+    $template->param('waitpickup' => 1);
+}
 
 my $sessionID = $query->cookie("CGISESSID");
 my $session = get_session($sessionID);
@@ -141,8 +172,9 @@ foreach ( $query->param ) {
 if ($query->param('WT-itemNumber')){
 	updateWrongTransfer ($query->param('WT-itemNumber'),$query->param('WT-waitingAt'),$query->param('WT-From'));
 }
-
+`echo caoecaoeuaoeuao >/tmp/caoeuaoeuaoeu`;
 if ( $query->param('reserve_id') ) {
+    `echo aoeuoaeuoaeuaoeu >/tmp/aoeuaoeuaou`;
     my $item           = $query->param('itemnumber');
     my $borrowernumber = $query->param('borrowernumber');
     my $reserve_id     = $query->param('reserve_id');
@@ -158,7 +190,10 @@ if ( $query->param('reserve_id') ) {
         my $diffBranchSend = ($userenv_branch ne $diffBranchReturned) ? $diffBranchReturned : undef;
         # diffBranchSend tells ModReserveAffect whether document is expected in this library or not,
         # i.e., whether to apply waiting status
-        ModReserveAffect( $item, $borrowernumber, $diffBranchSend, $reserve_id );
+	my $deskcode = $currentdesk;
+	`echo j'étais là $currentdesk >/tmp/blldlb`;
+	print "lol";
+        ModReserveAffect( $item, $borrowernumber, $diffBranchSend, $reserve_id, $deskcode );
     }
 #   check if we have other reserves for this document, if we have a return send the message of transfer
     my ( $messages, $nextreservinfo ) = GetOtherReserves($item);
@@ -431,8 +466,35 @@ if ( $messages->{'ResFound'}) {
         if ( $reserve->{'ResFound'} eq "Waiting" ) {
             $template->param(
                 waiting      => ($userenv_branch eq $reserve->{'branchcode'} ? 1 : 0 ),
-            );
-        } elsif ( $reserve->{'ResFound'} eq "Reserved" ) {
+		reserve_id   => $reserve->{reserve_id,}
+		);
+	     if ($reserve->{'found'} eq 'A' || $reserve->{'found'} eq 'E' ) {
+		 UpdateStats (
+		     {
+			 branch             => $reserve->{'branchcode'},
+			 type               => 'chkedinfst',
+			 borrowernumber     => $borr->{'borrowernumber'},
+			 associatedborrower => $reserve->{'reserve_id'},
+			 itemnumber         => $itemnumber,
+			 itemtype           => $item->{'itype'},
+			 ccode              => $item->{'ccode'},
+		     }
+		     );
+	     }
+	    else {
+		UpdateStats (
+		    {
+			branch             => $reserve->{'branchcode'},
+			type               => 'chkedinwai',
+			borrowernumber     => $borr->{'borrowernumber'},
+			associatedborrower => $reserve->{'reserve_id'},
+			itemnumber         => $itemnumber,
+			itemtype           => $item->{'itype'},
+			ccode              => $item->{'ccode'},
+		    }
+		    );
+	    }
+        } elsif ( $reserve->{'ResFound'} ) {
             $template->param(
                 intransit    => ($userenv_branch eq $reserve->{'branchcode'} ? 0 : 1 ),
                 transfertodo => ($userenv_branch eq $reserve->{'branchcode'} ? 0 : 1 ),

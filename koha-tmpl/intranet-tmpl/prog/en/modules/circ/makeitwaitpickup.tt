@@ -1,0 +1,36 @@
+[% USE AuthorisedValues %]
+[% USE Branches %]
+[% INCLUDE 'doc-head-open.inc' %]
+<title>Koha &rsaquo; Ajoutez un code à barre</title>
+[% INCLUDE 'doc-head-close.inc' %]
+<link rel="stylesheet" type="text/css" href="[% themelang %]/css/datatables.css" />
+</head>
+<body id="admin_desks" class="admin">
+[% INCLUDE 'header.inc' %]
+[% INCLUDE 'circ-search.inc' %]
+
+<div id="breadcrumbs">
+         <a href="/cgi-bin/koha/mainpage.pl">Home</a>
+&rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a>
+&rsaquo; Make it wait pickup
+</div>
+
+<div id="doc" class="yui-t7">
+  <div id="bd">
+    <div id="yui-main">
+      <div class="yui-b">
+<h1>Can't make put this item on status "Waiting pickup"</h1>
+
+<div class="dialog alert">
+[% IF errors.BAD_BARCODE %]
+<p>Can't find item with barcode: [% errors.BAD_BARCODE %]</p>
+[% END %]
+[% IF errors.NOT_ONLOAN %]
+<p>Item [% errors.NOT_ONLOAN %] not currently on loan.</p>
+[% END %]
+[% IF errors.CANT_RESERVE %]
+<p>Borrower [% errors.CANT_RESRVE %], can't reserve this item.</p>
+[% END %]
+[% errors.lol %]
+</div>
+[% INCLUDE 'intranet-bottom.inc' %]

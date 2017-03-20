@@ -24,6 +24,7 @@
     [% IF ( display_transfer ) %]
 		<li><a href="/cgi-bin/koha/circ/branchtransfers.pl">Transfer</a></li>
     [% END %]
+        <li><a href="/cgi-bin/koha/reserve/request-tmp-doc.pl">Card catalog request</a></li>
     [% IF ( AutoLocation ) %][% ELSE %][% IF ( IndependentBranches ) %][% ELSE %]<li><a href="/cgi-bin/koha/circ/selectbranchprinter.pl">Set library</a></li>[% END %][% END %]
 	[% IF ( fast_cataloging ) %]
 	    [% IF ( CAN_user_editcatalogue_fast_cataloging ) %]
@@ -39,6 +40,7 @@
 <ul>
     <li>    <a href="/cgi-bin/koha/circ/view_holdsqueue.pl">Holds queue</a></li>
 	<li>    <a href="/cgi-bin/koha/circ/pendingreserves.pl">Holds to pull</a></li>
+	<li>    <a href="/cgi-bin/koha/circ/editedreserves.pl" title="holds to retrieve off stacks">Holds to pull from stacks</a></li>
     <li>    <a href="/cgi-bin/koha/circ/waitingreserves.pl">Holds awaiting pickup</a></li>
 	<li>    <a href="/cgi-bin/koha/circ/reserveratios.pl">Hold ratios</a></li>
 	<li>    <a href="/cgi-bin/koha/circ/transferstoreceive.pl">Transfers to receive</a></li>

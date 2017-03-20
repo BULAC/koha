@@ -1183,6 +1183,7 @@
                     <th id="item_priority">Item hold queue priority</th>
                 [% END %]
                 [% IF ( ShowCourseReservesHeader ) %]<th id="item_coursereserves">Course reserves</th>[% END %]
+		    <th>Action</th>
             </tr>
         </thead>
         <tbody>
@@ -1325,6 +1326,11 @@
                             [% END %]
                         </td>
                     [% END  # /IF ShowCourseReservesHeader %]
+		        <td>
+		    [% IF (borrower.categorycode != selfregcategory) %]
+	            <a href="opac-iwantthis.pl?biblionumber=[% ITEM_RESULT.biblionumber %]&itemnumber=[% ITEM_RESULT.itemnumber %]">I want this</a>
+		    [% END %]
+		        </td>
                 </tr>
             [% END %]
         </tbody>

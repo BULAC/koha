@@ -1,0 +1,50 @@
+[% INCLUDE 'doc-head-open.inc' %]
+<title>Koha &rsaquo; Circulation &rsaquo; Set Desk</title>
+[% INCLUDE 'doc-head-close.inc' %]
+<style type="text/css">
+    .noshow {display: none;}
+</style>
+</head>
+<body id="circ_selectdesk" class="circ">
+[% INCLUDE 'header.inc' %]
+[% INCLUDE 'circ-search.inc' %]
+
+<div id="breadcrumbs">
+         <a href="/cgi-bin/koha/mainpage.pl">Home</a>
+&rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a>
+&rsaquo; <a href="/cgi-bin/koha/circ/selectdesk.pl">Set Desk</a>
+</div>
+
+<div id="doc" class="yui-t7">
+  <div id="bd">
+    <div id="yui-main">
+      <div class="yui-b">
+        <form method="post" action="selectdesk.pl">
+          <fieldset class="rows">
+            <legend>Set desk</legend>
+              <ol>
+                <li><label for="desk">Choose desk:</label>
+                  <select name="deskcode" id="deskcode">
+                    [% FOREACH deskloo IN deskloop %]
+                      [% IF ( deskloo.selected ) %]
+                        <option value="[% deskloo.deskcode %]" selected="selected">[% deskloo %]</option>
+                      [% ELSE %]
+                        <option value="[% deskloo.deskcode %]">[% deskloo.deskname %]</option>
+                      [% END %]
+                    [% END %]
+                  </select>
+	        </li>
+              </ol>
+            </fieldset>
+            <fieldset class="action">
+              <input type="submit" value="Submit" />
+              <a class="cancel" id="cancel_set_desk" href="[% referer or '/cgi-bin/koha/circ/circulation.pl' %]">Cancel</a>
+            </fieldset>
+            <div class="noshow">
+              <input type="hidden" name="oldreferer" value="[% referer or "/cgi-bin/koha/mainpage.pl" |html %]" />
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+[% INCLUDE 'intranet-bottom.inc' %]

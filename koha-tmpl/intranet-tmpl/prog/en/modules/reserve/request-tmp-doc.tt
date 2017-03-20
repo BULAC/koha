@@ -1,0 +1,142 @@
+[% USE KohaDates %]
+[% INCLUDE 'doc-head-open.inc' %]
+    <title>Koha &rsaquo; Circulation &rsaquo; Holds &rsaquo; make tmp doc</title>
+[% INCLUDE 'doc-head-close.inc' %]
+<link rel="stylesheet" type="text/css" href="[% themelang %]/css/datatables.css" />
+[% INCLUDE 'datatables.inc' %]
+[% INCLUDE 'calendar.inc' %]
+<script type="text/javascript">
+    // <![CDATA[
+$(document).ready(function() {
+    $( "#patron" ).autocomplete({
+        source: "/cgi-bin/koha/circ/ysearch.pl",
+        minLength: 3,
+        select: function( event, ui ) {
+            $( "#patron" ).val( ui.item.cardnumber );
+            $( "#holds_patronsearch" ).submit();
+            return false;
+        }
+    })
+    .data( "ui-autocomplete" )._renderItem = function( ul, item ) {
+        return $( "<li></li>" )
+        .data( "ui-autocomplete-item", item )
+        .append( "<a>" + item.surname + ", " + item.firstname +
+                 " (" + item.cardnumber + ") <small>" + item.address +
+                 " " + item.city + " " + item.zipcode + " " +
+                 item.country + "</small></a>" )
+        .appendTo( ul );
+    };
+
+ });
+
+// ]]>
+</script>
+</head>
+<body id="circ_request" class="catalog">
+[% INCLUDE 'header.inc' %]
+[% INCLUDE 'circ-search.inc' %]
+
+    <div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a> &rsaquo; Card catalog requests</div>
+
+ <div id="doc3" class="yui-t2">
+
+   <div id="bd">
+	<div id="yui-main">
+	<div class="yui-b">
+[% IF ( biblionumber && genitemnumber && biblio && ! enumchron) %]
+<h1>Request periodic from generic item</h1>
+
+<p>Request <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblionumber %]">[% biblio.title %]</a> in this range: [% item.enumchron %].</p>
+
+[% ELSIF ( biblionumber && genitemnumber && biblio && enumchron && done) %]
+
+<h1>Periodic item request done for patron <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% borrower.borrowernumber %]">[% borrower.firstname %] [% borrower.surname %] ([% borrower.cardnumber %])</a></h1>
+
+<p>Temporary periodic item: <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblionumber %]">[% biblio.title %]</a>[% IF (author) %], [% author %][% END %],
+[% enumchron %] [% itemcallnumber %] is on hold for patron <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% borrower.borrowernumber %]">[% borrower.firstname %] [% borrower.surname %] ([% borrower.cardnumber %])</a>.
+</p>
+
+<h1>Make another card catalog request</h1>
+
+<p>Request <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblionumber %]">[% biblio.title %]</a> in this range: [% genenumchron %].</p>
+
+[% ELSIF (reserveerror) %]
+<h1>Reserve error: [% reserveerror %]</h1>
+<p>Patron <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% borrower.borrowernumber %]">[% borrower.firstname %] [% borrower.surname %] ([% borrower.cardnumber %])</a> can't make a reserve because of reserve error: [% reserveerror %]</p>
+[% ELSIF ( biblionumber && genitemnumber && title && itemcallnumber && enumchron ) %]
+[% ELSIF ( borrower && title && itemcallnumber ) %]
+<h1>Card catalog request done for patron <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% borrower.borrowernumber %]">[% borrower.firstname %] [% borrower.surname %] ([% borrower.cardnumber %])</a></h1>
+
+<p>Temporary document from card catalog: <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblionumber %]">[% title %]</a>[% IF (author) %], [% author %][% END %],
+[% itemcallnumber %] is on hold for patron <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% borrower.borrowernumber %]">[% borrower.firstname %] [% borrower.surname %] ([% borrower.cardnumber %])</a>.
+</p>
+
+<h1>Make another card catalog request</h1>
+
+[% ELSE %]
+<h1>Make a card catalog request</h1>
+[% END %]
+
+[% IF ( borrower && ! reserveerror ) %]
+   <p>For patron: <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% borrower.borrowernumber %]">[% borrower.firstname %] [% borrower.surname %] ([% borrower.cardnumber %])</a>.</p>
+
+            <form id="stackrqform" action="/cgi-bin/koha/reserve/request-tmp-doc.pl" method="post">
+
+            <div class="yui-u first">
+
+            <input type="hidden" name="genitemnumber" value="[% genitemnumber %]" />
+            <input type="hidden" name="biblionumber" value="[% biblionumber %]" />
+	    <input type="hidden" name="cardnumber" value="[% borrower.cardnumber %]" />
+
+            <fieldset class="brief"><legend>Enter document info</legend>
+            <ol>
+                <li class="editable">
+                    <label for="title">Title:</label>
+                    <input id="title" type="text" name="title" value="[% biblio.title %]" [% IF (biblio.title) %]readonly[% END %] />
+                </li>
+
+                <li class="editable">
+                    <label for="author">Author:</label>
+                    <input id="author" type="text" name="author" value="[% biblio.author %]" [% IF (biblio.author) %]readonly[% END %] />
+                </li>
+
+
+                [% UNLESS (biblionumber && genitemnumber) %]
+                <li class="editable">
+                    <label for="pubyear">Publication year:</label>
+                    <input id="pubyear" type="text" name="pubyear" value="" />
+                </li>
+                [% END %]
+
+                <li class="mandatory editable">
+                    <label for="itemcallnumber" class="required">Call number:</label>
+                    <input id="itemcallnumber" type="text" name="itemcallnumber" value="[% item.itemcallnumber %]" [% IF (item.itemcallnumber) %]readonly[% END %] required="required"/>
+                </li>
+
+                <li class="[% IF (genitemnumber) %]mandatory [% END %]editable">
+                    <label for="enumchron" [% IF (genitemnumber) %]class="required"[% END %]>[% IF (genitemnumber)%]Year, [% END %]Volume(s), Number(s): [% IF (genitemnumber) %]<span class="hint">Separate with commas. Note : you can ask for items in this range : [% genenumchron %]</span>[% END %]</label>
+                    <textarea id="enumchron" rows="2" name="enumchron" [% IF (genitemnumber)%]required="required"[% END %]></textarea>
+                </li>
+
+
+            </ol>
+
+             </fieldset>
+	     <input type="submit" value="Submit">
+[% ELSE %]
+    <form  id="holds_patronsearch" action="request-tmp-doc.pl" method="post">
+            <fieldset class="brief">
+                <label for="patron">Patron: </label>
+                <div class="hint">Enter patron card number or partial name:</div>
+                <input type="text" size="40" id="patron" class="focus" name="cardnumber" />
+                <input type="submit" value="Search" />
+                <input type="hidden" name="biblionumber" value="[% biblionumber %]" />
+		<input type="hidden" name="genitemnumber" value="[% genitemnumber %]" />
+            </fieldset>
+    </form>
+[% END %]
+
+
+
+</div>
+[% INCLUDE 'intranet-bottom.inc' %]

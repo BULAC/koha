@@ -1,0 +1,221 @@
+[% USE AuthorisedValues %]
+[% USE Branches %]
+[% INCLUDE 'doc-head-open.inc' %]
+<title>Koha &rsaquo; Administration &rsaquo; Desks [% IF ( add_form ) %]&rsaquo;
+  [% IF ( deskcode ) %]
+Modify desk '[% deskcode %]'
+  [% ELSE %]
+Add desk
+  [% END %]
+[% END %]
+[% IF ( delete_confirm ) %]&rsaquo;
+  Delete desk '[% deskcode %]'?
+[% END %]
+[% IF ( delete_confirmed ) %]&rsaquo;
+Desk deleted
+[% END %]
+</title>
+[% INCLUDE 'doc-head-close.inc' %]
+<link rel="stylesheet" type="text/css" href="[% themelang %]/css/datatables.css" />
+[% INCLUDE 'datatables.inc' %]
+<script type="text/javascript">
+//<![CDATA[
+  $(document).ready(function() {
+    $('#icons').tabs();
+    $("#table_desks").dataTable($.extend(true, {}, dataTablesDefaults, {
+      "aoColumnDefs":
+         [{ "aTargets": [ -1 ], "bSortable": false, "bSearchable": false },],
+         "aaSorting": [[ 2, "asc" ]],
+         "iDisplayLength": 10,
+         "sPaginationType": "four_button"
+      }));
+      $( "#deskcodeentry" ).validate({
+        rules: {
+          deskcode: { required: true },
+          description: { required: true },
+          rentalcharge: { number: true }
+        }
+    });
+  });
+//]]>
+</script>
+<style type="text/css">
+  fieldset.rows div.toptabs li { clear:none;margin-right:.5em;padding-bottom:0;width:auto; }
+  fieldset.rows div.toptabs .ui-tabs-nav li.ui-tabs-active {background-color : #F4F8F9; }
+  fieldset.rows .ui-tabs-panel { margin-right : 10px; margin-left : 10px;margin-bottom:10px;}
+  fieldset.rows .ui-tabs-nav { margin-left : 10px; }
+</style>
+</head>
+<body id="admin_desks" class="admin">
+[% INCLUDE 'header.inc' %]
+[% INCLUDE 'cat-search.inc' %]
+
+<div id="breadcrumbs">
+<a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/admin/admin-home.pl">Administration</a> &rsaquo;
+[% IF ( add_form ) %]
+  [% IF ( desk.deskcode ) %]
+<a href="/cgi-bin/koha/admin/desks.pl">Desks</a> &rsaquo; Modify desk '[% desk.deskcode %]'
+  [% ELSE %]
+<a href="/cgi-bin/koha/admin/desks.pl">Desks</a> &rsaquo; Add desk
+  [% END %]
+[% END %]
+[% IF ( delete_confirm ) %]
+<a href="/cgi-bin/koha/admin/desks.pl">Desks</a> &rsaquo; Delete desk '[% deskcode %]'?
+[% END %]
+[% IF ( else ) %]
+Desks administration
+[% END %]</div>
+
+<div id="doc3" class="yui-t2">
+  <div id="bd">
+    <div id="yui-main">
+      <div class="yui-b">
+      [% IF ( error ) %]$
+        <div class="dialog alert">
+          [% IF ( CANT_ADD ) %]
+          <h3>Adding Desk [% deskcode %] failed</h3>
+          [% END %]
+          [% IF ( ALREADY_EXISTS ) %]
+          <h3>Adding Desk [% deskcode %] failed, it already exists</h3>
+          [% END %]
+          [% IF ( CANT_MODIFY ) %]
+          <h3>Modifying Desk [% deskcode %] failed</h3>
+          [% IF ( CANT_DELETE ) %]
+          <h3>Deleting Desk [% deskcode %] failed</h3>
+          [% END %]
+      [% END %]
+</div>
+[% END %]
+[% IF ( else ) %]
+        <div id="toolbar" class="btn-toolbar">
+          <a class="btn btn-small" id="newdesk" href="/cgi-bin/koha/admin/desks.pl?op=add_form"><i class="icon-plus"></i> New Desk</a>
+        </div>
+[% END %]
+
+
+[% IF ( add_form ) %]
+  [% IF ( deskcode ) %]
+      <h3>Modify desk</h3>
+  [% ELSE %]
+      <h3>Add desk</h3>
+  [% END %]
+      <form action="[% script_name %]" name="Aform" method="post" id="deskcodeentry">
+        <input type="hidden" name="op" value=
+	[% IF ( deskcode ) %]
+	  "modify_validate"
+	[% ELSE %]
+          "add_validate"
+	[% END %]
+           />
+        <input type="hidden" name="checked" value="0" />
+        <fieldset class="rows">
+        <ol>
+  [% IF ( desk.deskcode ) %]
+          <li>
+            <span class="label">Desk code: </span>
+	    <input type="hidden" name="deskcode" value="[% desk.deskcode %]" />
+            [% desk.deskcode %]
+          </li>
+  [% ELSE %]
+          <li>
+            <label for="deskcode" class="required">Desk code: </label>
+	    <input type="text" id="deskcode" name="deskcode" size="10" maxlength="10" onblur="toUC(this)" required="required" />
+	    <span class="required">Required</span>
+          </li>
+  [% END %]
+          <li>
+            <label for="deskdescription" class="required">Name: </label>
+	    <input type="text" id="deskname" name="deskname" size="48" value="[% desk.deskname |html %]" required="required" />
+	    <span class="required">Required</span>
+	  </li>
+          <li>
+            <label for="deskdescription" class="required">Description: </label>
+            <input type="text" id="deskdescription" name="deskdescription" size="48" value="[% desk.deskdescription |html %]" required="required" />
+	    <span class="required">Required</span></li>
+          <li>
+	    <label for="branchcode" class="required">Branch: </label>
+            <select id="branchcode" name="branchcode" required="required">
+              <option value=""></option>
+              [% FOREACH branchloo IN branchloop %]
+                [% IF (Branches.GetLoggedInBranchcode == branchloo.value) %]
+                <option value="[% branchloo.value %]" selected="selected">[% branchloo.branchname %]</option>
+                [% ELSE %]
+                <option value="[% branchloo.value %]">[% branchloo.branchname %]</option>
+loop            [% END %]
+              [% END %]
+            </select>
+          </li>
+        </ol>
+        </fieldset>
+        <fieldset class="action">
+          <input type="submit" value="Save changes" />
+          <a href="/cgi-bin/koha/admin/desks.pl" class="cancel">Cancel</a>
+        </fieldset>
+      </form>
+      <br class="clear" />
+[% END %]
+
+
+[% IF ( delete_confirm ) %]
+      <div class="dialog alert">
+        <h3>Delete Desk '[% desk.deskcode %]'?</h3>
+	<form action="[% script_name %]" method="post">
+	  <input type='hidden' name='op' value='delete_confirmed'/>
+          <table>
+            <tr>
+              <th scope="row">Desk</th>
+              <td><input type='hidden' name='deskcode' value='[% desk.deskcode %]'/>[% desk.deskcode %]</td>
+            </tr>
+	    <tr><th scope="row">Name</th><td>[% desk.deskname %]</td></tr>
+	    <tr><th scope="row">Description</th><td>[% desk.deskdescription %]</td></tr>
+	    <tr><th scope="row">Branch</th><td>[% desk.branchcode %]</td></tr>
+          </table>
+	  <input type="submit" class="approve" value="Delete this Desk" />
+	</form>
+	<form action="[% script_name %]" method="post">
+	  <input type="submit" class="deny" value="Do Not Delete" />
+	</form>
+      </div>
+[% END %]
+
+
+[% IF ( else ) %]
+      <h2>Desks administration</h2>
+  [% IF ( deskloop ) %]
+      <table id="table_desks">
+        <thead>
+          <th>Desk code</th>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Branchcode</th>
+          <th>Action</th>
+        </thead>
+    [% FOREACH deskloo IN deskloop %]
+        <tr>
+          <td>
+            <a href="[% deskloo.script_name %]?op=add_form&amp;deskcode=[% loo.deskcode |html %]">
+            [% deskloo.deskcode %]
+            </a>
+          </td>
+          <td>[% deskloo.deskname %]</td>
+          <td>[% deskloo.deskdescription %]</td>
+          <td>[% deskloo.branchcode %]</td>
+          <td>
+            <a href="[% deskloo.script_name %]?op=add_form&amp;deskcode=[% deskloo.deskcode |html %]">Edit</a>
+            <a href="[% deskloo.script_name %]?op=delete_confirm&amp;deskcode=[% deskloo.deskcode |html %]">Delete</a>
+          </td>
+        </tr>
+    [% END %]
+      </table>
+  [% ELSE %]
+      <div class="dialog message">There are no desk defined</div>
+  [% END %]
+      <div class="pages">[% pagination_bar %]</div>
+[% END %]
+    </div>
+  </div>
+  <div class="yui-b">
+[% INCLUDE 'admin-menu.inc' %]
+  </div>
+</div>
+[% INCLUDE 'intranet-bottom.inc' %]

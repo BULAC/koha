@@ -839,7 +839,9 @@ function verify_images() {
                     <td class="actions">
                         [% UNLESS item.cannot_be_edited %]
                             <a class="btn btn-mini" href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&biblionumber=[% item.biblionumber %]&itemnumber=[% item.itemnumber %]#edititem"><i class="fa fa-pencil"></i> Edit</a>
+			    <br>
                         [% END %]
+			<a href="/cgi-bin/koha/circ/iwantthis.pl?biblionumber=[% item.biblionumber %]&itemnumber=[% item.itemnumber %]" class="btn btn-small" id='getdoc'>Get</a>
                     </td>
                 [% END %]
                 </tr>
