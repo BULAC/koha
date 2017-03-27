@@ -2,17 +2,18 @@ msgid ""
 msgstr ""
 "Project-Id-Version: uk-UA-i-staff-t-prog-v-3002000\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2017-02-17 14:18+0000\n"
+"PO-Revision-Date: 2017-03-17 14:24+0000\n"
 "Last-Translator: Serhij <dubyk@ukr.net>\n"
 "Language-Team: Ukrainian Linux Team <translation@linux.org.ua>\n"
 "Language: uk\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 "X-Generator: Pootle 2.5.1.1\n"
 "X-Poedit-SourceCharset: utf-8\n"
-"X-POOTLE-MTIME: 1487341108.000000\n"
+"X-POOTLE-MTIME: 1489760694.000000\n"
 
 # Acquisitions
 msgid "acquisitions.pref"
@@ -5238,10 +5239,16 @@ msgstr "Включити наступний HTML-код попід пошуко�
 # OPAC > Appearance
 msgid "opac.pref#OPACSearchForTitleIn# <br />Note: The placeholders {BIBLIONUMBER}, {CONTROLNUMBER}, {TITLE}, {ISBN}, {ISSN} and {AUTHOR} will be replaced with information from the displayed record."
 msgstr ""
+"<br />Примітка: позначки-заповнювачі {BIBLIONUMBER}, {CONTROLNUMBER}, {TITLE}"
+", {ISBN}, {ISSN} та {AUTHOR} будуть замінені на інформацію з висвіченого "
+"запису. "
 
 # OPAC > Appearance
 msgid "opac.pref#OPACSearchForTitleIn# Include a \"More Searches\" box on the detail pages of items on the OPAC, with the following HTML (leave blank to disable):"
 msgstr ""
+"Включити у випадаюче меню „Додаткові пошуки“ на сторінках подробиць біб-"
+"записів в електронному каталозі наступний HTML-код (якщо захочете відключити "
+"меню, залиште порожнім): "
 
 # OPAC > Shelf Browser
 msgid "opac.pref#OPACShelfBrowser# Don't show"
