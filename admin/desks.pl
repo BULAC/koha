@@ -24,8 +24,8 @@ use C4::Output;
 use C4::Auth;
 use C4::Context;
 use C4::Koha;
-use C4::Branch;
 use C4::Desks;
+use Koha::Libraries;
 
 my $script_name = "/cgi-bin/koha/admin/desks.pl";
 
@@ -37,7 +37,7 @@ my $deskdescription = $input->param('deskdescription');
 my $op              = $input->param('op') || '';
 
 my @deskloop;
-my $branches = GetBranches;
+my $branches = { map { $_->branchcode => $_->unblessed } Koha::Libraries->search };
 my @branchloop;
 foreach my $thisbranch (sort keys %$branches) {
     my %row =(value => $thisbranch,

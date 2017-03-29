@@ -20,6 +20,14 @@
         </form>
     </div>
 [% END %]
+[% IF ( CAN_user_circulate ) %]
+<div id="putaside_search" class="residentsearch">
+    <p class="tip">Scan a barcode to put aside for the same borrower:</p>
+    <form method="post" action="/cgi-bin/koha/circ/makeitwaitpickup.pl" autocomplete="off">
+        <input name="barcode" id="ret_barcode" size="40" accesskey="r" />
+        <input value="Submit" class="submit" type="submit" />
+    </form>
+</div>[% END %]
 
 [% IF ( CAN_user_borrowers ) %]
 <div id="patron_search" class="residentsearch">
@@ -43,6 +51,7 @@
 <ul>
     [% IF ( CAN_user_circulate_circulate_remaining_permissions ) %]<li><a class="keep_text" href="#circ_search">Check out</a></li>[% END %]
     [% IF ( CAN_user_circulate_circulate_remaining_permissions ) %]<li><a class="keep_text" href="#checkin_search">Check in</a></li>[% END %]
+    [% IF ( CAN_user_circulate ) %]<li><a href="#putaside_search">Put aside</a></li>[% END %]
     [% IF ( CAN_user_circulate_circulate_remaining_permissions ) %]<li><a class="keep_text" href="#renew_search">Renew</a></li>[% END %]
     [% IF ( CAN_user_borrowers ) %]<li><a class="keep_text" href="#patron_search">Search patrons</a></li>[% END %]
     [% IF ( CAN_user_catalogue ) %]<li><a class="keep_text" href="#catalog_search">Search the catalog</a></li>[% END %]

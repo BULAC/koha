@@ -48,6 +48,7 @@ use C4::Members::Messaging;
 use C4::Koha;   # FIXME : is it still useful ?
 use C4::RotatingCollections;
 use C4::Desks;
+use C4::Stats;
 use Koha::AuthorisedValues;
 use Koha::DateUtils;
 use Koha::Calendar;
@@ -165,16 +166,13 @@ foreach ( $query->param ) {
     $input{borrowernumber} = $borrowernumber;
     push( @inputloop, \%input );
 }
-
 ############
 # Deal with the requests....
 
 if ($query->param('WT-itemNumber')){
 	updateWrongTransfer ($query->param('WT-itemNumber'),$query->param('WT-waitingAt'),$query->param('WT-From'));
 }
-`echo caoecaoeuaoeuao >/tmp/caoeuaoeuaoeu`;
 if ( $query->param('reserve_id') ) {
-    `echo aoeuoaeuoaeuaoeu >/tmp/aoeuaoeuaou`;
     my $item           = $query->param('itemnumber');
     my $borrowernumber = $query->param('borrowernumber');
     my $reserve_id     = $query->param('reserve_id');
@@ -191,13 +189,10 @@ if ( $query->param('reserve_id') ) {
         # diffBranchSend tells ModReserveAffect whether document is expected in this library or not,
         # i.e., whether to apply waiting status
 	my $deskcode = $currentdesk;
-	`echo j'étais là $currentdesk >/tmp/blldlb`;
-	print "lol";
         ModReserveAffect( $item, $borrowernumber, $diffBranchSend, $reserve_id, $deskcode );
     }
 #   check if we have other reserves for this document, if we have a return send the message of transfer
     my ( $messages, $nextreservinfo ) = GetOtherReserves($item);
-
     my $borr = GetMember( borrowernumber => $nextreservinfo );
     my $name   = $borr->{'surname'} . ", " . $borr->{'title'} . " " . $borr->{'firstname'};
     if ( $messages->{'transfert'} ) {
@@ -216,7 +211,6 @@ if ( $query->param('reserve_id') ) {
         );
     }
 }
-
 my $borrower;
 my $returned = 0;
 my $messages;
@@ -264,7 +258,6 @@ if ($return_date_override) {
         $return_date_override = q{};
     }
 }
-
 if ($dotransfer){
 # An item has been returned to a branch other than the homebranch, and the librarian has chosen to initiate a transfer
     my $transferitem = $query->param('transferitem');
@@ -466,22 +459,24 @@ if ( $messages->{'ResFound'}) {
         if ( $reserve->{'ResFound'} eq "Waiting" ) {
             $template->param(
                 waiting      => ($userenv_branch eq $reserve->{'branchcode'} ? 1 : 0 ),
-		reserve_id   => $reserve->{reserve_id,}
+		reserve_id   => $reserve->{'reserve_id'},
 		);
-	     if ($reserve->{'found'} eq 'A' || $reserve->{'found'} eq 'E' ) {
-		 UpdateStats (
-		     {
-			 branch             => $reserve->{'branchcode'},
-			 type               => 'chkedinfst',
-			 borrowernumber     => $borr->{'borrowernumber'},
-			 associatedborrower => $reserve->{'reserve_id'},
-			 itemnumber         => $itemnumber,
-			 itemtype           => $item->{'itype'},
-			 ccode              => $item->{'ccode'},
-		     }
-		     );
-	     }
+	    if ($reserve->{'found'} eq 'A' || $reserve->{'found'} eq 'E' ) {
+		my $item = GetItem($reserve->{'itemnumber'});
+		UpdateStats (
+		    {
+			branch             => $reserve->{'branchcode'},
+			type               => 'chkedinfst',
+			borrowernumber     => $borr->{'borrowernumber'},
+			associatedborrower => $reserve->{'reserve_id'},
+			itemnumber         => $itemnumber,
+			itemtype           => $item->{'itype'},
+			ccode              => $item->{'ccode'},
+		    }
+		    );
+	    }
 	    else {
+		my $item = GetItem($reserve->{'itemnumber'});
 		UpdateStats (
 		    {
 			branch             => $reserve->{'branchcode'},
@@ -498,7 +493,7 @@ if ( $messages->{'ResFound'}) {
             $template->param(
                 intransit    => ($userenv_branch eq $reserve->{'branchcode'} ? 0 : 1 ),
                 transfertodo => ($userenv_branch eq $reserve->{'branchcode'} ? 0 : 1 ),
-                reserve_id   => $reserve->{reserve_id},
+                reserve_id   => $reserve->{'reserve_id'},
                 reserved     => 1,
             );
         }

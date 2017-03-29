@@ -25,6 +25,7 @@
 		<li><a href="/cgi-bin/koha/circ/branchtransfers.pl">Transfer</a></li>
     [% END %]
         <li><a href="/cgi-bin/koha/reserve/request-tmp-doc.pl">Card catalog request</a></li>
+
     [% IF ( AutoLocation ) %][% ELSE %][% IF ( IndependentBranches ) %][% ELSE %]<li><a href="/cgi-bin/koha/circ/selectbranchprinter.pl">Set library</a></li>[% END %][% END %]
 	[% IF ( fast_cataloging ) %]
 	    [% IF ( CAN_user_editcatalogue_fast_cataloging ) %]
