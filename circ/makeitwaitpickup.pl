@@ -10,6 +10,8 @@ use C4::Items;
 use C4::Biblio;
 use C4::Reserves;
 use C4::Circulation;
+use C4::Stats;
+use DateTime::Duration;
 
 my $input = new CGI;
 
@@ -56,12 +58,30 @@ else {
 	    my $error;
 	    my $notes = "Mise de côté";
 	    my $resid = AddReserve(
-		$branch, $borrowernumber,
-		$biblionumber, 'a', [$biblionumber],
-		$rank, C4::Dates->new()->output(), '',
-		$notes, $item->{'title'},
-		$itemnumber, $found
+		$branch,
+		$borrowernumber,
+		$biblionumber,
+		[$biblionumber],
+		$rank,
+		output_pref({ dt => dt_from_string, dateformat => 'iso' , dateonly => 1 }),
+		'',
+		$notes,
+		$item->{'title'},
+		$itemnumber,
+		$found,
+		$item->{'ccode'},
 		);
+	    UpdateStats (
+		{
+		    branch             => $branch,
+		    type               => 'putaside',
+		    borrowernumber     => $borrowernumber,
+		    associatedborrower => $resid,
+		    itemnumber         => $itemnumber,
+		    itemtype           => $item->{'itype'},
+		    ccode              => $item->{'ccode'},
+		}
+	    );
 	    ModReserveAffect( $itemnumber, $borrowernumber, undef, $deskcode);
 	    print $input->redirect("returns.pl?barcode=$barcode&checkwaitpickup=1");
 	    exit;

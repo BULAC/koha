@@ -50,6 +50,19 @@
             <li class="dropdown">
                 <a href="#" id="drop3" role="button" class="dropdown-toggle" data-toggle="dropdown">
                     <span class="loggedinusername">[% loggedinusername %]</span>
+		    [% IF ( LoginDeskcode ) %]
+                    <span class="separator">|</span>
+                    <strong>
+                      <span id="logged-in-desk-name">[% LoginDeskname %]</span>
+                      <span id="logged-in-desk-code" class="content_hidden">[% LoginDeskcode %]</span>
+                    </strong>
+                    [% ELSIF (HasDesk) %]
+                    <span class="separator">|</span>
+                    <strong>
+                      <span id="logged-in-desk-name">NO DESK SET</span>
+                    </strong>
+                    [% END %]
+
                     <span class="separator">|</span>
                     [% IF ( AutoLocation ) %]
                     <brand>
@@ -79,6 +92,10 @@
                         <a class="toplinks" href="/cgi-bin/koha/circ/selectbranchprinter.pl">Set library</a>
                     </li>
                     [% END %]
+                    <li>
+                        <a class="toplinks" href="/cgi-bin/koha/circ/selectdesk.pl">Set desk</a>
+                    </li>
+
                     [% IF EnableSearchHistory %]
                     <li>
                         <a class="toplinks" href="/cgi-bin/koha/catalogue/search-history.pl">Search history</a>

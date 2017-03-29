@@ -28,14 +28,16 @@ use C4::Reserves;
 use C4::Biblio;
 use C4::Items;
 use C4::Output;
-use C4::Dates qw/format_date/;
 use C4::Context;
 use C4::Members;
 use C4::Branch; # GetBranches
 use C4::Overdues;
 use C4::Debug;
+use C4::Stats;
 use Koha::DateUtils;
 use Koha::Borrower::Debarments qw(IsDebarred);
+use Koha::DateUtils;
+use DateTime::Duration;
 use Date::Calc qw/Today Date_to_Days/;
 
 my $maxreserves = C4::Context->preference("maxreserves");
@@ -119,11 +121,29 @@ if ($op eq 'additem') {
 	    my $rank = 0;
 	    my $notes = "Périodique issue d'une notice générique\n Si vous ne le trouvez pas pensez à vérifier l'état des collections,\n les autres notices d'exemplaires et le magasin 21";
 	    my $resid = AddReserve(
-		$branch, C4::Context->userenv->{'number'},
-		$biblionumber, 'a', [$biblionumber],
-		$rank, C4::Dates->new()->output(), '',
-		$notes, $item->{'title'},
-		$itemnumber, $found
+		$branch,
+		C4::Context->userenv->{'number'},
+		$biblionumber,
+		[$biblionumber],
+		$rank,
+		output_pref({ dt => dt_from_string, dateformat => 'iso' , dateonly => 1 }),
+		'',
+		$notes,
+		$item->{'title'},
+		$itemnumber,
+		$found,
+		$item->{'itype'}
+		);
+	    UpdateStats (
+		{
+		    branch             => $branch,
+		    type               => 'periogen',
+		    borrowernumber     => C4::Context->userenv->{'number'},
+		    associatedborrower => $resid,
+		    itemnumber         => $itemnumber,
+		    itemtype           => $item->{'itype'},
+		    ccode              => $item->{'ccode'},
+		}
 		);
 	} else {
 	    push @errors, $canitembereserved;
@@ -173,11 +193,29 @@ elsif ($op eq 'addbiblioanditem') {
 	my $rank = 0;
 	my $notes = "Demande de communication\ndepuis le fichier papier";
 	my $resid = AddReserve(
-	    $branch, C4::Context->userenv->{'number'},
-	    $biblionumber, 'a', [$biblionumber],
-	    $rank, C4::Dates->new()->output(), '',
-	    $notes, $item->{'title'},
-	    $itemnumber, $found
+	    $branch,
+	    C4::Context->userenv->{'number'},
+	    $biblionumber,
+	    [$biblionumber],
+	    $rank,
+	    output_pref({ dt => dt_from_string, dateformat => 'iso' , dateonly => 1 }),
+	    '',
+	    $notes,
+	    $item->{'title'},
+	    $itemnumber,
+	    $found,
+	    $item->{'ccode'}
+	    );
+	UpdateStats (
+	    {
+		    branch             => $branch,
+		    type               => 'periogen',
+		    borrowernumber     => C4::Context->userenv->{'number'},
+		    associatedborrower => $resid,
+		    itemnumber         => $itemnumber,
+		    itemtype           => $item->{'itype'},
+		    ccode              => $item->{'ccode'},
+		}
 	    );
     }
     $template->param (
