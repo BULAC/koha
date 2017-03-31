@@ -527,6 +527,12 @@ Using this account is not recommended because some parts of Koha will not functi
 
                         [% IF ( RESERVES.count ) %]
                             <div id="opac-user-holds">
+			    <div class="alert">
+			    <p>
+                            Document requested from stacks or put aside will be expired seven days after the date in the "placed on" column.
+                            </p>
+                            </div>
+
                                 <table id="holdst" class="table table-bordered table-striped">
                                     <caption>Holds <span class="count">([% RESERVES.count %] total)</span></caption>
                                     <!-- RESERVES TABLE ROWS -->
@@ -534,7 +540,6 @@ Using this account is not recommended because some parts of Koha will not functi
                                         <tr>
                                             <th class="anti-the">Title</th>
                                             <th class="psort">Placed on</th>
-                                            <th>Expires on</th>
                                             <th>Pick up location</th>
                                             [% IF ( showpriority ) %]
                                                 <th>Priority</th>
@@ -577,21 +582,6 @@ Using this account is not recommended because some parts of Koha will not functi
                                                     [% RESERVE.reservedate | $KohaDates %]
                                                 </span>
                                             </td>
-                                            <td class="expirationdate">
-                                                [% IF ! RESERVE.found %]
-                                                    [% IF ( RESERVE.expirationdate ) %]
-                                                        <span>
-                                                            <span class="tdlabel">Expiration:</span>
-                                                                [% RESERVE.expirationdate | $KohaDates %]
-                                                        </span>
-                                                    [% ELSE %]
-                                                        <span class="tdlabel">Expiration:</span>
-                                                        Never expires
-                                                    [% END %]
-                                                [% ELSE %]
-                                                    -
-                                                [% END %]
-                                            </td>
                                             <td class="branch">
                                                 <span class="tdlabel">Pick up location:</span>
                                                 [% RESERVE.branch.branchname %]
@@ -607,7 +597,7 @@ Using this account is not recommended because some parts of Koha will not functi
                                                 [% IF ( RESERVE.is_waiting ) %]
                                                     [% IF ( RESERVE.is_at_destination ) %]
                                                         [% IF ( RESERVE.found ) %]
-                                                            Item waiting at <b> [% RESERVE.branch.branchname %]</b>
+                                                            Item waiting at <b> [% RESERVE.branch.branchname %]</b>[% IF (RESERVE.deskcode) %], [% RESERVE.deskcode %][% END %]
                                                             [% IF ( RESERVE.waitingdate ) %]
                                                                 since [% RESERVE.waitingdate | $KohaDates %]
                                                                 [% IF RESERVE.waiting_expires_on %]

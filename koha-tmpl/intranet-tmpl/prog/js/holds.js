@@ -72,6 +72,8 @@ $(document).ready(function() {
 
                                     if ( oObj.waiting_here ) {
                                         data += ITEM_IS_WAITING_HERE;
+					desk = ( oObj.deskcode ) ? ", " + oObj.deskcode : "";
+					data += desk;
                                     } else {
                                         data += ITEM_IS_WAITING;
                                         data += " " + AT.format( oObj.waiting_at );

@@ -99,6 +99,7 @@ while ( my $h = $holds_rs->next() ) {
         waiting        => $h->is_waiting(),
         waiting_at     => $h->branch()->branchname(),
         waiting_here   => $h->branch()->branchcode() eq $branch,
+	deskcode       => $h->deskcode(),
         priority       => $h->priority(),
         itemtype_limit => $itemtype_limit,
         subtitle       => GetRecordValue(

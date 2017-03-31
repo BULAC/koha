@@ -8,6 +8,16 @@
                 <li>
             [% END %]
                 <a href="/cgi-bin/koha/opac-user.pl">your summary</a></li>
+	    [% IF BORROWER_INFO.categorycode != '11PREINS' %]
+                 [% IF ( cardcatalogrequest ) %]
+                     <li class="active">
+                 [% ELSE %]
+                  <li>
+                 [% END %]
+                <a href="/cgi-bin/koha/opac-requestdoc.pl?futureop=addbiblioanditem">card catalog request</a></li>
+                  </li>
+            [% END %]
+
             [% IF ( OPACFinesTab ) %]
                 [% IF ( accountview ) %]
                     <li class="active">
