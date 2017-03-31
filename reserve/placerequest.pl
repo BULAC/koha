@@ -83,6 +83,10 @@ if (defined $checkitem && $checkitem ne ''){
 
 if ( $type eq 'str8' && $borrower ) {
 
+    unless (defined $checkitem && $checkitem ne ''){
+       $rank[0] = C4::Reserves::CalculatePriority($biblionumber) ;
+    }
+
     foreach my $biblionumber ( keys %bibinfos ) {
         my $count = @bibitems;
         @bibitems = sort @bibitems;
@@ -128,7 +132,8 @@ if ( $type eq 'str8' && $borrower ) {
         print $input->redirect("request.pl?biblionumber=$biblionumber");
     }
 }
-elsif ( $borrower eq '' ) {
+else {
+#elsif ( $borrower eq '' ) {
     print $input->header();
     print "Invalid borrower number please try again";
 
