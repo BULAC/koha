@@ -311,6 +311,7 @@ sub GetReservesFromBiblionumber {
     my $query = "
         SELECT  reserve_id,
                 branchcode,
+                deskcode,
                 timestamp AS rtimestamp,
                 priority,
                 biblionumber,
@@ -381,6 +382,7 @@ sub GetReservesFromItemnumber {
         $r->get_column('branchcode'),
         $r->reserve_id(),
         $r->waitingdate(),
+        $r->deskcode(),
     );
 }
 
@@ -786,10 +788,9 @@ sub GetReservesForBranch {
     my $dbh = C4::Context->dbh;
 
     my $query = "
-        SELECT reserve_id,borrowernumber,reservedate,itemnumber,waitingdate
+        SELECT reserve_id,borrowernumber,reservedate,itemnumber,waitingdate, deskcode
         FROM   reserves
-        WHERE   priority='0'
-        AND found='W'
+        WHERE  found='W'
     ";
     $query .= " AND branchcode=? " if ( $frombranch );
     $query .= "ORDER BY waitingdate" ;
@@ -1276,7 +1277,8 @@ sub ModReserveStatus {
     my ($itemnumber, $newstatus) = @_;
     my $dbh = C4::Context->dbh;
 
-    my $query = "UPDATE reserves SET found = ?, waitingdate = NOW() WHERE itemnumber = ? AND found IS NULL AND priority = 0";
+    #my $query = "UPDATE reserves SET found = ?, waitingdate = NOW() WHERE itemnumber = ? AND found IS NULL AND priority = 0";
+    my $query = "UPDATE reserves SET found = ?, waitingdate = NOW() WHERE itemnumber = ?" ;
     my $sth_set = $dbh->prepare($query);
     $sth_set->execute( $newstatus, $itemnumber );
 

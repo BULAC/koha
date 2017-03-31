@@ -87,6 +87,9 @@
                     <th>Patron</th>
                     <th>Home branch</th>
                     <th>Current location</th>
+                    [% IF HasDesk %]
+                    <th>Desk</th>
+                    [% END %]
                     <th>Call number</th>
                     <th>Copy number</th>
                     <th>Enumeration</th>
@@ -108,6 +111,9 @@
                     </td>
                     <td>[% Branches.GetName( reserveloo.homebranch ) %]</td>
                     <td>[% Branches.GetName( reserveloo.holdingbranch ) %]</td>
+		    [% IF HasDesk %]
+                    <td>[% reserveloo.deskname %]</td>
+                    [% END %]
                     <td>[% reserveloo.itemcallnumber %]</td>
                     <td>[% reserveloo.copynumber %]</td>
                     <td>[% reserveloo.enumchron %]</td>
@@ -123,6 +129,8 @@
                             [% ELSE %]
                             <input type="submit" value="Cancel hold" />
                             [% END %]
+			    <br/>
+			    <button onClick="window.open('printslip.pl?reserves=[% reserveloo.reserve_id %]')" type="button">ReEdit</button>
                        </form>
                     </td>
                 </tr>
@@ -153,6 +161,9 @@
                     <th>Patron</th>
                     <th>Home branch</th>
                     <th>Current location</th>
+		    [% IF HasDesk %]
+                    <th>Desk</th>
+                    [% END %]
                     <th>Call number</th>
                     <th>Copy number</th>
                     <th>Enumeration</th>
@@ -173,6 +184,9 @@
                     </td>
                     <td>[% Branches.GetName( overloo.homebranch ) %]</td>
                     <td>[% Branches.GetName( overloo.holdingbranch ) %]</td>
+		    [% IF HasDesk %]
+                    <td>[% reserveloo.deskname %]</td>
+                    [% END %]
                     <td>[% overloo.itemcallnumber %]</td>
                     <td>[% overloo.copynumber %]</td>
                     <td>[% overloo.enumchron %]</td>
@@ -187,6 +201,8 @@
                             [% ELSE %]
                             <input type="submit" value="Cancel hold" />
                             [% END %]
+			    <br/>
+			    <button onClick="window.open('printslip.pl?reserves=[% overloo.reserve_id %]')" type="button">ReEdit</button>
                        </form>
                     </td>
                 </tr>

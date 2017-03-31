@@ -28,6 +28,7 @@ use C4::Circulation;
 use C4::Members;
 use C4::Biblio;
 use C4::Items;
+use C4::Desks;
 use Koha::DateUtils;
 use Date::Calc qw(
   Today
@@ -93,12 +94,19 @@ foreach my $num (@getreserves) {
     my $itemnumber = $num->{'itemnumber'};
     my $gettitle     = GetBiblioFromItemNumber( $itemnumber );
     my $borrowernum = $num->{'borrowernumber'};
+    my $deskcode = $num->{'deskcode'};
+    my $desk = GetDesk($deskcode);
+    my $deskname;
+    if ($desk) {
+	$deskname = $desk->{'deskname'};
+    }
     my $holdingbranch = $gettitle->{'holdingbranch'};
     my $homebranch = $gettitle->{'homebranch'};
 
     my %getreserv = (
         itemnumber => $itemnumber,
         borrowernum => $borrowernum,
+	deskname => $deskname,
     );
 
     # fix up item type for display
@@ -113,6 +121,7 @@ foreach my $num (@getreserves) {
         $max_pickup_delay);
     my $calcDate = Date_to_Days( $waiting_year, $waiting_month, $waiting_day );
 
+    $getreserv{'reserve_id'}     = $num->{'reserve_id'};
     $getreserv{'itemtype'}       = $itemtypeinfo->{'description'};
     $getreserv{'title'}          = $gettitle->{'title'};
     $getreserv{'subtitle'}       = GetRecordValue('subtitle', GetMarcBiblio($gettitle->{'biblionumber'}), GetFrameworkCode($gettitle->{'biblionumber'}));
