@@ -151,7 +151,7 @@ $(document).ready(function () {
 <span class="audio-alert-success"></span>
 
 [% INCLUDE 'header.inc' %]
-[% INCLUDE 'checkin-search.inc' %]
+[% INCLUDE 'circ-search.inc' %]
 
 <div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a> &rsaquo; Check in</div>
 
