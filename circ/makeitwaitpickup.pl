@@ -12,6 +12,7 @@ use C4::Reserves;
 use C4::Circulation;
 use C4::Stats;
 use DateTime::Duration;
+use Koha::DateUtils;
 
 my $input = new CGI;
 
