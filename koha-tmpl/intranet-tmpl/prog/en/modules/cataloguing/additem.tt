@@ -13,6 +13,7 @@
 <script type="text/javascript" src="[% interface %]/lib/shims/json2.min.js"></script>
 <![endif]-->
 <script type="text/javascript" src="[% interface %]/js/browser.js"></script>
+<script type="text/javascript" src="[% themelang %]/js/pgl-callnumber.js"></script>
 <script type="text/javascript">
 //<![CDATA[
     var browser = KOHA.browser('[% searchid %]', parseInt('[% biblionumber %]', 10));
@@ -123,6 +124,21 @@ function Dopop(link,i) {
 function confirm_deletion() {
     return confirm(_("Are you sure you want to delete this item?"));
 }
+
+//Progilone B10: Manage active callnumber
+function updateActiveCote(subfield) {
+        getInputSubfield(getDivSubfields(document, 'k')[0]).value = getInputSubfield(getDivSubfields(document, subfield)[0]).value;
+}
+
+//Progilone B10: Manage old callnumbers
+function splitRepeatableFields() {
+        var repeatableFields = findSubfieldsWithProperty('repeatable');
+        for (var i = 0; i < repeatableFields.length; i++) {
+                splitField(repeatableFields[i]);
+        }
+}
+
+
 
 //]]>
 </script>
@@ -255,6 +271,17 @@ function confirm_deletion() {
 	<fieldset class="rows">
 	<ol>
         [% FOREACH ite IN item %]
+               [% IF ("$ite.tag$ite.subfield" == '995B' || "$ite.tag$ite.subfield" == '995g' || "$ite.tag$ite.subfield" == '995K' || "$ite.tag$ite.subfield" == '995z' || "$ite.tag$ite.subfield" == '995k' ) %]
+                 [% readonly = 'readonly' %]
+               [% ELSE %]
+                 [% readonly = '' %]
+               [% END %]
+               [% IF ("$ite.tag$ite.subfield" == '995B' || "$ite.tag$ite.subfield" == '995K' )  %]
+                 [% activate = "<input type=\"button\" value=\"Activate\" onclick=\"updateActiveCote('$ite.subfield')\"/>" %]
+	       [% ELSE %]
+                 [% activate = '' %]
+               [% END %]
+
                <li><div class="subfield_line" style="[% ite.visibility %]" id="subfield[% ite.tag %][% ite.subfield %][% ite.random %]">
                 [% IF ( ite.mandatory ) %]
                <label class="required">[% ite.subfield %] - [% ite.marc_lib %]</label>
@@ -284,15 +311,17 @@ function confirm_deletion() {
                     [% SET dopop = "Dopop('/cgi-bin/koha/authorities/auth_finder.pl?authtypecode=\"${mv.authtypecode}\"&index=${mv.id}','${mv.id}')" %]
                     <a href="#" class="buttonDot"  onclick="[%- dopop -%]; return false;" title="Tag editor">...</a>
                 [% ELSIF ( mv.type == 'text_plugin' ) %]
-                    <input type="text" id="[%- mv.id -%]" name="field_value" class="input_marceditor" size="50" maxlength="[%- mv.maxlength -%]" value="[%- mv.value -%]" />
+		    <input type="text" id="[%- mv.id -%]" name="field_value" class="input_marceditor" size="50" maxlength="[%- mv.maxlength -%]" value="[%- mv.value -%]" [% readonly %] />
                     [% IF ( mv.nopopup ) %]
                         <a href="#" id="buttonDot_[%- mv.id -%]" class="[%- mv.class -%]" title="No popup">...</a>
                     [% ELSE  %]
                         <a href="#" id="buttonDot_[%- mv.id -%]" class="[%- mv.class -%]" title="Tag editor">...</a>
                     [% END %]
+                    [% activate %]
                     [%- mv.javascript -%]
                 [% ELSIF ( mv.type == 'text' ) %]
-                    <input type="text" id="[%- mv.id -%]" name="field_value" class="input_marceditor" size="50" maxlength="[%- mv.maxlength -%]" value="[%- mv.value -%]" />
+                    <input type="text" id="[%- mv.id -%]" name="field_value" class="input_marceditor" size="50" maxlength="[%- mv.maxlength -%]" value="[%- mv.value -%]" [% readonly %] />
+                    [% activate %]
                 [% ELSIF ( mv.type == 'textarea' ) %]
                     <textarea id="[%- mv.id -%]" name="field_value" class="input_marceditor" rows="5" cols="64" >[% mv.value %]</textarea>
                 [% END %]

@@ -37,6 +37,10 @@ use C4::Search;
 use Storable qw(thaw freeze);
 use URI::Escape;
 use C4::Members;
+use C4::Callnumber::FreeAccessCallnumber;
+use C4::Callnumber::StoreCallnumber;
+use C4::Callnumber::Utils;
+use C4::Callnumber::Callnumber;
 
 use MARC::File::XML;
 use URI::Escape;
@@ -479,6 +483,9 @@ if ($op eq "additem") {
 
         # if barcode exists, don't create, but report The problem.
         unless ($exist_itemnumber) {
+	    if ( C4::Context->preference('UseAdvancedCallNumberManagement') ) {
+		UpdateCallnumberrules( $record, undef, $biblionumber );
+	    }
             my ( $oldbiblionumber, $oldbibnum, $oldbibitemnum ) = AddItemFromMarc( $record, $biblionumber );
             set_item_default_location($oldbibitemnum);
 
@@ -562,8 +569,12 @@ if ($op eq "additem") {
 
 		# Adding the item
         if (!$exist_itemnumber) {
+	    if ( C4::Context->preference('UseAdvancedCallNumberManagement') ) {
+		UpdateCallnumberrules( $record, undef, $biblionumber );
+	    }
             my ($oldbiblionumber,$oldbibnum,$oldbibitemnum) = AddItemFromMarc($record,$biblionumber);
             set_item_default_location($oldbibitemnum);
+
 
             # We count the item only if it was really added
             # That way, all items are added, even if there was some already existing barcodes
@@ -699,6 +710,11 @@ if ($op eq "additem") {
     if ($exist_itemnumber && $exist_itemnumber != $itemnumber) {
         push @errors,"barcode_not_unique";
     } else {
+	#Progilone B10: Callnumber rules
+        if ( C4::Context->preference('UseAdvancedCallNumberManagement') ) {
+	    UpdateCallnumberrules( $itemtosave, $itemnumber, $biblionumber );
+        }
+
         ModItemFromMarc($itemtosave,$biblionumber,$itemnumber);
         $itemnumber="";
     }
@@ -712,6 +728,7 @@ if ($op eq "additem") {
   LostItem($itemnumber,'MARK RETURNED');
     }
     $nextop="additem";
+    UpdateCallnumberrules($itemtosave, $itemnumber, $biblionumber);
 } elsif ($op eq "delinkitem"){
     my $analyticfield = '773';
 	if ($marcflavour  eq 'MARC21' || $marcflavour eq 'NORMARC'){
