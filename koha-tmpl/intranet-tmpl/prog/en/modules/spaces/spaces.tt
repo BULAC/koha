@@ -31,8 +31,6 @@ iframe#framecontent {
 [% INCLUDE 'header.inc' %]
 [% INCLUDE 'cat-search.inc' %]
 <div id="breadcrumbs">
-<!-- <frameset rows="137, *" frameborder="0"> -->
-	<iframe src="/cgi-bin/koha/spaces/spaces-header.pl?op=[% op %]" id='framehead'></iframe>
 </div>
 <ul>
 <li><a href="spaces.pl?op=booking">Booking</a></li>
