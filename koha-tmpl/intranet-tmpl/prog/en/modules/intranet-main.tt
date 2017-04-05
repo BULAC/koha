@@ -111,6 +111,9 @@ var MSG_CONFIRM_DELETE = _("Are you sure you want to delete this news item? This
                         <a class="icon_general icon_administration" href="/cgi-bin/koha/admin/admin-home.pl">Koha administration</a>
                     </li>
                     [% END %]
+		    <li>
+                        <a class="icon_general" href="/cgi-bin/koha/spaces/spaces.pl">Spaces</a>
+                    </li>
                     <li>
                         <a class="icon_general icon_koha" href="/cgi-bin/koha/about.pl">About Koha</a>
                     </li>

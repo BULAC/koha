@@ -8,6 +8,22 @@
                 <li>
             [% END %]
                 <a href="/cgi-bin/koha/opac-user.pl">your summary</a></li>
+            [% IF BORROWER_INFO.categorycode != '11PREINS' %]
+                [% IF ( bookings ) %]
+                    <li class="active">
+                [% ELSE %]
+                    <li>
+                [% END %]
+                <a href="/cgi-bin/koha/opac-spaces.pl?op=booking">my bookings</a></li>
+                   </li>
+                [% IF ( invitation ) %]
+                    <li class="active">
+                [% ELSE %]
+                    <li>
+                [% END %]
+                <a href="/cgi-bin/koha/opac-spaces.pl?op=invitation">my invitations</a></li>
+                   </li>
+              [% END %]
             [% IF ( OPACFinesTab ) %]
                 [% IF ( accountview ) %]
                     <li class="active">
