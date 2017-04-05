@@ -1,0 +1,27 @@
+[% USE AuthorisedValues %]
+[% INCLUDE 'doc-head-open.inc' %]
+
+<title>Koha &rsaquo; Spaces management</title>
+<base target="_parent">
+[% INCLUDE "doc-head-close.inc" %]
+<script type="text/javascript" src="[% themelang %]/js/spaces/frame-manager.js"></script>
+</head>
+<body>
+
+[% IF (booking) %]
+	<div id="breadcrumbs">
+		<a href="/cgi-bin/koha/mainpage.pl">Home</a>
+		&rsaquo;
+		Spaces booking
+	</div>
+[% ELSE %]
+	[% IF (management) %]
+		<div id="breadcrumbs">
+			<a href="/cgi-bin/koha/mainpage.pl">Home</a>
+			&rsaquo;
+			<a href="/cgi-bin/koha/admin/admin-home.pl">Administration</a>
+			&rsaquo;
+			Spaces management
+		</div>
+	[% END %]
+[% END %]
