@@ -13,6 +13,10 @@
 //<![CDATA[
     var browser = KOHA.browser('[% searchid %]', parseInt('[% biblionumber %]', 10));
     browser.show();
+    function alertCallNumber() {
+        var text = _("The active callnumber can not be printed because it was not generated with the callnumber plugin.");
+        alert(text);
+    }
 //]]>
 </script>
 </head>
@@ -29,6 +33,7 @@
     <div id="yui-main">
     <div class="yui-b">
 [% INCLUDE 'cat-toolbar.inc' %]
+[% INCLUDE 'jasper.inc' %]
 
 <div id="catalogue_detail_biblio">
 
@@ -57,10 +62,46 @@
     [% FOREACH ITEM_DAT IN ITEM_DATA %]
     <div class="yui-g">
         <h3 id="item[% ITEM_DAT.itemnumber %]">Barcode [% ITEM_DAT.barcode %]  [% IF ( ITEM_DAT.notforloantext ) %][% ITEM_DAT.notforloantext %] [% END %]</h3>
-        <div class="listgroup"><h4>Item information [% IF ( CAN_user_editcatalogue_edit_catalogue ) %][% UNLESS ( ITEM_DAT.nomod ) %]
+        <div class="listgroup"><h4>Item information [% IF ( CAN_user_editcatalogue_edit_items ) %][% UNLESS ( ITEM_DAT.nomod ) %]
          [% IF ( CAN_user_editcatalogue_edit_items ) %]
          <a href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&amp;biblionumber=[% ITEM_DAT.biblionumber %]&amp;itemnumber=[% ITEM_DAT.itemnumber %]">[Edit Item]</a>
          [% END %]
+	 	        <form method="post" action="/cgi-bin/koha/catalogue/moredetail.pl">
+                                <input type="hidden" name="biblionumber" value="[% ITEM_DAT.biblionumber %]" />
+                                <input type="hidden" name="itemnumber" value ="[% ITEM_DAT.itemnumber %]" />
+                                <input type="hidden" name="barcode" value ="[% ITEM_DAT.barcode %]" />
+                                <input type="hidden" name="op" value ="print_barcode" />
+                                <input type="submit" class="submit" name="print_barcode" value="Barcode edition" />
+                        </form>
+
+                        <form method="post" action="/cgi-bin/koha/catalogue/moredetail.pl">
+                                <input type="hidden" name="biblionumber" value="[% ITEM_DAT.biblionumber %]" />
+                                <input type="hidden" name="itemnumber" value ="[% ITEM_DAT.itemnumber %]" />
+                                <input type="hidden" name="op" value ="print_callnumber" />
+
+                        [% IF (pluginCallnumber) %]
+                                <input type="submit" class="submit" name="print_callnumber" value="Callnumber edition" />
+                        [% ELSE %]
+			        <input type="submit" class="submit" name="print_callnumber" value="Callnumber edition" />
+                                <!-- <input type="submit" class="submit" name="print_callnumber" value="Callnumber edition" onclick="alertCallNumber();return false;" /> -->
+                        [% END %]
+
+                        </form>
+                        <!--
+                        <form method="post" action="/cgi-bin/koha/catalogue/moredetail.pl">
+                                <input type="hidden" name="biblionumber" value="[% ITEM_DAT.biblionumber %]" />
+                                <input type="hidden" name="itemnumber" value ="[% ITEM_DAT.itemnumber %]" />
+                                <input type="hidden" name="op" value ="print_return_ticket" />
+                                <input type="submit" class="submit" name="print_return_ticket" value="Return Ticket" />
+                        </form>
+
+                        <form method="post" action="/cgi-bin/koha/catalogue/moredetail.pl">
+                                <input type="hidden" name="biblionumber" value="[% ITEM_DAT.biblionumber %]" />
+                                <input type="hidden" name="itemnumber" value ="[% ITEM_DAT.itemnumber %]" />
+                                <input type="hidden" name="op" value ="print_taking_slip" />
+                                <input type="submit" class="submit" name="print_taking_slip" value="Taking Slip" />
+                        </form>
+                        -->
          [% END %][% END %]</h4>
             <ol class="bibliodetails">
             <li><span class="label">Home library:</span> [% Branches.GetName( ITEM_DAT.homebranch ) %]&nbsp;</li>

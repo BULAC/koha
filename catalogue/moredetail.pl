@@ -34,6 +34,11 @@ use C4::Members; # to use GetMember
 use C4::Search;		# enabled_staff_search_views
 use C4::Members qw/GetHideLostItemsPreference/;
 use C4::Reserves qw(GetReservesFromBiblionumber);
+use C4::Callnumber::Callnumber;
+use C4::Callnumber::FreeAccessCallnumber;
+use C4::Callnumber::StoreCallnumber;
+use C4::Callnumber::Utils;
+use C4::Jasper::JasperReport;
 
 use Koha::Acquisition::Bookseller;
 use Koha::AuthorisedValues;
@@ -75,6 +80,8 @@ my $itemnumber = $query->param('itemnumber');
 my $data = &GetBiblioData($biblionumber);
 my $dewey = $data->{'dewey'};
 my $showallitems = $query->param('showallitems');
+
+my $op = $query->param( 'op' );
 
 #coping with subscriptions
 my $subscriptionsnumber = CountSubscriptionFromBiblionumber($biblionumber);
@@ -184,6 +191,167 @@ foreach my $item (@items){
         $item->{'issue'}= 1;
     } else {
         $item->{'issue'}= 0;
+    }
+
+    my ($active_callnumber, $store_callnumber, $free_callnumber) = C4::Callnumber::Utils::GetCallnumbers( $item->{'itemnumber'} );
+    $item->{ pluginCallnumber } = 0;
+    if ( $active_callnumber ne '' ) {
+	if ( $active_callnumber eq $store_callnumber ) {
+	    unless (C4::Callnumber::StoreCallnumber::IsRetroCallnumber( $store_callnumber)){
+		$item->{ pluginCallnumber } = 1;
+	    }
+	} elsif ( $active_callnumber eq $free_callnumber ) {
+	    unless (C4::Callnumber::FreeAccessCallnumber::IsFreeInputCallnumber( $free_callnumber)){
+		$item->{ pluginCallnumber } = 1;
+	    }
+	}
+    }
+    my @data = split(//, $item->{'conservation_data'});
+
+    $item->{itempapierloop}= GetAuthorisedValues('PAPIER',@data[0]);
+    $item->{itemfaconnageloop}= GetAuthorisedValues('FACONNAGE',@data[1]);
+    $item->{itemdesherbage}= @data[2];
+    $item->{itemnumerisation}= @data[3];
+    $item->{itemintervloop}= GetAuthorisedValues('NIV_INTERV',@data[4]);
+
+    @data = split(//, $item->{'barcode_info'});
+    $item->{itemtwobarcodes}= @data[0];
+    $item->{itemnobarcode}= @data[1];
+
+    if ($item->{'notforloan'} == 7) {
+        $item->{itemmissing}= 1;
+    } else {
+        $item->{itemmissing}= 0;
+    }
+
+    if ($item->{'materialsinfo'}) {
+        $item->{itemmaterialsinfoloop}= GetAuthorisedValues(GetAuthValCode('items.materialsinfo',$fw),$item->{materialsinfo}) if GetAuthValCode('items.materialsinfo',$fw);
+    }
+    if ( $op eq 'print_barcode') {
+        my $barcode    = $query->param( 'barcode' );
+        my $itemnumber = $query->param( 'itemnumber' );
+
+        my @report_parameters_list = ();
+        my ( $report_directory, $report_name, $report_action ) = ( 'exports', 'code_barres', 'print' );
+        my @report_errors = ();
+
+        push( @report_parameters_list, { barcode => $barcode } );
+        my ( $report_zipdirectory, $report_zipfile, @report_results ) = GenerateZip( $report_directory, $report_name, $report_action, \@report_parameters_list );
+
+        for ( my $i = 0; $i < scalar( @report_parameters_list ); $i++ ) {
+	    if ( $report_results[$i] == 0) {
+		push @report_errors, { report_name => $report_name, item => $itemnumber };
+	    }
+        }
+
+        if ( ( scalar @report_errors ) < ( scalar @report_parameters_list ) ) {
+	    #At least one report to send
+	    $template->param(
+		report_zipdirectory => $report_zipdirectory,
+		report_zipfile      => $report_zipfile,
+		report_print        => $report_action eq 'print' ? 1 : 0,
+                );
+        }
+
+        if ( scalar @report_errors ) {
+	    $template->param(
+		report_errors => \@report_errors,
+                );
+        }
+    }
+    elsif ( $op eq 'print_callnumber') {
+        my $itemnumber = $query->param( 'itemnumber' );
+
+        my @report_parameters_list = ();
+        my ( $report_directory, $report_name, $report_action ) = ( 'exports', 'cote', 'print' );
+        my @report_errors = ();
+
+        my ( $magasin, $level, $geo, $cplt, $classif, $tome ) = GetCallnumberParts( $itemnumber );
+        push( @report_parameters_list, { itemcallnumber_type_magasin => $magasin, location => $level, bulac_geo => $geo, complement => $cplt, classification => $classif, tome => $tome } );
+        my ( $report_zipdirectory, $report_zipfile, @report_results ) = GenerateZip( $report_directory, $report_name, $report_action, \@report_parameters_list );
+
+        for ( my $i = 0; $i < scalar( @report_parameters_list ); $i++ ) {
+	    if ( $report_results[$i] == 0) {
+		push @report_errors, { report_name => $report_name, item => $itemnumber };
+	    }
+        }
+
+        if ( ( scalar @report_errors ) < ( scalar @report_parameters_list ) ) {
+	    #At least one report to send
+	    $template->param(
+		report_zipdirectory => $report_zipdirectory,
+		report_zipfile      => $report_zipfile,
+		report_print        => $report_action eq 'print' ? 1 : 0,
+                );
+        }
+
+        if ( scalar @report_errors ) {
+	    $template->param(
+		report_errors => \@report_errors,
+                );
+        }
+    }
+    elsif ( $op eq 'print_return_ticket') {
+        my $itemnumber = $query->param( 'itemnumber' );
+
+        my @report_parameters_list = ();
+        my ( $report_directory, $report_name, $report_action ) = ( 'exports', 'bordereau_retour', 'print' );
+        my @report_errors = ();
+
+        push( @report_parameters_list, { Item_Number => $itemnumber } );
+        my ( $report_zipdirectory, $report_zipfile, @report_results ) = GenerateZip( $report_directory, $report_name, $report_action, \@report_parameters_list );
+
+        for ( my $i = 0; $i < scalar( @report_parameters_list ); $i++ ) {
+	    if ( $report_results[$i] == 0) {
+		push @report_errors, { report_name => $report_name, item => $itemnumber };
+	    }
+        }
+
+        if ( ( scalar @report_errors ) < ( scalar @report_parameters_list ) ) {
+	    #At least one report to send
+	    $template->param(
+		report_zipdirectory => $report_zipdirectory,
+		report_zipfile      => $report_zipfile,
+		report_print        => $report_action eq 'print' ? 1 : 0,
+                );
+        }
+
+        if ( scalar @report_errors ) {
+	    $template->param(
+		report_errors => \@report_errors,
+                );
+        }
+    }
+    elsif ( $op eq 'print_taking_slip') {
+	my $itemnumber = $query->param( 'itemnumber' );
+
+	my @report_parameters_list = ();
+	my ( $report_directory, $report_name, $report_action ) = ( 'exports', 'bordereau_prelevement', 'visualization' );
+	my @report_errors = ();
+
+	push( @report_parameters_list, { Item_Number => $itemnumber, borrower_number => $loggedinuser } );
+	my ( $report_zipdirectory, $report_zipfile, @report_results ) = GenerateZip( $report_directory, $report_name, $report_action, \@report_parameters_list );
+
+	for ( my $i = 0; $i < scalar( @report_parameters_list ); $i++ ) {
+	    if ( $report_results[$i] == 0) {
+		push @report_errors, { report_name => $report_name, item => $itemnumber };
+	    }
+	}
+
+	if ( ( scalar @report_errors ) < ( scalar @report_parameters_list ) ) {
+	    #At least one report to send
+	    $template->param(
+		report_zipdirectory => $report_zipdirectory,
+		report_zipfile      => $report_zipfile,
+		report_print        => $report_action eq 'print' ? 1 : 0,
+		);
+	}
+
+	if ( scalar @report_errors ) {
+	    $template->param(
+		report_errors => \@report_errors,
+		);
+	}
     }
 
     unless ($hidepatronname) {
