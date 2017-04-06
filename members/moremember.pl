@@ -51,6 +51,7 @@ use C4::Biblio;
 use C4::Form::MessagingPreferences;
 use List::MoreUtils qw/uniq/;
 use C4::Members::Attributes qw(GetBorrowerAttributes);
+use C4::Spaces;
 use Koha::AuthorisedValues;
 use Koha::Patron::Debarments qw(GetDebarments);
 use Koha::Patron::Images;
@@ -122,6 +123,13 @@ my ( $od, $issue, $fines ) = GetMemberIssuesAndFines($borrowernumber);
 $template->param( issuecount => $issue, fines => $fines );
 
 my $data = GetMember( 'borrowernumber' => $borrowernumber );
+
+my $booked_spaces = C4::Spaces::GetBorrowerSpaces($borrowernumber);
+my $spaces_invitations = C4::Spaces::GetBorrowerInvitations($borrowernumber);
+$template->param (
+    booked_spaces => $booked_spaces,
+    spaces_invitations => $spaces_invitations,
+    );
 
 if ( not defined $data ) {
     $template->param (unknowuser => 1);
