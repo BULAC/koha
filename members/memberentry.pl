@@ -54,6 +54,10 @@ if ( C4::Context->preference('NorwegianPatronDBEnable') && C4::Context->preferen
 }
 use Koha::SMS::Providers;
 
+use C4::Utils::Constants;
+use C4::Utils::String;
+use C4::Spaces::SCA;
+
 use vars qw($debug);
 
 BEGIN {
@@ -403,6 +407,21 @@ if ((!$nok) and $nodouble and ($op eq 'insert' or $op eq 'save')){
         $borrowernumber = &AddMember(%newdata);
         $newdata{'borrowernumber'} = $borrowernumber;
 
+        #SCA : add user
+        if ( C4::Context->preference('UseSCA') && $userenv->{branch} eq 'BULAC') {
+            my ($status, $message, $enrolled_by) = AddScaUser( $borrowernumber );
+            if ($status) {
+                ModMember(
+                    borrowernumber => $borrowernumber,
+                    sca_enrolled_by => $enrolled_by
+                );
+            } else {
+                $nok = 1;
+		push @errors, $message;
+            }
+        }
+        #End SCA
+
         # If 'AutoEmailOpacUser' syspref is on, email user their account details from the 'notice' that matches the user's branchcode.
         if ( C4::Context->preference("AutoEmailOpacUser") == 1 && $newdata{'userid'}  && $newdata{'password'}) {
             #look for defined primary email address, if blank - attempt to use borr.email and borr.emailpro instead
@@ -443,6 +462,29 @@ if ((!$nok) and $nodouble and ($op eq 'insert' or $op eq 'save')){
         if (C4::Context->preference('EnhancedMessagingPreferences') and $input->param('setting_messaging_prefs')) {
             C4::Form::MessagingPreferences::handle_form_action($input, { borrowernumber => $borrowernumber }, $template, 1, $newdata{'categorycode'});
         }
+	#SCA : modify user if necessary
+        my $old_category   = $input->param('old_category');
+        my $old_cardnumber = $input->param('old_cardnumber');
+        my $old_enrolled_by = $input->param('old_enrolled_by');
+        if ( C4::Context->preference('UseSCA')  && $userenv->{branch} eq 'BULAC' ) {
+            my ($status, $message, $enrolled_by) = ModScaUser( $borrowernumber, $old_cardnumber, $old_category, $old_enrolled_by );
+            if ($status) {
+                ModMember(
+                    borrowernumber => $borrowernumber,
+                    sca_enrolled_by => $enrolled_by
+                );
+            } else {
+                ModMember(
+                    borrowernumber => $borrowernumber,
+                    sca_enrolled_by => $old_enrolled_by,
+                    cardnumber => $old_cardnumber,
+                );
+                $nok = 1;
+		push @errors, $message;
+            }
+        }
+        #End SCA
+
         # Try to do the live sync with the Norwegian national patron database, if it is enabled
         if ( exists $data{'borrowernumber'} && C4::Context->preference('NorwegianPatronDBEnable') && C4::Context->preference('NorwegianPatronDBEnable') == 1 ) {
             NLSync({ 'borrowernumber' => $borrowernumber });
