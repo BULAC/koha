@@ -371,6 +371,13 @@ function validate1(date) {
 [% END %]
 [% END %]
 
+[% IF (booked_spaces) %]
+[% INCLUDE 'borrower-booked-spaces.inc' %]
+[% END %]
+
+[% IF (spaces_invitations) %]
+[% INCLUDE 'spaces-invitations.inc' %]
+[% END %]
 
 [% IF ( EnhancedMessagingPreferences ) %]
 <div id="patron-messaging-prefs" style="padding-top: 1em;">
