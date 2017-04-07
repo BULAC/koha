@@ -160,21 +160,20 @@ my $selfreg_default_category = C4::Context->preference('PatronSelfRegistrationDe
 if ($op eq 'modify' and $borrower_data->{'categorycode'} eq $selfreg_default_category) {
     $borrower_data->{'dateexpiry'} = '';
 }
-## Prevent preins category from having a cardnumber
-if ($op eq 'save' && $borrower_data->{'categorycode'} eq $selfreg_default_category && $cardnumber) {
-    $nok = 1;
-    my $borrowercategory = GetBorrowercategory($selfreg_default_category);
-    my $category_name = $borrowercategory->{'description'}; 
-    $template->param("categoryname"=>$category_name);   
-    push @errors, 'ERROR_selfregdefaultcat_cardnum';
-}
 
 unless ($category_type or !($categorycode)){
     my $borrowercategory = Koha::Patron::Categories->find($categorycode);
     $category_type    = $borrowercategory->category_type;
     my $category_name = $borrowercategory->description;
     $template->param("categoryname"=>$category_name);
+    ## Prevent preins category from having a cardnumber
+    if ($op eq 'save' && $borrowercategory eq $selfreg_default_category && $cardnumber) {
+	$nok = 1;
+	$template->param("categoryname" => $category_name);
+	push @errors, 'ERROR_selfregdefaultcat_cardnum';
+    }
 }
+
 $category_type="A" unless $category_type; # FIXME we should display a error message instead of a 500 error !
 
 # if a add or modify is requested => check validity of data.
