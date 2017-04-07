@@ -169,6 +169,10 @@ $(document).ready(function() {
             [% IF ERROR_cardnumber_length %]
                 <li id="ERROR_cardnumber">Cardnumber length is incorrect.</li>
             [% END %]
+	    [% IF ERROR_selfregdefaultcat_cardnum  %]
+                <li id="ERROR_selfregdefaultcat_cardnum">Patron with selfregistration category "[% categoryname %]" can't have a cardnumber.</li>
+            [% END %]
+
 			[% IF ( ERROR_age_limitations ) %]
             <li id="ERROR_age_limitations">Patron's age is incorrect for their category.
                     Ages allowed are [% age_low %]-[% age_high %].</li>
@@ -684,6 +688,19 @@ $(document).ready(function() {
     [% IF ( mandatorysort2 ) %]<span class="required">Required</span>[% END %]
     </li>
         [% END %]
+            [% UNLESS nosort3 %]
+    <li>
+    [% IF ( mandatorysort3 ) %]
+    <label for="sort3" class="required">
+    [% ELSE %]
+    <label for="sort3">
+    [% END %]
+    Sort 3: </label>
+    [% PROCESS 'av-build-dropbox.inc' name="sort3", category="Bsort3", default=sort3, size = 20 %]
+    [% IF ( mandatorysort3 ) %]<span class="required">Required</span>[% END %]
+    </li>
+        [% END %]
+
     [% IF ( Koha.Preference( 'NorwegianPatronDBEnable' ) == 1 ) %]
         <li>
             <label for="sort2">Sync with the Norwegian national patron database:</label>
@@ -779,6 +796,7 @@ $(document).ready(function() {
 	  [% IF ( mandatoryopacnote ) %]<span class="required">Required</span>[% END %]
 		</li>
         [% END %]
+	<li><span class="label">SCA enrolled by:</span>[% sca_enrolled_by  %]</li>
         [% UNLESS noborrowernotes %]
 		<li>
             [% IF ( mandatoryborrowernotes ) %]

@@ -160,6 +160,19 @@ $template->param( "checked" => 1 ) if ( defined($nodouble) && $nodouble eq 1 );
 ( $borrower_data = GetMember( 'borrowernumber' => $borrowernumber ) ) if ( $op eq 'modify' or $op eq 'save' or $op eq 'duplicate' );
 my $categorycode  = $input->param('categorycode') || $borrower_data->{'categorycode'};
 my $category_type = $input->param('category_type') || '';
+my $selfreg_default_category = C4::Context->preference('PatronSelfRegistrationDefaultCategory');
+if ($op eq 'modify' and $borrower_data->{'categorycode'} eq $selfreg_default_category) {
+    $borrower_data->{'dateexpiry'} = '';
+}
+## Prevent preins category from having a cardnumber
+if ($op eq 'save' && $borrower_data->{'categorycode'} eq $selfreg_default_category && $cardnumber) {
+    $nok = 1;
+    my $borrowercategory = GetBorrowercategory($selfreg_default_category);
+    my $category_name = $borrowercategory->{'description'};
+    $template->param("categoryname"=>$category_name);
+    push @errors, 'ERROR_selfregdefaultcat_cardnum';
+}
+
 unless ($category_type or !($categorycode)){
     my $borrowercategory = Koha::Patron::Categories->find($categorycode);
     $category_type    = $borrowercategory->category_type;
@@ -716,6 +729,7 @@ $template->param(no_add => $no_add);
 
 $template->param( sort1 => $data{'sort1'});
 $template->param( sort2 => $data{'sort2'});
+$template->param( sort3 => $data{'sort3'});
 
 if ($nok) {
     foreach my $error (@errors) {
