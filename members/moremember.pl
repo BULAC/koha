@@ -129,6 +129,7 @@ if ( not defined $data ) {
     exit;
 }
 
+$template->param (sca_enrolled_by => $data->{'sca_enrolled_by'});
 my $category_type = $data->{'category_type'};
 
 $debug and printf STDERR "dates (enrolled,expiry,birthdate) raw: (%s, %s, %s)\n", map {$data->{$_}} qw(dateenrolled dateexpiry dateofbirth);
