@@ -302,7 +302,7 @@ $(document).ready(function()
         <input type="hidden" name="invoiceincgst" id="invoiceincgst" value="[% invoiceincgst %]" />
         <input type="hidden" name="suggestionid" value="[% suggestionid %]" />
         <input type="hidden" name="import_batch_id" value="[% import_batch_id %]" />
-
+	
         [% FOREACH c IN currencies %]
             <input type="hidden" id="currency_rate_[% c.currency %]"  name="[% c.currency %]" value="[% c.rate %]" />
         [% END %]
@@ -356,6 +356,34 @@ $(document).ready(function()
         </li>
         <li>
             [% IF ( biblionumber ) %]
+            <span class="label">Geolinguistic code: </span>
+                <input type="hidden" name="geolangcode" id="geolangcode" value="[% geolangcode %]" />[% geolangcode %]
+            [% ELSE %]
+            <label for="geolangcode">Geolinguistic code: </label>
+                <input type="text" size="4" name="geolangcode" id="geolangcode" value="[% geolangcode %]" />
+            [% END %]
+        </li>
+        <li>
+            [% IF ( biblionumber ) %]
+            <span class="label">Lang: </span>
+                <input type="hidden" name="bulaclang" id="bulaclang" value="[% bulaclang %]" />[% bulaclang %]
+            [% ELSE %]
+            <label for="bulaclang">Lang: </label>
+                <input type="text" size="4" name="bulaclang" id="bulaclang" value="[% bulaclang %]" />
+            [% END %]
+        </li>
+        <li>
+            [% IF ( biblionumber ) %]
+            <span class="label">Country: </span>
+                <input type="hidden" name="bulaccountry" id="bulaccountry" value="[% bulaccountry %]" />[% bulaccountry %]
+            [% ELSE %]
+            <label for="country">Country: </label>
+                <input type="text" size="4" name="bulaccountry" id="bulaccountry" value="[% bulaccountry %]" />
+            [% END %]
+        </li>
+
+        <li>
+            [% IF ( biblionumber ) %]
             <span class="label">ISBN: </span>
                 <input type="hidden" name="isbn" id="ISBN" value="[% isbn %]" />[% isbn %]
             [% ELSE %]
@@ -363,6 +391,16 @@ $(document).ready(function()
                 <input type="text" size="50" name="isbn" id="ISBN" value="[% isbn %]" />
             [% END %]
         </li>
+        <li>
+            [% IF ( biblionumber ) %]
+            <span class="label">ISSN: </span>
+                <input type="hidden" name="issn" id="issn" value="[% issn %]" />[% issn %]
+            [% ELSE %]
+            <label for="issn">ISSN: </label>
+                <input type="text" size="4" name="issn" id="issn" value="[% issn %]" />
+            [% END %]
+        </li>
+
         [% IF (UNIMARC) %]
         <li>
             [% IF ( biblionumber ) %]
@@ -399,6 +437,7 @@ $(document).ready(function()
             </li>
             [% END %]
             [% END %]
+	    <li>
         </ol>
     </fieldset>
 

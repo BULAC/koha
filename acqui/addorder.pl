@@ -253,6 +253,11 @@ if ( $basket->{is_standing} || $orderinfo->{quantity} ne '0' ) {
                 "biblio.copyrightdate"        => $$orderinfo{publicationyear} ? $$orderinfo{publicationyear}: "",
                 "biblioitems.itemtype"        => $$orderinfo{itemtype} ? $$orderinfo{itemtype} : "",
                 "biblioitems.editionstatement"=> $$orderinfo{editionstatement} ? $$orderinfo{editionstatement} : "",
+		"biblioitems.geolangcode"     => defined $$orderinfo{geolangcode} ? $$orderinfo{geolangcode} : "",
+                "biblioitems.bulaclang"       => $$orderinfo{bulaclang} ? $$orderinfo{bulaclang} : "",
+		"biblioitems.bulaccountry"    => $$orderinfo{bulaccountry} ? $$orderinfo{bulaccountry} : "",
+		"biblioitems.issn"            => $$orderinfo{issn} ? $$orderinfo{issn} : "",
+
             });
 
         C4::Acquisition::FillWithDefaultValues( $record );
