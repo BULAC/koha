@@ -30,12 +30,10 @@ use C4::Items;
 use C4::Output;
 use C4::Context;
 use C4::Members;
-use C4::Branch; # GetBranches
 use C4::Overdues;
 use C4::Debug;
 use C4::Stats;
 use Koha::DateUtils;
-use Koha::Borrower::Debarments qw(IsDebarred);
 use Koha::DateUtils;
 use DateTime::Duration;
 use Date::Calc qw/Today Date_to_Days/;
@@ -74,9 +72,6 @@ $template->param( BORROWER_INFO => $borrower );
 	$template->param( RESERVE_CHARGE => sprintf("%.2f",$borrower->{reservefee}));
     }
 
-
-    my $branches = GetBranches();
-
     my $branch = $query->param('branch') || $borrower->{'branchcode'} || C4::Context->userenv->{branch} || '' ;
 
 my $op = $query->param('op');
@@ -98,7 +93,7 @@ if ($biblionumber) {
 if ($genitemnumber || $itemnumber) {
     $item = ($genitemnumber) ? GetItem($genitemnumber) : GetItem($itemnumber);
     $item->{'itype'} = 'DOC-TMP-MG';
-    foreach my $key qw(replacementpricedate datelastseen timestamp) {
+    foreach my $key (qw(replacementpricedate datelastseen timestamp)) {
 	delete($item->{$key});
     }
     $template->param(
