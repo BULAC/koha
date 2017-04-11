@@ -39,11 +39,11 @@ sub GetBorrowerSpaces {
 sub GetBorrowerInvitations {
     my $borrower_number = shift;
     my $query = "SELECT id_borrower, space_type.name, space_type.name as type, space.name, start_date, end_date
-                 FROM espacesprod.booking
+                 FROM espacesprod.invitation
+                 JOIN espacesprod.booking ON booking.id_booking = invitation.id_booking
                  JOIN espacesprod.space ON booking.id_space = space.id_space
                  JOIN espacesprod.space_type ON space.id_space_type = space_type.id_space_type
-                 JOIN espacesprod.invitation ON invitation.id_booking = booking.id_booking
-                 WHERE invitation.id_borrower = ?
+                 WHERE espacesprod.invitation.borrowernumber = ?
                  ORDER BY start_date";
     my $dbh   = C4::Context->dbh;
     my $sth = $dbh->prepare($query);
