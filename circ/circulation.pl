@@ -132,6 +132,10 @@ if (!C4::Auth::haspermission( C4::Context->userenv->{id} , { circulate => 'force
 }
 
 my $onsite_checkout = $query->param('onsite_checkout');
+if ($onsite_checkout) {
+    $template->param(onsite_checkout => $onsite_checkout)
+}
+
 
 my @failedrenews = $query->multi_param('failedrenew');    # expected to be itemnumbers
 our %renew_failed = ();
