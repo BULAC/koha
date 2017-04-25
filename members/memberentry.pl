@@ -540,6 +540,32 @@ if ((!$nok) and $nodouble and ($op eq 'insert' or $op eq 'save')){
                                                                 # updating any columns in the borrowers table,
                                                                 # which can happen if we're only editing the
                                                                 # patron attributes or messaging preferences sections
+
+	
+	my $old_category   = $input->param('old_category');
+	my $old_cardnumber = $input->param('old_cardnumber');
+	my $old_enrolled_by = $input->param('old_enrolled_by');
+	if ( C4::Context->preference('UseSCA')  && $userenv->{branch} eq 'BULAC' ) {
+	    my $scacardnumber = $old_cardnumber || $cardnumber;
+	    my ($status, $message, $enrolled_by) = ModScaUser( $borrowernumber, $scacardnumber, $old_category, $old_enrolled_by );
+	    if ($status) {
+		ModMember(
+		    borrowernumber => $borrowernumber,
+		    sca_enrolled_by => $enrolled_by
+		    );
+	    } else {
+		ModMember(
+		    borrowernumber => $borrowernumber,
+		    sca_enrolled_by => $old_enrolled_by,
+		    #                    cardnumber => $old_cardnumber,
+		    );
+		$nok = 1;
+		push @errors, $message;
+	    }
+	}
+	#End SCA
+	    
+	    
         if (C4::Context->preference('ExtendedPatronAttributes') and $input->param('setting_extended_patron_attributes')) {
             C4::Members::Attributes::SetBorrowerAttributes($borrowernumber, $extended_patron_attributes);
         }
