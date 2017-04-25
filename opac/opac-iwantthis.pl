@@ -128,13 +128,6 @@ if (!$selfreserve && !$selfissue && $op eq 'reserve' && $canreserve) {
     if (!$reservesbefore && $from == 'stacks') {
 	$found = 'A';
     }
-    use Data::Dumper;
-    open my $debuglog, '>', '/tmp/debuglog';
-    print $debuglog Dumper($homebranch, C4::Context->userenv->{'number'},
-			   $biblionumber, 'a', [$biblionumber],
-			   $rank, output_pref({ dt => dt_from_string, dateformat => 'iso' , dateonly => 1 }), '',
-			   $notes, $item->{'title'},
-			   $itemnumber, $found);
     my $resid = AddReserve(
 	$homebranch,
 	C4::Context->userenv->{'number'},
