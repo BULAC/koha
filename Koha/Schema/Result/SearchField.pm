@@ -53,6 +53,12 @@ the human readable name of the field, for display
 
 what type of data this holds, relevant when storing it in the search engine
 
+=head2 facet_order
+
+  data_type: 'tinyint'
+  default_value: 0
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -68,6 +74,8 @@ __PACKAGE__->add_columns(
     extra => { list => ["", "string", "date", "number", "boolean", "sum"] },
     is_nullable => 0,
   },
+  "facet_order",
+  { data_type => "tinyint", default_value => 0, is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -114,8 +122,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2017-03-23 13:30:43
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1IenQWmCO16tJ/nIFTFYug
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2017-06-30 10:26:00
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:0f8VeusKpolVCRHLvQKhnA
 
 __PACKAGE__->many_to_many("search_marc_maps", "search_marc_to_fields", "search_marc_map");
 
