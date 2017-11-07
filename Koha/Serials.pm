@@ -27,6 +27,16 @@ use Koha::Serial;
 
 use base qw(Koha::Objects);
 
+use vars qw(@ISA @EXPORT);
+
+BEGIN {
+    require Exporter;
+    @ISA    = qw(Exporter);
+    @EXPORT = qw(
+        &GetSerialItemsInformations
+    );
+}
+
 =head1 NAME
 
 Koha::Serial - Koha Serial Object class
@@ -47,6 +57,31 @@ sub _type {
 
 sub object_class {
     return 'Koha::Serial';
+}
+
+=head2 GetSerialItemsInformations
+
+    @serialsitemsinformations = GetSerialItemsInformations (@serialid)
+
+    return an array of specifique information of serials and serialitem a given array of serialid
+
+=cut
+
+sub GetSerialItemsInformations{
+    my ( @serialid ) = @_;
+    my @serialitemsinformation;
+    my $dbh = C4::Context->dbh;
+
+    foreach my $sid ( @serialid ) {
+        my $sth = $dbh->prepare("select count(i.itemnumber) as countitems,s.itemnumber as itemnumber  from items i natural join serialitems s where s.serialid=?");
+        $sth->execute( $sid );
+
+        my $line = $sth->fetchrow_hashref;
+        if( $line->{'countitems'} ){
+            push @serialitemsinformation, $line;
+        }
+    }
+   return @serialitemsinformation;
 }
 
 =head1 AUTHOR

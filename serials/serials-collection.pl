@@ -28,6 +28,7 @@ use C4::Items;
 use C4::Letters;
 use C4::Output;
 use C4::Context;
+use Koha::Serials;
 
 use Koha::DateUtils qw( dt_from_string );
 

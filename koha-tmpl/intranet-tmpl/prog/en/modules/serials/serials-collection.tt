@@ -28,7 +28,7 @@
            <input type="hidden" name="confdelete" value="1" />
            <input type="submit" class="approve" value="Yes, delete"/>
        </form>
-       <form action=""/cgi-bin/koha/serials/serials-collection.pl/#">
+       <form action="/cgi-bin/koha/serials/serials-collection.pl/#">
            <input type="hidden" name="subscriptionid" value="[% subscriptionid %]" />
            <input type="submit" class="deny" value="No, don't delete"/>
        </form>
@@ -184,18 +184,14 @@
                     [% IF ( serial.subscriptionexpired ) %]
                        <input type="checkbox" name="serialid" value="[% serial.serialid %]" disabled="disabled" />
                     [% ELSE %]
-                      [% IF ( serial.checked ) %]
-                         [% IF ( delete ) %]
-                            <input type="checkbox" class="checkboxed" name="serialid" value="[% serial.serialid %]" [% IF ( delete ) %] readonly [% END %] [% IF serialsid.grep("${serial.serialid}").size %] checked [% END %] />
-                         [% ELSE %]
-                            <input type="checkbox" class="checkboxed" name="serialid" checked="checked" value="[% serial.serialid %]" />
-                         [% END %]
+                      [% IF ( delete ) %]
+                        [% IF serialsid.grep("${serial.serialid}").size %]
+                          <input type="checkbox" class="checkboxed" name="serialid" value="[% serial.serialid %]" disabled checked />
+                        [% ELSE %]
+                          <input type="checkbox" class="checkboxed" name="serialid" value="[% serial.serialid %]" disabled />
+                        [% END %]
                       [% ELSE %]
-                         [% IF ( delete ) %]
-                            <input type="checkbox" class="checkboxed" name="serialid" value="[% serial.serialid %]" [% IF ( delete ) %] readonly [% END %] [% IF serialsid.grep("${serial.serialid}").size %] checked [% END %] />
-                         [% ELSE %]
-                            <input type="checkbox" class="checkboxed" name="serialid" value="[% serial.serialid %]" />
-                         [% END %]
+                        <input type="checkbox" class="checkboxed" name="serialid" value="[% serial.serialid %]" />
                       [% END %]
                     [% END %]
                   [% END %]

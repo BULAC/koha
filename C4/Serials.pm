@@ -87,7 +87,6 @@ BEGIN {
       HasItems
       &GetSubscriptionsFromBorrower
       &subscriptionCurrentlyOnOrder
-      &GetSerialItemsInformations
 
     );
 }
@@ -2723,29 +2722,6 @@ sub _can_do_on_subscription {
         ;
     }
     return 0;
-}
-
-=head1 GetSerialItemsInformations
-
-    @serialsitemsinformations = GetSerialItemsInformations (@serialid)
-
-    return an array of specifique information of serials and serialitem a given array of serialid
-
-=cut
-
-sub GetSerialItemsInformations{
-    my (@serialid)=@_;
-    my @serialitemsinformation;
-    my $dbh = C4::Context->dbh;
-    foreach my $sid(@serialid){
-        my $sth = $dbh->prepare("select count(i.itemnumber) as countitems,s.itemnumber as itemnumber  from items i  natural join  serialitems s where s.serialid=?");
-        $sth->execute($sid);
-        my $line   = $sth->fetchrow_hashref;
-        if($line->{'countitems'}){
-            push @serialitemsinformation,$line;
-        }
-    }
-    return @serialitemsinformation;
 }
 
 =head2 findSerialsByStatus

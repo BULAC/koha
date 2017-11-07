@@ -16,6 +16,7 @@ use C4::Budgets;
 use C4::Items;
 use Koha::DateUtils;
 use Koha::Acquisition::Booksellers;
+use Koha::Serials;
 use t::lib::Mocks;
 use Test::More tests => 50;
 use t::lib::TestBuilder;
@@ -30,8 +31,6 @@ my $dbh = C4::Context->dbh;
 # Start transaction
 $dbh->{AutoCommit} = 0;
 $dbh->{RaiseError} = 1;
-
-my $builder = t::lib::TestBuilder->new();
 
 # This could/should be used for all untested methods
 my @methods = ('updateClaim');
@@ -375,25 +374,25 @@ subtest "Test GetSerialItemsInformations " => sub {
         AddItem2Serial($serialid[0],$itemnumber1);
         my @result = C4::Serials::GetSerialItemsInformations(@serialid);
         is (scalar @result, 1 , "GetSerialItemsInformation return right length of array using 1 serial with 1 item");
-        is (@result[0]->{countitems}, 1 , "GetSerialItemsInformation return right number items of serial1");
+        is ($result[0]->{countitems}, 1 , "GetSerialItemsInformation return right number items of serial1");
         AddItem2Serial($serialid[1],$itemnumber3);
         @result = C4::Serials::GetSerialItemsInformations(@serialid);
         is (scalar @result, 2 , "GetSerialItemsInformation return right length of array using 2 serials and each have 1 item");
-        is (@result[0]->{countitems}, 1 , "GetSerialItemsInformation return right number items of serial1");
-        is (@result[1]->{countitems}, 1 , "GetSerialItemsInformation return right number items of serial2");
+        is ($result[0]->{countitems}, 1 , "GetSerialItemsInformation return right number items of serial1");
+        is ($result[1]->{countitems}, 1 , "GetSerialItemsInformation return right number items of serial2");
     };
     subtest "Test with 2 serials and each have 2 items" => sub {
         plan tests => 6;
         AddItem2Serial($serialid[0],$itemnumber2);
         my @result = C4::Serials::GetSerialItemsInformations(@serialid);
         is (scalar @result, 2 , "GetSerialItemsInformation return right length of array using 2 serials ");
-        is (@result[0]->{countitems}, 2 , "GetSerialItemsInformation return right number items of serial1");
-        is (@result[1]->{countitems}, 1 , "GetSerialItemsInformation return right number items of serial2");
+        is ($result[0]->{countitems}, 2 , "GetSerialItemsInformation return right number items of serial1");
+        is ($result[1]->{countitems}, 1 , "GetSerialItemsInformation return right number items of serial2");
         AddItem2Serial($serialid[1],$itemnumber4);
         @result = C4::Serials::GetSerialItemsInformations(@serialid);
         is (scalar @result, 2 , "GetSerialItemsInformation return right length of array using 2 serials and each have 2 items ");
-        is (@result[0]->{countitems}, 2 , "GetSerialItemsInformation return right number items of serial1");
-        is (@result[1]->{countitems}, 2 , "GetSerialItemsInformation return right number items of serial2");
+        is ($result[0]->{countitems}, 2 , "GetSerialItemsInformation return right number items of serial1");
+        is ($result[1]->{countitems}, 2 , "GetSerialItemsInformation return right number items of serial2");
     };
 };
 
