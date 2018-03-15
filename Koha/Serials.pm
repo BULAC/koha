@@ -24,6 +24,7 @@ use Carp;
 use Koha::Database;
 
 use Koha::Serial;
+use Koha::Serial::Items;
 
 use base qw(Koha::Objects);
 
@@ -33,7 +34,7 @@ BEGIN {
     require Exporter;
     @ISA    = qw(Exporter);
     @EXPORT = qw(
-        &GetSerialItemsInformations
+        &get_serial_items_count
     );
 }
 
@@ -59,29 +60,30 @@ sub object_class {
     return 'Koha::Serial';
 }
 
-=head2 GetSerialItemsInformations
+=head2 get_serial_items_count
 
-    @serialsitemsinformations = GetSerialItemsInformations (@serialid)
+    @serialsitemsinformations = get_serial_items_count (@serialid)
 
     return an array of specifique information of serials and serialitem a given array of serialid
 
 =cut
 
-sub GetSerialItemsInformations{
-    my ( @serialid ) = @_;
+sub get_serial_items_count{
+    my ( @self ) = @_;
     my @serialitemsinformation;
-    my $dbh = C4::Context->dbh;
 
-    foreach my $sid ( @serialid ) {
-        my $sth = $dbh->prepare("select count(i.itemnumber) as countitems,s.itemnumber as itemnumber  from items i natural join serialitems s where s.serialid=?");
-        $sth->execute( $sid );
+    foreach my $sid ( @self ) {
+        my $serialitems = Koha::Serial::Items->search({ serialid => $sid}) ;
 
-        my $line = $sth->fetchrow_hashref;
-        if( $line->{'countitems'} ){
-            push @serialitemsinformation, $line;
+        my $countitem = 0;
+        while ( my $s = $serialitems->next() ) {
+            $countitem++;
         }
+
+        push @serialitemsinformation,{'countitems' => $countitem, 'serialid' => $sid } if $countitem;
     }
-   return @serialitemsinformation;
+
+    return @serialitemsinformation;
 }
 
 =head1 AUTHOR

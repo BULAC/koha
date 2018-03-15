@@ -352,9 +352,9 @@ subtest "Do not generate an expected if one already exists" => sub {
     is( @serialsByStatus, 1, "ModSerialStatus delete corectly serial expected and not create another if exists" );
 };
 
-subtest "Test GetSerialItemsInformations " => sub {
+subtest "Test get_serial_items_count " => sub {
     plan tests => 4;
-    is (Koha::Serials::GetSerialItemsInformations(),0,"test GetSerialItemsInformation with nothing parameters ");
+    is (Koha::Serials::get_serial_items_count(),0,"test get_serial_items_count with nothing parameters ");
     my $branchcode = $builder->build({ source => 'Branch' })->{ branchcode };
     my $itemtype   = $builder->build({ source => 'Itemtype' })->{ itemtype };
     my ($biblionumber1, $bibitemnumber) = AddBiblio(MARC::Record->new, '');
@@ -369,31 +369,31 @@ subtest "Test GetSerialItemsInformations " => sub {
     my $itemnumber3 = AddItem({ barcode => '0103', %item_infos }, $biblionumber1);
     my $itemnumber4 = AddItem({ barcode => '0104', %item_infos }, $biblionumber1);
     my @serialid = ($serials[0]->{serialid},$serials[1]->{serialid});
-    is (Koha::Serials::GetSerialItemsInformations(@serialid),0,"test GetSerialItemsInformation with array of serialid and none have items");
+    is (Koha::Serials::get_serial_items_count(@serialid),0,"test get_serial_items_count with array of serialid and none have items");
     subtest "Test with 2 serials and each have one item" => sub {
         plan tests => 5;
         AddItem2Serial($serialid[0],$itemnumber1);
-        my @result = Koha::Serials::GetSerialItemsInformations(@serialid);
-        is (scalar @result, 1 , "GetSerialItemsInformation return right length of array using 1 serial with 1 item");
-        is ($result[0]->{countitems}, 1 , "GetSerialItemsInformation return right number items of serial1");
+        my @result = Koha::Serials::get_serial_items_count(@serialid);
+        is (scalar @result, 1 , "get_serial_items_count return right length of array using 1 serial with 1 item");
+        is ($result[0]->{countitems}, 1 , "get_serial_items_count return right number items of serial1");
         AddItem2Serial($serialid[1],$itemnumber3);
-        @result = Koha::Serials::GetSerialItemsInformations(@serialid);
-        is (scalar @result, 2 , "GetSerialItemsInformation return right length of array using 2 serials and each have 1 item");
-        is ($result[0]->{countitems}, 1 , "GetSerialItemsInformation return right number items of serial1");
-        is ($result[1]->{countitems}, 1 , "GetSerialItemsInformation return right number items of serial2");
+        @result = Koha::Serials::get_serial_items_count(@serialid);
+        is (scalar @result, 2 , "get_serial_items_count return right length of array using 2 serials and each have 1 item");
+        is ($result[0]->{countitems}, 1 , "get_serial_items_count return right number items of serial1");
+        is ($result[1]->{countitems}, 1 , "get_serial_items_count return right number items of serial2");
     };
     subtest "Test with 2 serials and each have 2 items" => sub {
         plan tests => 6;
         AddItem2Serial($serialid[0],$itemnumber2);
-        my @result = Koha::Serials::GetSerialItemsInformations(@serialid);
-        is (scalar @result, 2 , "GetSerialItemsInformation return right length of array using 2 serials ");
-        is ($result[0]->{countitems}, 2 , "GetSerialItemsInformation return right number items of serial1");
-        is ($result[1]->{countitems}, 1 , "GetSerialItemsInformation return right number items of serial2");
+        my @result = Koha::Serials::get_serial_items_count(@serialid);
+        is (scalar @result, 2 , "get_serial_items_count return right length of array using 2 serials ");
+        is ($result[0]->{countitems}, 2 , "get_serial_items_count return right number items of serial1");
+        is ($result[1]->{countitems}, 1 , "get_serial_items_count return right number items of serial2");
         AddItem2Serial($serialid[1],$itemnumber4);
-        @result = Koha::Serials::GetSerialItemsInformations(@serialid);
-        is (scalar @result, 2 , "GetSerialItemsInformation return right length of array using 2 serials and each have 2 items ");
-        is ($result[0]->{countitems}, 2 , "GetSerialItemsInformation return right number items of serial1");
-        is ($result[1]->{countitems}, 2 , "GetSerialItemsInformation return right number items of serial2");
+        @result = Koha::Serials::get_serial_items_count(@serialid);
+        is (scalar @result, 2 , "get_serial_items_count return right length of array using 2 serials and each have 2 items ");
+        is ($result[0]->{countitems}, 2 , "get_serial_items_count return right number items of serial1");
+        is ($result[1]->{countitems}, 2 , "get_serial_items_count return right number items of serial2");
     };
 };
 

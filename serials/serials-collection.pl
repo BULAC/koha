@@ -63,7 +63,7 @@ my $subscriptions;
 my $delete;
 my $countitems=0;
 my @ids=split("!",$serialsid);
-my @serialitemsinformation=GetSerialItemsInformations(@ids);
+my @serialitemsinformation=get_serial_items_count(@ids);
 my $subscriptionid = $subscriptionid[0];
 if($op eq 'gennext' && @subscriptionid){
     my $subscriptionid = $subscriptionid[0];
