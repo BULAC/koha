@@ -17,13 +17,17 @@
 
 use Modern::Perl;
 
-use Test::More tests => 2;
+use Test::More tests => 3;
 use Test::MockModule;
 
 use t::lib::Mocks;
+use t::lib::TestBuilder;
 use MARC::Record;
 
+use Koha::SearchFields;
+
 my $schema = Koha::Database->schema;
+my $builder = t::lib::TestBuilder->new;
 
 use_ok('Koha::SearchEngine::Elasticsearch');
 
@@ -161,4 +165,107 @@ subtest 'get_fixer_rules() tests' => sub {
 
     $schema->storage->txn_rollback;
 
+};
+
+subtest 'get_facetable_fields() tests' => sub {
+
+    plan tests => 15;
+
+    $schema->storage->txn_begin;
+
+    Koha::SearchFields->search()->delete;
+
+    $builder->build({
+        source => 'SearchField',
+        value => {
+            name => 'author',
+            label => 'author',
+            type => 'string',
+            facet_order => undef
+        }
+    });
+    $builder->build({
+        source => 'SearchField',
+        value => {
+            name => 'holdingbranch',
+            label => 'holdingbranch',
+            type => 'string',
+            facet_order => 1
+        }
+    });
+    $builder->build({
+        source => 'SearchField',
+        value => {
+            name => 'homebranch',
+            label => 'homebranch',
+            type => 'string',
+            facet_order => 2
+        }
+    });
+    $builder->build({
+        source => 'SearchField',
+        value => {
+            name => 'itype',
+            label => 'itype',
+            type => 'string',
+            facet_order => 3
+        }
+    });
+    $builder->build({
+        source => 'SearchField',
+        value => {
+            name => 'se',
+            label => 'se',
+            type => 'string',
+            facet_order => 4
+        }
+    });
+    $builder->build({
+        source => 'SearchField',
+        value => {
+            name => 'su-geo',
+            label => 'su-geo',
+            type => 'string',
+            facet_order => 5
+        }
+    });
+    $builder->build({
+        source => 'SearchField',
+        value => {
+            name => 'subject',
+            label => 'subject',
+            type => 'string',
+            facet_order => 6
+        }
+    });
+    $builder->build({
+        source => 'SearchField',
+        value => {
+            name => 'not_facetable_field',
+            label => 'not_facetable_field',
+            type => 'string',
+            facet_order => undef
+        }
+    });
+
+    my @faceted_fields = Koha::SearchEngine::Elasticsearch->get_facetable_fields();
+    is(scalar(@faceted_fields), 7);
+
+    is($faceted_fields[0]->name, 'holdingbranch');
+    is($faceted_fields[0]->facet_order, 1);
+    is($faceted_fields[1]->name, 'homebranch');
+    is($faceted_fields[1]->facet_order, 2);
+    is($faceted_fields[2]->name, 'itype');
+    is($faceted_fields[2]->facet_order, 3);
+    is($faceted_fields[3]->name, 'se');
+    is($faceted_fields[3]->facet_order, 4);
+    is($faceted_fields[4]->name, 'su-geo');
+    is($faceted_fields[4]->facet_order, 5);
+    is($faceted_fields[5]->name, 'subject');
+    is($faceted_fields[5]->facet_order, 6);
+    is($faceted_fields[6]->name, 'author');
+    ok(!$faceted_fields[6]->facet_order);
+
+
+    $schema->storage->txn_rollback;
 };
