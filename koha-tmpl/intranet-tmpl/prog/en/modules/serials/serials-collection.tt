@@ -15,26 +15,6 @@
 
 <div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/serials/serials-home.pl">Serials</a> &rsaquo; Serial collection information for  <i>[% bibliotitle %]</i></div>
 
-[% IF ( delete ) %]
- <div class="yui-g">
- <div id="circ_needsconfirmation" class="dialog alert">
-   <h3>Are you sure delete <b> [% serialnumber %] </b> selected serials</h3>
-   <form action="/cgi-bin/koha/serials/serials-collection.pl/#">
-           <h5>Delete associated items <input type="radio" name="delitems" value="Yes">Yes
-           <input type="radio" name="delitems" value="No" checked>No</h5>
-           <h5>Number of items available <b>: [% countitems %] </b> </h5>
-           <input type="hidden" name="subscriptionid" value="[% subscriptionid %]" />
-           <input type="hidden" name="serialsid" value="[% serialsid %]" />
-           <input type="hidden" name="confdelete" value="1" />
-           <input type="submit" class="approve" value="Yes, delete"/>
-       </form>
-       <form action="/cgi-bin/koha/serials/serials-collection.pl/#">
-           <input type="hidden" name="subscriptionid" value="[% subscriptionid %]" />
-           <input type="submit" class="deny" value="No, don't delete"/>
-       </form>
-   </div>
- </div>
- [% END %]
 <div id="doc3" class="yui-t2">
    
    <div id="bd">
@@ -50,6 +30,30 @@
         [% IF location %] ([% AuthorisedValues.GetByCode( 'LOC', location ) %]) [% END %]
 		[% IF ( callnumber ) %]callnumber: [% callnumber %][% END %]</h1>
 [% END %]
+
+[% IF ( delete ) %]
+    <div class="dialog alert">
+        <h3>Are you sure you want to delete? <b>[% serialnumber %]</b> serial(s) will be deleted</h3>
+        <form action="/cgi-bin/koha/serials/serials-collection.pl/#">
+            <h5>Number of items available: <b>[% countitems %]</b></h5>
+            [% IF countitems > 0 %]
+                <p>
+                    <label>Delete associated items? <input type="checkbox" name="delitems" value="Yes" />Yes</label>
+                </p>
+            [% END %]
+
+            <input type="hidden" name="subscriptionid" value="[% subscriptionid %]" />
+            <input type="hidden" name="serialsid" value="[% serialsid %]" />
+            <input type="hidden" name="confdelete" value="1" />
+            <button type="submit" class="approve"><i class="fa fa-fw fa-check"></i> Yes, delete</button>
+        </form>
+        <form action="/cgi-bin/koha/serials/serials-collection.pl/#">
+            <input type="hidden" name="subscriptionid" value="[% subscriptionid %]" />
+            <button type="submit" class="deny"><i class="fa fa-fw fa-remove"></i> No, do not delete</button>
+        </form>
+    </div>
+[% END %]
+
 
 [% IF ( subscriptions ) %]
 <table>
@@ -140,7 +144,7 @@
                     <div class="btn-group"><input type="button" value="Multi receiving" href="#multi_receiving" class="btn btn-default btn-sm" data-toggle="modal"></div>
                 [% END %]
             [% END %]
-            <input type="button" value="Delete selected issues" onclick="javascript:deleteIssues([% subscriptionidlist %])"/>
+            <input type="button" value="Delete selected issues" class="delete-issues" data-subscriptionids="[% subscriptionidlist %]" />
         </p>
     [% END %]
       <span class="checkall">
@@ -389,6 +393,11 @@
                 "bInfo": false,
                 "bFilter": false,
             } ));
+            $(".delete-issues").on("click", function(e){
+                e.preventDefault();
+                var subscriptionids = "[% subscriptionidlist %]";
+                deleteIssues( subscriptionids );
+            });
 
             $('#multi_receiving').on('show', function () {
                $(this).find(".modal-body").html($(".serials_multi_receiving")[0].outerHTML);
