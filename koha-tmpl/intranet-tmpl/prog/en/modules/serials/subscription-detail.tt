@@ -1,7 +1,9 @@
 [% USE Asset %]
 [% USE Koha %]
+[% USE KohaDates %]
 [% USE Branches %]
 [% USE AuthorisedValues %]
+[% USE Price %]
 [% SET footerjs = 1 %]
 [% INCLUDE 'doc-head-open.inc' %]
 <title>Koha &rsaquo; Serials &rsaquo; Details for subscription #[% subscriptionid %]</title>
@@ -327,42 +329,71 @@
     </div>
     </div>
 
-    [% IF ( show_acquisition_details ) %]
+    [% IF orders %]
         <div id="acquisition_details">
             <h2>Acquisition details</h2>
-            <table>
+            <table id="orders">
                 <thead>
-                    <tr><th></th><th>Price exc. taxes</th><th>Price inc. taxes</th><th>Fund</th><th></th></tr>
+                    <tr>
+                        <th>Invoice</th>
+                        <th>Basket</th>
+                        <th>Order number</th>
+                        <th class="title-string">Creation date</th>
+                        <th class="title-string">Receive date</th>
+                        <th>Status</th>
+                        <th>Fund</th>
+                        <th>Ordered</th>
+                        <th>Spent</th>
+                    </tr>
                 </thead>
                 <tbody>
+                [% FOR order IN orders %]
                     <tr>
-                        <td>Ordered amount</td>
-                        <td>[% value_tax_excluded_ordered %]</td>
-                        <td>[% value_tax_included_ordered %]</td>
-                        <td>[% budget_name_ordered %]</td>
                         <td>
-                            [% IF ( ordered_exists ) %]
-                                <a href="/cgi-bin/koha/acqui/basket.pl?basketno=[% basketno %]">See basket information</a>
+                        [% IF order.invoice %]
+                            [% IF CAN_user_acquisition %]
+                                <a href="/cgi-bin/koha/acqui/invoice.pl?invoiceid=[% order.invoiceid %]" title="Invoice detail page">
+                                   [% order.invoice.invoicenumber %]</a>
+                            [% ELSE %]
+                                [% order.invoice.invoicenumber %]
+                            [% END %]
+                        [% END %]
+                        </td>
+                        <td>[% IF CAN_user_acquisition_order_manage %]
+                            <a href="/cgi-bin/koha/acqui/basket.pl?basketno=[% order.basketno %]">[% order.basket.basketname %] ([% order.basketno %])</a>
+                        [% ELSE %]
+                            [% order.basket.basketname %] ([% order.basketno %])
+                        [% END %]</td>
+                        <td>[% order.ordernumber %]</td>
+                        <td><span title="[% order.basket.creationdate %]">[% order.basket.creationdate | $KohaDates%]</span></td>
+                        <td><span title="[% order.datereceived %]">[% order.datereceived | $KohaDates%]</span></td>
+                        <td>
+                          [% SWITCH order.orderstatus %]
+                            [% CASE 'new' %]New
+                            [% CASE 'ordered' %]Ordered
+                            [% CASE 'partial' %]Partial
+                            [% CASE 'complete' %]Complete
+                            [% CASE 'cancelled' %]Cancelled
+                          [% END %]
+                        </td>
+                        <td>[% order.fund.budget_name %]</td>
+                        <td>
+                            [% UNLESS order.datereceived %]
+                                [% order.ecost_tax_excluded | $Price %] / [% order.ecost_tax_included | $Price %]
+                            [% END %]
+                        </td>
+                        <td>
+                            [% IF order.datereceived %]
+                                [%# FIXME What if unitprice has not been filled? %]
+                                [% order.unitprice_tax_excluded | $Price %] / [% order.unitprice_tax_included | $Price %]
                             [% END %]
                         </td>
                     </tr>
-                    <tr>
-                        <td>Spent amount</td>
-                        <td>[% value_tax_excluded_spent %]</td>
-                        <td>[% value_tax_included_spent %]</td>
-                        <td>[% budget_name_spent %]</td>
-                        <td>
-                            [% IF ( spent_exists ) %]
-                                <a href="/cgi-bin/koha/acqui/invoice.pl?invoiceid=[% invoiceid %]">See invoice information</a>
-                            [% END %]
-                        </td>
-                    </tr>
+                [% END %]
                 </tbody>
             </table>
-        </div>
-    [% END %]
-
-
+          </div>
+      [% END %]
 
 </div>
 </div>
