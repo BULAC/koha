@@ -581,6 +581,8 @@ sub BuildItemsData{
             $this_row{author}       = $biblio->author;
             $this_row{isbn}         = $biblio->biblioitem->isbn;
             $this_row{biblionumber} = $biblio->biblionumber;
+            $this_row{holds}        = $biblio->holds->count;
+            $this_row{item_holds}   = Koha::Holds->search( itemnumber => $itemnumber )->count;
 
 			if (%this_row) {
 				push(@big_array, \%this_row);
@@ -604,6 +606,8 @@ sub BuildItemsData{
       $row_data{title} = $row->{title};
       $row_data{isbn} = $row->{isbn};
       $row_data{biblionumber} = $row->{biblionumber};
+      $row_data{holds}        = $row->{holds};
+      $row_data{item_holds}   = $row->{item_holds};
       my $is_on_loan = C4::Circulation::IsItemIssued( $row->{itemnumber} );
       $row_data{onloan} = $is_on_loan ? 1 : 0;
 			push(@item_value_loop,\%row_data);

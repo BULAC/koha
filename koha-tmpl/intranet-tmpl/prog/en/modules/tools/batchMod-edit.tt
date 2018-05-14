@@ -137,6 +137,7 @@ $(document).ready(function(){
     <tr>
         <th>&nbsp;</th>
         <th class="anti-the">Title</th>
+        <th class="holds_count" title="Item holds / Total holds">Holds</th>
         [% FOREACH item_header_loo IN item_header_loop %]
         <th> [% item_header_loo.header_value %] </th>
         [% END %] 
@@ -155,6 +156,7 @@ $(document).ready(function(){
                   <td>&nbsp;</td>
                 [% END %]
                 <td><label for="row[% item_loo.itemnumber %]"><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% item_loo.biblionumber %]">[% item_loo.title %]</a>[% IF ( item_loo.author ) %], by [% item_loo.author %][% END %]</label></td>
+                <td class="holds_count"><a href="/cgi-bin/koha/reserve/request.pl?biblionumber=[% item_loo.biblionumber %]">[% IF item_loo.holds %][% item_loo.item_holds %]/[% item_loo.holds %][% ELSE %][% item_loo.holds %][% END %]</a></td>
                 [% FOREACH item_valu IN item_loo.item_value %] <td>[% item_valu.field |html %]</td> 
         [% END %] </tr>
             [% END %]
