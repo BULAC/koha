@@ -156,7 +156,8 @@ $(document).ready(function(){
                   <td>&nbsp;</td>
                 [% END %]
                 <td><label for="row[% item_loo.itemnumber %]"><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% item_loo.biblionumber %]">[% item_loo.title %]</a>[% IF ( item_loo.author ) %], by [% item_loo.author %][% END %]</label></td>
-                <td class="holds_count"><a href="/cgi-bin/koha/reserve/request.pl?biblionumber=[% item_loo.biblionumber %]">[% IF item_loo.holds %][% item_loo.item_holds %]/[% item_loo.holds %][% ELSE %][% item_loo.holds %][% END %]</a></td>
+                <td class="holds_count"><a href="/cgi-bin/koha/reserve/request.pl?biblionumber=[% item_loo.biblionumber %]" title="[% IF item_loo.holds %]Holds on this item: [% item_loo.item_holds %] / Total holds on this record: [% item_loo.holds %] [% ELSE %]Holds on this record: [% item_loo.holds %][% END %]">
+                    [%- IF item_loo.holds %][% item_loo.item_holds %]/[% item_loo.holds %][% ELSE %][% item_loo.holds %][% END %]</a></td>
                 [% FOREACH item_valu IN item_loo.item_value %] <td>[% item_valu.field |html %]</td> 
         [% END %] </tr>
             [% END %]
