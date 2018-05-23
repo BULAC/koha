@@ -53,6 +53,12 @@ the human readable name of the field, for display
 
 what type of data this holds, relevant when storing it in the search engine
 
+=head2 weight
+
+  data_type: 'decimal'
+  is_nullable: 1
+  size: [5,2]
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -68,6 +74,8 @@ __PACKAGE__->add_columns(
     extra => { list => ["", "string", "date", "number", "boolean", "sum"] },
     is_nullable => 0,
   },
+  "weight",
+  { data_type => "decimal", is_nullable => 1, size => [5, 2] },
 );
 
 =head1 PRIMARY KEY
