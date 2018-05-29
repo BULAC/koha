@@ -334,6 +334,12 @@
         <div id="acquisition_details">
             <h2>Acquisition details</h2>
             <table id="orders">
+                <caption>
+                  <span class="actions">
+                  <a href="#" id="hide_received_orders">Hide already received orders</a>
+                  | <a href="#" id="show_all_orders">Show all orders</a></span>
+                </caption>
+
                 <thead>
                     <tr>
                         <th>Invoice</th>
@@ -367,7 +373,7 @@
                         [% END %]</td>
                         <td>[% order.ordernumber %]</td>
                         <td><span title="[% order.basket.creationdate %]">[% order.basket.creationdate | $KohaDates%]</span></td>
-                        <td><span title="[% order.datereceived %]">[% order.datereceived | $KohaDates%]</span></td>
+                        <td>[% IF order.datereceived %]<span title="[% order.datereceived %]">[% order.datereceived | $KohaDates %]</span>[% END %]</td>
                         <td>
                           [% SWITCH order.orderstatus %]
                             [% CASE 'new' %]New
@@ -424,7 +430,7 @@
                 return false;
             })
 
-            $("#orders").dataTable($.extend(true, {}, dataTablesDefaults, {
+            var table = $("#orders").dataTable($.extend(true, {}, dataTablesDefaults, {
                 'bPaginate': false,
                 'bAutoWidth': false,
                 "aaSorting": [[ 4, "desc" ]],
@@ -432,6 +438,17 @@
                     { "aTargets": "title-string", "sType": "title-string" }
                 ]
             }));
+
+            $("#hide_received_orders").click(function(e){
+                e.preventDefault();
+                table.fnFilter( '.', 4, true ); // Not empty "Receive date" columns
+            });
+            $("#show_all_orders").click(function(e){
+                e.preventDefault();
+                table.fnFilter( '', 4 ); // Not filter, display all columns
+            });
+            $("#show_all_orders").click();
+
 
         });
     </script>
